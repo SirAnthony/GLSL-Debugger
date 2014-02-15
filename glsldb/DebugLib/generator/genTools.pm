@@ -28,10 +28,11 @@ our %extname_matches;
 our %files;
 our @skip_defines;
 our @force_extensions;
-
+my %skip_defines_map = map { $_ => 1 } @skip_defines;
+my %force_extensions_map = map { $_ => 1 } @force_extensions;
 
 our %regexps = (
-    "glapi" => qr/^\s*(?:GLAPI\b)\s+(.*?)\s*(?:GL)?APIENTRY\s+(.*?)\s*\((.*?)\)/,
+    "glapi" => qr/^\s*(?:GLAPI\b)\s+(.*?)\s*(?:GL)?APIENTRY\s+(.*?)\s*\(\s*(.*?)\s*\)/,
     "wingdi" => qr/^\s*(?:WINGDIAPI\b)\s+(.*?)\s*(?:WINAPI|APIENTRY)\s+(wgl.*?)\s*\((.*?)\)/,
     "winapifunc" => qr/^\s*(?!WINGDIAPI)(.*?)\s*WINAPI\s+(wgl\S+)\s*\((.*)\)\s*;/,
     "glxfunc" => qr/^\s*(?:GLAPI\b|extern\b)\s+(\S.*\S)\s*(glX\S+)\s*\((.*)\)\s*;/,
@@ -44,7 +45,6 @@ our %regexps = (
     "wglvar" => qr/^\s*#define\s+((WGL|ERROR)_\w+)\s+0x[0-9A-Fa-f]*/,
 );
 
-my $func_match = qr/^\s*(?:GLAPI\b|WINGDIAPI\b|extern\b)\s+\S.*\S\s*\([^)]*?$/;
 
 # I wanted to make it clear
 # Well, shit...
@@ -54,8 +54,7 @@ sub parse_output {
     my @definitions = ($extname);
     my $proto = $extname;
     my $api_re = qr/^#ifndef\s+($api\S+)/;
-    my $api_defined = qr/^#ifn?def\s+(\S+)/;
-	my $isNative = grep { $$_[0] eq $filename } values %files;
+    my $isNative = grep { $$_[0] eq $filename } values %files;
     my @skip = 0;
     my $indef = 0;
     my @ifdir;
@@ -76,7 +75,7 @@ sub parse_output {
         next if /^\/\//;
 
         # Multiline function
-        if (/$func_match/) {
+        if (/^\s*(?:GLAPI\b|WINGDIAPI\b|extern\b)\s+\S.*\S\s*\([^)]*?$/) {
             my $fprototype = $_;
             chomp $fprototype;
             while ($fprototype !~ /.*;\s*$/) {
@@ -90,8 +89,8 @@ sub parse_output {
 
         # Prototype name in #define or in comment
         my $reg_match = $extname_matches{$_};
-        my $extreg = qr/^#define\s+$extname\s+1/;
-        if ($reg_match || ($indef == $ifdir[$#ifdir] && /$extreg/)) {
+        if ($reg_match || ($indef eq $ifdir[$#ifdir] &&
+                /^#define\s+$extname\s+1/)) {
             if ($reg_match){
                 push @definitions, $extname;
                 $extname = $reg_match;
@@ -100,9 +99,10 @@ sub parse_output {
         }
 
         # Run each supplied regexp here
-        if ($indef == $ifdir[$#ifdir]) {
-			my $isExtension = (grep(/^$extname$/, @force_extensions) or !$isNative);
-            while (my ($regexp, $func) = each(%$actions) ) {
+        if ($indef eq $ifdir[$#ifdir]) {
+            my $isExtension = ($force_extensions_map{$extname} or !$isNative);
+            foreach my $group (@$actions){
+                my ($regexp, $func) = @$group;
                 if (my @matches = /$regexp/){
                     $func->($isExtension, $proto, @matches);
                 }
@@ -111,9 +111,9 @@ sub parse_output {
 
         if (/^#endif/ and (scalar @ifdir)) {
             my $ifdef = pop @ifdir;
-            next if $ifdef and grep { /^$1$/ } @skip_defines;
+            next if $ifdef and $skip_defines_map{$1};
 
-            if ($ifdef =~ /$api/ and $ifdir[$#ifdir] == $indef){
+            if ($ifdef =~ $api and $ifdir[$#ifdir] eq $indef){
                 $indef = $ifdir[$#ifdir];
                 $extname = pop @definitions;
                 $proto = $bextname;
@@ -121,10 +121,10 @@ sub parse_output {
         }
 
         if (/^#if/) {
-            my $ifdef = /$api_defined/;
+            my $ifdef = /^#ifn?def\s+(\S+)/;
             push @ifdir, $1;
             $indef = $1 if !$indef;
-            next if $ifdef and grep { /^$1$/ } @skip_defines;
+            next if $ifdef and $skip_defines_map{$1};
             if (/$api_re/) {
                 push @definitions, $extname;
                 $extname = $1;
@@ -136,7 +136,8 @@ sub parse_output {
 }
 
 
-sub header_generated {
+sub header_generated
+{
     my $style = shift;
     my $t = localtime;
     my $year = $t->year + 1900;
@@ -173,23 +174,19 @@ sub header_generated {
 
 sub parse_gl_files {
     my $gl_actions = shift;
-    my $add_actions = shift;
     my $WIN32 = shift;
     my $win32func = shift;
-    my @params = ([$files{"gl"}, "GL_VERSION_1_0", "GL_", $gl_actions]);
+    my @params = ([$files{"gl"}, "GL_VERSION_1_0", qr/GL_/, $gl_actions]);
 
-    if (ref($add_actions) eq "HASH") {
-        if ($WIN32) {
-            push @params, [$files{"wgl"}, "WGL_VERSION_1_0",
-                            "WGL_", $add_actions];
-
-            # Additional function from original file
-            $win32func->(0, "WGL_VERSION_1_0", "BOOL", "SwapBuffers",
-                            "HDC") if $win32func;
-        } else {
-            push @params, [$files{"glx"}, "GLX_VERSION_1_0",
-                            "GLX_", $add_actions];
-        }
+    if ($WIN32) {
+        push @params, [$files{"wgl"}, "WGL_VERSION_1_0",
+                        qr/WGL_/, $gl_actions];
+        # Additional function from original file
+        $win32func->(0, "WGL_VERSION_1_0", "BOOL", "SwapBuffers",
+                        "HDC") if $win32func;
+    } else {
+        push @params, [$files{"glx"}, "GLX_VERSION_1_0",
+                        qr/GLX_/, $gl_actions];
     }
 
     foreach my $entry (@params) {
