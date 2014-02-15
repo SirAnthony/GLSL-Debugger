@@ -41,22 +41,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif /* _WIN32 */
 
 #include "glenumerants.h"
-#include "generated/glenumerants.h"
-
 #if (defined(GLSLDB_LINUX) || defined(GLSLDB_OSX))
 #  include "../GL/glx.h"
 #  include "../GL/glxext.h"
-#  include "generated/glxenumerants.h"
-//#  ifdef GLX_VERSION_1_4
-//#    define GLX_SAMPLE_BUFFERS                 100000
-//#    define GLX_SAMPLES                        100001
-//#  endif
-
 #else
-#  include <windows.h>
 #  include "../GL/wglext.h"
-#  include "generated/wglenumerants.h"
 #endif
+#include "generated/glenumerants.h"
+
 
 static void concatenate(char **dst, const char *src)
 {
@@ -84,17 +76,42 @@ static void concatenate(char **dst, const char *src)
 	}
 }
 
-const char *lookupEnum(GLenum e)
+static const char* lookupEnumInMap(EnumerantsMap map[], int e)
 {
 	int i = 0;
-	while (glEnumerantsMap[i].string != NULL) {
-		if (glEnumerantsMap[i].value == e) {
+	while (map[i].string != NULL) {
+		if (map[i].value == e) {
 			/* assumes enums are unique! */
-			return glEnumerantsMap[i].string;
+			return map[i].string;
 		}
 		i++;
 	}
 	return "UNKNOWN ENUM!";
+}
+
+const char *lookupEnum(GLenum e)
+{
+	return lookupEnumInMap(glEnumerantsMap, e);
+}
+
+const char *lookupExtEnum(int e)
+{
+	return lookupEnumInMap(extEnumerantsMap, e);
+}
+
+
+static void concatEnumsInMap(char** result, EnumerantsMap map[], int e)
+{
+	int i = 0;
+	while (map[i].string != NULL) {
+		if (map[i].value == e) {
+			/* assumes enums are unique! */
+			const char *s = map[i].string;
+			concatenate(result, s);
+			concatenate(result, ",");
+		}
+		i++;
+	}
 }
 
 char *lookupAllEnum(GLenum e)
@@ -102,33 +119,10 @@ char *lookupAllEnum(GLenum e)
 	int i;
 	char *result = NULL;
 
-	i = 0;
 	concatenate(&result, "{");
-	while (glEnumerantsMap[i].string != NULL) {
-		if (glEnumerantsMap[i].value == e) {
-			/* assumes enums are unique! */
-			const char *s = glEnumerantsMap[i].string;
-			concatenate(&result, s);
-			concatenate(&result, ",");
-		}
-		i++;
-	}
-#ifndef _WIN32
-	i = 0;
-	while (glxEnumerantsMap[i].string != NULL) {
-		if (glxEnumerantsMap[i].value == e) {
-			const char *s = glxEnumerantsMap[i].string;
-#else
-			while (wglEnumerantsMap[i].string != NULL) {
-				if (wglEnumerantsMap[i].value == e) {
-					const char *s = wglEnumerantsMap[i].string;
-#endif
-			/* assumes enums are unique! */
-			concatenate(&result, s);
-			concatenate(&result, ",");
-		}
-		i++;
-	}
+	concatEnumsInMap(&result, glEnumerantsMap, e);
+	concatEnumsInMap(&result, extEnumerantsMap, e);
+
 	if (strlen(result) == 1) {
 		result = realloc(result, 14 * sizeof(char));
 		strcpy(result, "UNKNOWN ENUM!");
@@ -141,10 +135,9 @@ char *lookupAllEnum(GLenum e)
 char *dissectBitfield(GLbitfield b)
 {
 	char *result = NULL;
-	int i;
+	int i = 0;
 
 	/* find combinations */
-	i = 0;
 	while (glBitfieldMap[i].string != NULL) {
 		if ((glBitfieldMap[i].value & b) == glBitfieldMap[i].value) {
 			if (result != NULL) {
@@ -156,39 +149,3 @@ char *dissectBitfield(GLbitfield b)
 	}
 	return result;
 }
-
-#ifdef _WIN32
-
-const char *lookupWGLEnum(int e)
-{
-	int i;
-
-	i = 0;
-	while (wglEnumerantsMap[i].string != NULL) {
-		if (wglEnumerantsMap[i].value == e) {
-			/* assumes enums are unique! */
-			return wglEnumerantsMap[i].string;
-		}
-		i++;
-	}
-	return "UNKNOWN ENUM!";
-}
-
-#else
-
-const char *lookupGLXEnum(int e)
-{
-	int i;
-
-	i = 0;
-	while (glxEnumerantsMap[i].string != NULL) {
-		if (glxEnumerantsMap[i].value == e) {
-			/* assumes enums are unique! */
-			return glxEnumerantsMap[i].string;
-		}
-		i++;
-	}
-	return "UNKNOWN ENUM!";
-}
-
-#endif

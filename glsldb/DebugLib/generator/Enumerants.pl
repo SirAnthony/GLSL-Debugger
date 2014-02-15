@@ -67,10 +67,7 @@ sub out_struct {
         $elements .= check_define($extname, $enums->{$extname});
     }
     print "
-static struct {
-\tGLenum value;
-\tconst char *string;
-} ${name}[] = {
+static EnumerantsMap ${name}[] = {
 $elements
 \t{0, NULL}
 };
@@ -120,4 +117,10 @@ require "$opt_p/glheaders.pm";
 our @defines;
 
 header_generated("#");
+print "typedef struct {
+    GLenum value;
+    const char *string;
+} EnumerantsMap;
+";
+
 out(convert(\@defines));
