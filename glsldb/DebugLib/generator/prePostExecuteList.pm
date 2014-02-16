@@ -76,13 +76,13 @@ my @justCopyPointersList = (
 
 sub arguments_references
 {
-    return if @_[0] =~ /^void$|^$/i;
+    return "" if @_[0] =~ /^void$|^$/i;
     return join(", ", map {"&arg$_"} (0..$#_));
 }
 
 sub arguments_string
 {
-    return if @_[0] =~ /^void$|^$/i;
+    return "" if @_[0] =~ /^void$|^$/i;
     return join(", ", map {"arg$_"} (0..$#_));
 }
 
