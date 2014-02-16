@@ -35,28 +35,29 @@ my $line_length = 10;
 require "$opt_p/glheaders.pm";
 our @api;
 
+sub min ($$) { $_[$_[0] > $_[1]] }
 
 sub createRefs
 {
-    my @functions = @_;
-    my (@orig, @hooked, @names);
-    my $count = scalar @functions;
-    my $type = (defined $WIN32) ? "PVOID" : "void";
+	my @functions = @_;
+	my (@orig, @hooked, @names);
+	my $count = scalar @functions;
+	my $type = (defined $WIN32) ? "PVOID" : "void";
 
-    my $start = 0;
-    while ($start <= $count) {
-        my @group = grep { /\S/ } @functions[$start..$start+$line_length];
-        push @names, join ", ", map { "\"$_\"" } @group;
-        if ($WIN32) {
-            push @orig, join ", ", map { "&((PVOID)Orig$_)" } @group;
-            push @hooked, join ", ", map { "Hooked$_" } @group;
-        } else {
-            push @orig, join ", ", map { "(void*)$_" } @group;
-        }
-        $start += $line_length;
-    }
+	my $start = 0;
+	while ($start < $count) {
+		my @group = @functions[$start..min($start+$line_length, $count-1)];
+		push @names, join ", ", map { "\"$_\"" } @group;
+		if ($WIN32) {
+			push @orig, join ", ", map { "&((PVOID)Orig$_)" } @group;
+			push @hooked, join ", ", map { "Hooked$_" } @group;
+		} else {
+			push @orig, join ", ", map { "(void*)$_" } @group;
+		}
+		$start += $line_length;
+	}
 
-    printf "#define FUNC_REFS_COUNT $count
+	printf "#define FUNC_REFS_COUNT $count
 $type* refs_OrigFuncs[FUNC_REFS_COUNT] = {
 %s
 };
@@ -65,12 +66,12 @@ const char* refs_FuncsNames[FUNC_REFS_COUNT] = {
 };
 ", join(",\n", @orig), join(",\n", @names);
 
-    if ($WIN32) {
-        printf "$type refs_HookedFuncs[FUNC_REFS_COUNT] = {
+	if ($WIN32) {
+		printf "$type refs_HookedFuncs[FUNC_REFS_COUNT] = {
 %s
 };
 ", join(",\n", @hooked);
-    }
+	}
 
 }
 

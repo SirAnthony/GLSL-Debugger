@@ -38,12 +38,8 @@ generate_file(FunctionRef.pl functionRefs.inc)
 generate_file(GetProcAddressHook.pl getProcAddressHook.inc)
 generate_file(FunctionPointerTypes.pl functionPointerTypes.inc)
 generate_file(streamHintRef.pl streamHintRefs.inc)
+generate_file(ReplayFunc.pl replayFunction.c)
 
-execute_process(COMMAND ${PERL_EXECUTABLE}
-    WORKING_DIRECTORY ${GENERATOR_DIR}
-    INPUT_FILE ReplayFunc.pl
-    OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/replayFunction.c
-)
 execute_process(COMMAND ${PERL_EXECUTABLE}
     WORKING_DIRECTORY ${GENERATOR_DIR}
     INPUT_FILE FunctionList.pl

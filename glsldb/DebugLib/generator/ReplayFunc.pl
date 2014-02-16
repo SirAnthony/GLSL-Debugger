@@ -32,11 +32,19 @@
 #
 ################################################################################
 
-require prePostExecuteList;
-require genTools;
-require genTypes;
-our %regexps;
+use strict;
+use warnings;
+use Getopt::Std;
+use prePostExecuteList;
+use genTools;
+use genTypes;
+use streamHints;
+our %stream_hints;
 
+our $opt_p;
+getopt('p');
+require "$opt_p/glheaders.pm";
+our @api;
 
 sub createBodyHeader
 {
@@ -67,43 +75,37 @@ void replayFunctionCall(StoredCall *f, int final)
 
 sub createBodyFooter
 {
-	print '    {
-		fprintf(stderr, "Cannot replay %s: unknown function\n", f->fname);
-	}
+	print '	fprintf(stderr, "Cannot replay %s: unknown function\n", f->fname);
 }
 ';
 }
 
 sub createFunctionHook
 {
-	my $isExtension = shift;
-	my $extname = shift;
-	my $retval = shift;
-	my $fname = shift;
-	my $argString = shift;
+	my ($fnum, $fname, $argString) = @_;
+	# Do not generate this for functions not in stream_hints
+	return if not defined $stream_hints{$fname};
+
 	my $ucfname = uc($fname);
 	my @arguments = buildArgumentList($argString);
 	my $argOutput = arguments_types_array($fname, "f->arguments", @arguments);
 
-	printf "#if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_REPLAY || DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
-	if (!strcmp(\"$fname\", (char*)f->fname)) {
-#if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
-		if (final) {
-#endif
-			ORIG_GL($fname)($argOutput);
-#if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
+	# StreamRefs generated from same api array as other things do,
+	# so we can be sure that array index matches function index.
+	print qq#
+	if (!strcmp("$fname", (char*)f->fname)) {
+		if (refs_StreamHint[$fnum] == STREAMHINT_RECORD_AND_REPLAY ||
+			(refs_StreamHint[$fnum] == STREAMHINT_RECORD_AND_FINAL && final))
+				ORIG_GL($fname)($argOutput);
 		}
-#endif
 		return;
 	}
-#endif
-";
+#;
 }
 
 header_generated();
 createBodyHeader();
 for my $i (0..$#api) {
-	createFunctionHook
+	createFunctionHook($i, @{$api[$i]}[3..4]);
 }
-parse_gl_files({ $regexps{"glapi"} => \&createFunctionHook });
 createBodyFooter();

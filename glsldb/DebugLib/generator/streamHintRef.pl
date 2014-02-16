@@ -38,16 +38,17 @@ my $line_length = 10;
 require "$opt_p/glheaders.pm";
 our @api;
 
+sub min ($$) { $_[$_[0] > $_[1]] }
+
 sub createRefs
 {
 	my @functions = @_;
 	my @groups;
-	my ($count, $start) = (scalar @functions, 0);
+	my ($count, $start) = ($#functions, 0);
 	while ($start <= $count) {
 		push @groups, join(", ",
 			 map { $stream_hints_types[$stream_hints{$_} or 0] }
-			 grep { defined $_ and /\S/ }
-				@functions[$start..$start+$line_length]);
+			@functions[$start..min($start+$line_length, $count)]);
 		$start += $line_length;
 	}
 
@@ -56,7 +57,7 @@ enum StreamHints {
 %s
 };
 
-refs_StreamHint[FUNC_REFS_COUNT] = {
+enum StreamHints refs_StreamHint[FUNC_REFS_COUNT] = {
 %s
 };
 ", join(",\n", @stream_hints_types),
