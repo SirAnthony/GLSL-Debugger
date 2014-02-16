@@ -242,7 +242,7 @@ sub buildArgumentList
 		my $argType = "";
 		#print "argItems: #"; print join('#', @argItems); print "#\n";
 		foreach $argItem (@argItems) {
-			if (scalar grep {$argItem eq $_} @storageQualifiers) {
+			if ($isStorageQualifier{$argItem}) {
 				$argType .= "$argItem ";
 			} elsif (scalar grep {$argItem eq $_} @typeQualifiers) {
 				$haveTypeQualifier = 1;

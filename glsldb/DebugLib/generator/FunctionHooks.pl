@@ -56,9 +56,10 @@ my $WIN32 = ($^O =~ /Win32/);
 
 sub print_defines
 {
-	printf 'include "streamHintRefs.inc"';
+	printf '#include "streamHintRefs.inc"
+';
 
-	if (defined $WIN32)	{
+	if ($WIN32)	{
 		print "#define ENTER_CS EnterCriticalSection
 #define EXIT_CS LeaveCriticalSection
 #define RECURSING(n) rec->isRecursing = n;
@@ -152,8 +153,8 @@ setErrorCode(error);" if $void;
 sub thread_statement
 {
 	my ($fname, $retval, $retval_assign, $return_name, @arguments) = (@_);
-	my $statement;
-	if (defined $WIN32) {
+	my $statement = "";
+	if ($WIN32) {
 		my $preexec = pre_execute($fname, @arguments);
 		my $postexec = post_execute($fname, $retval, @arguments);
 		my $argstring = arguments_string(@arguments);
@@ -213,20 +214,19 @@ sub createBody
 			$arguments[$_]) } (0..$#arguments)) : "";
 
 	my $ucfname = uc($fname);
-	my $win_recursing = defined $WIN32 ? "rec->isRecursing = 0;\n" : "";
+	my $win_recursing = $WIN32 ? "rec->isRecursing = 0;\n" : "";
 	my $preexec = pre_execute($fname, @arguments);
 	my $postexec = post_execute($fname, $retval, @arguments);
 
 	my $thread_statement = thread_statement($fname,
 					$retval, $retval_assign, $return_name, @arguments);
-	print $fname;
 	my $errstr = check_error_string($checkError, $return_void, $fname);
 
 	my $output = "";
 	###########################################################################
 	# create function head
 	###########################################################################
-	if (defined $WIN32) {
+	if ($WIN32) {
 		$output .= "__declspec(dllexport) $retval APIENTRY Hooked$fname (";
 	} else {
 		$output .= "$retval $fname (";

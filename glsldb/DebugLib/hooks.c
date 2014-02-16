@@ -37,7 +37,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #else /* !_WIN32 */
 #include <windows.h>
-#include "../GL/WinGDI.h"
+#include "GL/WinGDI.h"
 #define GL_GLEXT_PROTOTYPES 1
 #define WGL_WGLEXT_PROTOTYPES 1
 #include "../GL/gl.h"

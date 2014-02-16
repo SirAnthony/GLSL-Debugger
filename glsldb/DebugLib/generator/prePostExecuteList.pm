@@ -124,10 +124,10 @@ sub arguments_types_array
     return "" if @arguments[0] =~ /^void$|^$/i;
 
     sub _get_arg {
-        my $argument = @arguments[$_];
+        my $argument = $arguments[$_];
         if (scalar grep {$fname eq $_} @justCopyPointersList) {
             return "*($argument *)${array_name}[$_]";
-        } elsif ($argument =~ /[*]$/) {
+        } elsif ($argument =~ s/\[.*\]$/\*/) {
             return "($argument)${array_name}[$_]";
         }
         return "*($argument *)${array_name}[$_]";

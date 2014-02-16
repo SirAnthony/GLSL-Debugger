@@ -31,6 +31,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -116,7 +118,6 @@ static void concatEnumsInMap(char** result, EnumerantsMap map[], int e)
 
 char *lookupAllEnum(GLenum e)
 {
-	int i;
 	char *result = NULL;
 
 	concatenate(&result, "{");

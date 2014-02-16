@@ -97,7 +97,6 @@ sub createFunctionHook
 		if (refs_StreamHint[$fnum] == STREAMHINT_RECORD_AND_REPLAY ||
 			(refs_StreamHint[$fnum] == STREAMHINT_RECORD_AND_FINAL && final))
 				ORIG_GL($fname)($argOutput);
-		}
 		return;
 	}
 #;

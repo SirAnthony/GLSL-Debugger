@@ -116,7 +116,7 @@ sub convert
 require "$opt_p/glheaders.pm";
 our @defines;
 
-header_generated("#");
+header_generated();
 print "typedef struct {
 	GLenum value;
 	const char *string;

@@ -53,6 +53,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "GL/glext.h"
 #include "debuglib.h"
 
+#ifdef _WIN32
+#include "GL/WinGDI.h"
+#include "GL/wglxext.h"
+#else
+#include "GL/glx.h"
+#include "GL/glxext.h"
+#endif
+
 extern "C" {
 #include "DebugLib/glenumerants.h"
 #include "DebugLib/generated/glenumerants.h"

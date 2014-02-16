@@ -25,7 +25,7 @@ set(ARCHIVE_DIR "${PROJECT_BINARY_DIR}/lib")
 # platform checks
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set(GLSLDB_LINUX 1)
-	add_definitions(-DGLSLDB_LINUX -D_GNU_SOURCE)
+	add_definitions(-DGLSLDB_LINUX)
 	if(CMAKE_SIZEOF_VOID_P MATCHES "8")
 		include(CheckCXXCompilerFlag)
 		check_cxx_compiler_flag("-fPIC" WITH_FPIC)

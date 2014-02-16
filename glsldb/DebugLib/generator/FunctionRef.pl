@@ -41,12 +41,12 @@ sub createRefs
 {
 	my @functions = @_;
 	my (@orig, @hooked, @names);
-	my $count = scalar @functions;
-	my $type = (defined $WIN32) ? "PVOID" : "void";
+	my $count = $#functions;
+	my $type = $WIN32 ? "PVOID" : "void";
 
 	my $start = 0;
-	while ($start < $count) {
-		my @group = @functions[$start..min($start+$line_length, $count-1)];
+	while ($start <= $count) {
+		my @group = @functions[$start..(min($start+$line_length, $count)-1)];
 		push @names, join ", ", map { "\"$_\"" } @group;
 		if ($WIN32) {
 			push @orig, join ", ", map { "&((PVOID)Orig$_)" } @group;
@@ -57,6 +57,7 @@ sub createRefs
 		$start += $line_length;
 	}
 
+	$count += 2;
 	printf "#define FUNC_REFS_COUNT $count
 $type* refs_OrigFuncs[FUNC_REFS_COUNT] = {
 %s

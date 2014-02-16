@@ -44,20 +44,22 @@ sub createRefs
 {
 	my @functions = @_;
 	my @groups;
-	my ($count, $start) = ($#functions, 0);
+	my ($count, $start) = (scalar $#functions, 0);
 	while ($start <= $count) {
 		push @groups, join(", ",
 			 map { $stream_hints_types[$stream_hints{$_} or 0] }
-			@functions[$start..min($start+$line_length, $count)]);
+			@functions[$start..(min($start+$line_length, $count)-1)]);
 		$start += $line_length;
 	}
 
+	$count += 2;
 	printf "
+#define STREAMHINTS_REFS_COUNT $count
 enum StreamHints {
 %s
 };
 
-enum StreamHints refs_StreamHint[FUNC_REFS_COUNT] = {
+enum StreamHints refs_StreamHint[STREAMHINTS_REFS_COUNT] = {
 %s
 };
 ", join(",\n", @stream_hints_types),
