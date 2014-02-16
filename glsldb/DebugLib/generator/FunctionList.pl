@@ -1,200 +1,81 @@
 ################################################################################
 #
-# Copyright (C) 2006-2009 Institute for Visualization and Interactive Systems
-# (VIS), Universität Stuttgart.
-# All rights reserved.
+# Copyright (c) 2014 SirAnthony <anthony at adsorbtion.org>
 #
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#   * Redistributions of source code must retain the above copyright notice, this
-#     list of conditions and the following disclaimer.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#   * Redistributions in binary form must reproduce the above copyright notice, this
-#   list of conditions and the following disclaimer in the documentation and/or
-#   other materials provided with the distribution.
-#
-#   * Neither the name of the name of VIS, Universität Stuttgart nor the names
-#   of its contributors may be used to endorse or promote products derived from
-#   this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 #
 ################################################################################
 
-require genTools;
+use strict;
+use warnings;
+use Getopt::Std;
+use genTools;
+use genSettings;
 
-# edit this list for new extensions that include drawcalls
-# second entry is index of parameter that gives the primitiveMode, this is so
-# future-proof, I can't believe we've done that ;-)
-my @debuggableDrawCalls = (
- ["glBegin", 0],
- #"glBitmap",
- ["glDrawArrays", 0],
- ["glDrawArraysInstanced", 0],
- ["glDrawElements", 0],
- ["glDrawElementsInstanced", 0],
- #"glDrawPixels",
- ["glDrawRangeElements", 0],
- ["glMultiDrawArrays", 0],
- ["glMultiDrawElements", 0],
- ["glDrawArraysEXT", 0],
- ["glDrawRangeElementsEXT", 0],
- ["glMultiDrawArraysEXT", 0],
- ["glMultiDrawElementsEXT", 0],
- ["glMultiModeDrawArraysIBM", 0],
- ["glMultiModeDrawElementsIBM", 0],
- ["glDrawElementArrayATI", 0],
- ["glDrawRangeElementArrayATI", 0],
- ["glDrawMeshArraysSUN", 0],
- ["glDrawElementArrayAPPLE", 0],
- ["glDrawRangeElementArrayAPPLE", 0],
- ["glMultiDrawElementArrayAPPLE", 0],
- ["glMultiDrawRangeElementArrayAPPLE", 0],
- ["glDrawArraysInstancedEXT", 0],
- ["glDrawElementsInstancedEXT", 0]
- #"glCallList",
- #"glCallLists"
-);
+our $opt_p;
+getopt('p');
+require "$opt_p/glheaders.pm";
 
-my @framebufferChanges = (
- "glEnd",
- "glBitmap",
- "glDrawArrays",
- "glDrawArraysInstanced",
- "glDrawElements",
- "glDrawElementsInstanced",
- "glDrawPixels",
- "glDrawRangeElements",
- "glMultiDrawArrays",
- "glMultiDrawElements",
- "glDrawArraysEXT",
- "glDrawRangeElementsEXT",
- "glMultiDrawArraysEXT",
- "glMultiDrawElementsEXT",
- "glMultiModeDrawArraysIBM",
- "glMultiModeDrawElementsIBM",
- "glDrawElementArrayATI",
- "glDrawRangeElementArrayATI",
- "glDrawMeshArraysSUN",
- "glDrawElementArrayAPPLE",
- "glDrawRangeElementArrayAPPLE",
- "glMultiDrawElementArrayAPPLE",
- "glMultiDrawRangeElementArrayAPPLE",
- "glDrawArraysInstancedEXT",
- "glDrawElementsInstancedEXT",
- "glCallList",
- "glCallLists",
- "glClear",
- "glCopyPixels",
- "glBlitFramebufferEXT",
- "glXSwapBuffers",
- "SwapBuffers"
-);
+our @api;
+our @debuggableDrawCalls;
+our @shaderSwitches;
+our @frameEndMarkers;
+our @framebufferChanges;
+my %debuggableDrawCallsMap = map { $_->[0] => ($_->[1] + 1) } @debuggableDrawCalls;
+my %shaderSwitchesMap = map { $_ => 1 } @shaderSwitches;
+my %frameEndMarkersMap = map { $_ => 1 } @frameEndMarkers;
+my %framebufferChangesMap = map { $_ => 1 } @framebufferChanges;
+my $WIN32 = ($^O =~ /Win32/);
 
-my @shaderSwitches = (
-    "glUseProgram",
-    "glUseProgramObjectARB",
-    "glLinkProgram",
-    "glLinkProgramObjectARB"
-);
-
-my @frameEndMarkers = (
-    "glXSwapBuffers",
-    "SwapBuffers"
-);
-
-if ($^O =~ /Win32/) {
-    $WIN32 = 1;
-}
-
-sub createHeader
-{
-    #print "#include <stdlib.h>\n";
-    #print "struct {\n";
-    #print "\tconst char *prefix;\n";
-    #print "\tconst char *extname;\n";
-    #print "\tconst char *fname;\n";
-    #print "\tint isDrawDebuggableCall;\n";
-    #print "\tint primitiveModeIndex;\n";
-    #print "\tint isShaderSwitch;\n";
-    #print "\tint isFrameEnd;\n";
-    #print "} glFunctions[] = {\n";
-
-    print '#include <stdlib.h>
-#include "debuglib.h"
-GLFunctionList glFunctions[] = {
-';
-}
-
-
-sub createFooter
-{
-    print "  {NULL, NULL, NULL, 0, -1, 0, 0}
-};
-";
-}
 
 sub createListEntry
 {
-    my $prefix = shift;
-    my $extname = shift;
-    my $fname = shift;
-    my @abla = grep {$fname eq $_->[0]} @debuggableDrawCalls;
-    my $bla = @abla ? $abla[0]->[1] : -1;
+	my ($extname, $fname) = @_;
+	my $prefix = (split("_", $extname, 2))[0];
 
-    printf "  {\"$prefix\", \"$extname\", \"$fname\", %s, $bla, %s, %s, %s},
-", (scalar grep {$fname eq $_->[0]} @debuggableDrawCalls),
-   (scalar grep {$fname eq $_} @shaderSwitches),
-   (scalar grep {$fname eq $_} @frameEndMarkers),
-   (scalar grep {$fname eq $_} @framebufferChanges);
+	return sprintf
+	"{\"$prefix\", \"$extname\", \"$fname\", %s, %s, %s, %s, %s},",
+		($debuggableDrawCallsMap{$fname} or 0),
+		(($debuggableDrawCallsMap{$fname} or 0) - 1),
+		($shaderSwitchesMap{$fname} or 0),
+		($frameEndMarkersMap{$fname} or 0),
+		($framebufferChangesMap{$fname} or 0);
 }
 
-
-sub gl_entry
+sub out
 {
-    my ($isExtension, $extname, $retval, $funcname) = @_;
-    createListEntry("GL", $extname, $funcname);
-}
+	my $input = shift;
+	my @elements;
+	foreach my $func (@$input) {
+		push @elements, createListEntry($func->[1], $func->[3]);
+	}
 
-sub wgl_entry
-{
-    my ($isExtension, $extname, $retval, $funcname) = @_;
-    createListEntry("WGL", $extname, $funcname);
-}
-
-sub glx_entry
-{
-    my ($isExtension, $extname, $retval, $funcname) = @_;
-    createListEntry("GLX", $extname, $funcname);
-}
-
-
-my $gl_actions = {    
-    $regexps{"glapi"} => \&gl_entry,
+	printf '
+#include <stdlib.h>
+#include "debuglib.h"
+GLFunctionList glFunctions[] = {
+	%s
+	{NULL, NULL, NULL, 0, -1, 0, 0}
 };
-
-my $add_actions;
-if (defined $WIN32) {
-    $add_actions = {
-        $regexps{"wingdi"} => \&wgl_entry,
-        $regexps{"winapifunc"} => \&wgl_entry
-    }
-} else {
-    $add_actions = { $regexps{"glxfunc"} => \&glx_entry }
+', join "\n\t", @elements;
 }
 
 header_generated();
-createHeader();
-parse_gl_files($gl_actions, $add_actions, defined $WIN32, \&wgl_entry);
-createFooter();
+out(\@api);
 

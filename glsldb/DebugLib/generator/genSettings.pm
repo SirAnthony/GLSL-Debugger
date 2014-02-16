@@ -85,3 +85,85 @@ our @problem_defines = (
 	"GL_COMPUTE_LOCAL_WORK_SIZE",
 );
 
+
+# Next group of arrays defines control points of runflow
+
+# edit this list for new extensions that include drawcalls
+# second entry is index of parameter that gives the primitiveMode, this is so
+# future-proof, I can't believe we've done that ;-)
+our @debuggableDrawCalls = (
+ ["glBegin", 0],
+ #"glBitmap",
+ ["glDrawArrays", 0],
+ ["glDrawArraysInstanced", 0],
+ ["glDrawElements", 0],
+ ["glDrawElementsInstanced", 0],
+ #"glDrawPixels",
+ ["glDrawRangeElements", 0],
+ ["glMultiDrawArrays", 0],
+ ["glMultiDrawElements", 0],
+ ["glDrawArraysEXT", 0],
+ ["glDrawRangeElementsEXT", 0],
+ ["glMultiDrawArraysEXT", 0],
+ ["glMultiDrawElementsEXT", 0],
+ ["glMultiModeDrawArraysIBM", 0],
+ ["glMultiModeDrawElementsIBM", 0],
+ ["glDrawElementArrayATI", 0],
+ ["glDrawRangeElementArrayATI", 0],
+ ["glDrawMeshArraysSUN", 0],
+ ["glDrawElementArrayAPPLE", 0],
+ ["glDrawRangeElementArrayAPPLE", 0],
+ ["glMultiDrawElementArrayAPPLE", 0],
+ ["glMultiDrawRangeElementArrayAPPLE", 0],
+ ["glDrawArraysInstancedEXT", 0],
+ ["glDrawElementsInstancedEXT", 0]
+ #"glCallList",
+ #"glCallLists"
+);
+
+our @framebufferChanges = (
+ "glEnd",
+ "glBitmap",
+ "glDrawArrays",
+ "glDrawArraysInstanced",
+ "glDrawElements",
+ "glDrawElementsInstanced",
+ "glDrawPixels",
+ "glDrawRangeElements",
+ "glMultiDrawArrays",
+ "glMultiDrawElements",
+ "glDrawArraysEXT",
+ "glDrawRangeElementsEXT",
+ "glMultiDrawArraysEXT",
+ "glMultiDrawElementsEXT",
+ "glMultiModeDrawArraysIBM",
+ "glMultiModeDrawElementsIBM",
+ "glDrawElementArrayATI",
+ "glDrawRangeElementArrayATI",
+ "glDrawMeshArraysSUN",
+ "glDrawElementArrayAPPLE",
+ "glDrawRangeElementArrayAPPLE",
+ "glMultiDrawElementArrayAPPLE",
+ "glMultiDrawRangeElementArrayAPPLE",
+ "glDrawArraysInstancedEXT",
+ "glDrawElementsInstancedEXT",
+ "glCallList",
+ "glCallLists",
+ "glClear",
+ "glCopyPixels",
+ "glBlitFramebufferEXT",
+ "glXSwapBuffers",
+ "SwapBuffers"
+);
+
+our @shaderSwitches = (
+    "glUseProgram",
+    "glUseProgramObjectARB",
+    "glLinkProgram",
+    "glLinkProgramObjectARB"
+);
+
+our @frameEndMarkers = (
+    "glXSwapBuffers",
+    "SwapBuffers"
+);
