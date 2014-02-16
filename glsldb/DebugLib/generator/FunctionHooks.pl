@@ -35,9 +35,10 @@
 use strict;
 use warnings;
 use Getopt::Std;
-require prePostExecuteList;
-require genTools;
-require genTypes;
+use prePostExecuteList;
+use genTools;
+use genTypes;
+use streamHints;
 
 our $opt_p;
 getopt('p');
@@ -241,13 +242,12 @@ sub createBody
 	}
 
 	my $streamhint = "";
-	if (defined $stream_hints{$fname}) {
+	if ($stream_hints{$fname}) {
 		$streamhint = qq|
 			if (refs_StreamHint[$fnum] != STREAMHINT_NO_RECORD)
 				recordFunctionCall(&G.recordedStream, "$fname", ${argcount}${argsizes});
 			if (refs_StreamHint[$fnum] == STREAMHINT_RECORD_AND_FINAL)
-				break;
-|;
+				break;|;
 	}
 
 

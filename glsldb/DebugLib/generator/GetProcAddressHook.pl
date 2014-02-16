@@ -40,68 +40,68 @@ my @functions;
 my $WIN32 = ($^O =~ /Win32/);
 
 if ($^O =~ /Win32/) {
-    $WIN32 = 1;
+	$WIN32 = 1;
 }
 
 sub createBody
 {
-    print '#include "generator/functionRefs.inc"
+	print '#include "generator/functionRefs.inc"
 ';
 
-    if (defined $WIN32) {
-        print qq|
+	if (defined $WIN32) {
+		print qq|
 __declspec(dllexport) PROC APIENTRY HookedwglGetProcAddress(LPCSTR arg0) {
-    int i;
-    dbgPrint(DBGLVL_DEBUG, "HookedwglGetProcAddress(\\"%s\\")\\n", arg0);
-    for (i = 0; i < FUNC_REFS_COUNT; ++i) {
-        if (!strcmp(refs_FuncsNames[i], arg0)) {
-            if (*refs_OrigFuncs[i] == NULL) {
-                /* *refs_OrigFuncs[i] = (PFN${fname}PROC)OrigwglGetProcAddress(refs_FuncsNames[i]); */
-                /* HAZARD BUG OMGWTF This is plain wrong. Use GetCurrentThreadId() */
-                DbgRec *rec = getThreadRecord(GetCurrentProcessId());
-                rec->isRecursing = 1;
-                initExtensionTrampolines();
-                rec->isRecursing = 0;
-                if (*refs_OrigFuncs[i] == NULL) {
-                    dbgPrint(DBGLVL_DEBUG, \"Could not get %s address\\n\", refs_FuncsNames[i]);
-                }
-            }
-            return (PROC) refs_HookedFuncs[i];
-        }
-    }
-    return NULL;
+	int i;
+	dbgPrint(DBGLVL_DEBUG, "HookedwglGetProcAddress(\\"%s\\")\\n", arg0);
+	for (i = 0; i < FUNC_REFS_COUNT; ++i) {
+		if (!strcmp(refs_FuncsNames[i], arg0)) {
+			if (*refs_OrigFuncs[i] == NULL) {
+				/* *refs_OrigFuncs[i] = (PFN${fname}PROC)OrigwglGetProcAddress(refs_FuncsNames[i]); */
+				/* HAZARD BUG OMGWTF This is plain wrong. Use GetCurrentThreadId() */
+				DbgRec *rec = getThreadRecord(GetCurrentProcessId());
+				rec->isRecursing = 1;
+				initExtensionTrampolines();
+				rec->isRecursing = 0;
+				if (*refs_OrigFuncs[i] == NULL) {
+					dbgPrint(DBGLVL_DEBUG, \"Could not get %s address\\n\", refs_FuncsNames[i]);
+				}
+			}
+			return (PROC) refs_HookedFuncs[i];
+		}
+	}
+	return NULL;
 }
 |;
-    } else {
-        #my $pfname = join("","PFN",uc($fname),"PROC");
-        print qq|
+	} else {
+		#my $pfname = join("","PFN",uc($fname),"PROC");
+		print qq|
 DBGLIBLOCAL void (*glXGetProcAddressHook(const GLubyte *arg0))(void)
 {
-    int i;
-    /* void (*result)(void) = NULL; */
+	int i;
+	/* void (*result)(void) = NULL; */
 
-    /*fprintf(stderr, \"glXGetProcAddressARB(%s)\\n\", (const char*)arg0);*/
+	/*fprintf(stderr, \"glXGetProcAddressARB(%s)\\n\", (const char*)arg0);*/
 
-    if (!(strcmp("glXGetProcAddressARB", (char*)arg0) &&
-          strcmp(\"glXGetProcAddress\", (char*)arg0))) {
-        return (void(*)(void))glXGetProcAddressHook;
-    }
+	if (!(strcmp("glXGetProcAddressARB", (char*)arg0) &&
+		  strcmp(\"glXGetProcAddress\", (char*)arg0))) {
+		return (void(*)(void))glXGetProcAddressHook;
+	}
 
-    for (i = 0; i < FUNC_REFS_COUNT; ++i) {
-        if (!strcmp(refs_FuncsNames[i], arg0))
-            return (void(*)(void))refs_OrigFuncs[i];
-    }
+	for (i = 0; i < FUNC_REFS_COUNT; ++i) {
+		if (!strcmp(refs_FuncsNames[i], arg0))
+			return (void(*)(void))refs_OrigFuncs[i];
+	}
 
-    {
-        /*fprintf(stderr, "glXGetProcAddressARB no overload found for %s\\n", (const char*)arg0); */
-        /*return ORIG_GL(glXGetProcAddressARB)(arg0);*/
-        return G.origGlXGetProcAddress(arg0);
-    }
-    /*fprintf(stderr, \"glXGetProcAddressARB result: %p\\n\", result);*/
-    /* return result; */
+	{
+		/*fprintf(stderr, "glXGetProcAddressARB no overload found for %s\\n", (const char*)arg0); */
+		/*return ORIG_GL(glXGetProcAddressARB)(arg0);*/
+		return G.origGlXGetProcAddress(arg0);
+	}
+	/*fprintf(stderr, \"glXGetProcAddressARB result: %p\\n\", result);*/
+	/* return result; */
 }
 |;
-    }
+	}
 }
 
 header_generated();
