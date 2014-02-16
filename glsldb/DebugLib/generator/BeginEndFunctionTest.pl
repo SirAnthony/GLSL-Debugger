@@ -92,6 +92,7 @@ sub createBody
 {
 	my ($isExtension, $extname, $retval, $fname, $argString) = @_;
 	my @arguments = buildArgumentList($argString);
+	my $argstring = join(", ", map {getDummyValue($_)} @arguments);
 	my $pfname = join("","PFN",uc($fname),"PROC");
 
 	my $funcstring = "($pfname)glXGetProcAddressARB((const GLubyte *)\"$fname\")";
@@ -103,39 +104,44 @@ sub createBody
 		}
 	}
 
-	printf "    {
+
+	if ($WIN32) {
+		print qq|	{
 		$pfname func = $funcstring;
 		if (func) {
-#ifdef _WIN32
 			/* This is an evil hack to catch an access violation in Nvidia's
 			 * Windows driver. */
 			__try {
 				glBegin(GL_POINTS);
-#else /* _WIN32 */
-			if (!sigsetjmp(check_env, 1)) {
-				glBegin(GL_POINTS);
-					currentFname = \"$fname\";
-					signal(SIGSEGV, catch_segfault);
-#endif /* _WIN32 */
-					func(%s);
-#ifndef _WIN32
-					currentFname = \"WTF\";
-					signal(SIGSEGV, SIG_DFL);
-#endif /* !_WIN32 */
+				func($argstring);
 				glEnd();
-				if (glGetError() != GL_INVALID_OPERATION) {
-					printf(\"${fname},\\n\");
-				}
-#ifdef _WIN32
+				if (glGetError() != GL_INVALID_OPERATION)
+					printf("${fname},\\n");
 			} __except(dirtyFilter(GetExceptionCode(), GetExceptionInformation())) {
-				printf(\"# ACCESS VIOLATION WHEN CALLING '$fname'\\n\");
+				printf("# ACCESS VIOLATION WHEN CALLING '$fname'\\n");
 			}
-#else /* _WIN32 */
-			}
-#endif /* _WIN32 */
 		}
 	}
-", join(", ", map {getDummyValue($_)} @arguments);
+|;
+	} else {
+		print qq|	{
+		$pfname func = $funcstring;
+		if (func) {
+			if (!sigsetjmp(check_env, 1)) {
+				glBegin(GL_POINTS);
+					currentFname = "$fname";
+					signal(SIGSEGV, catch_segfault);
+					func($argstring);
+					currentFname = "WTF";
+					signal(SIGSEGV, SIG_DFL);
+				glEnd();
+				if (glGetError() != GL_INVALID_OPERATION)
+					printf("${fname},\\n");
+			}
+		}
+	}
+|;
+	}
 }
 
 
