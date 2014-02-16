@@ -40,7 +40,7 @@ our %regexps;
 
 sub createBodyHeader
 {
-    print '#include <stdio.h>
+	print '#include <stdio.h>
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -57,6 +57,8 @@ sub createBodyHeader
 #include "debuglibInternal.h"
 #include "streamRecording.h"
 #include "replayFunction.h"
+#include "streamHintRefs.inc"
+
 
 void replayFunctionCall(StoredCall *f, int final)
 {
@@ -65,41 +67,43 @@ void replayFunctionCall(StoredCall *f, int final)
 
 sub createBodyFooter
 {
-    print '    {
-        fprintf(stderr, "Cannot replay %s: unknown function\n", f->fname);
-    }
+	print '    {
+		fprintf(stderr, "Cannot replay %s: unknown function\n", f->fname);
+	}
 }
 ';
 }
 
 sub createFunctionHook
 {
-    my $isExtension = shift;
-    my $extname = shift;
-    my $retval = shift;
-    my $fname = shift;
-    my $argString = shift;
-    my $ucfname = uc($fname);
-    my @arguments = buildArgumentList($argString);
-    my $argOutput = arguments_types_array($fname, "f->arguments", @arguments);
+	my $isExtension = shift;
+	my $extname = shift;
+	my $retval = shift;
+	my $fname = shift;
+	my $argString = shift;
+	my $ucfname = uc($fname);
+	my @arguments = buildArgumentList($argString);
+	my $argOutput = arguments_types_array($fname, "f->arguments", @arguments);
 
-    printf "#if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_REPLAY || DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
-    if (!strcmp(\"$fname\", (char*)f->fname)) {
+	printf "#if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_REPLAY || DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
+	if (!strcmp(\"$fname\", (char*)f->fname)) {
 #if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
-        if (final) {
+		if (final) {
 #endif
-            ORIG_GL($fname)($argOutput);
+			ORIG_GL($fname)($argOutput);
 #if DBG_STREAM_HINT_$ucfname == DBG_RECORD_AND_FINAL
-        }
+		}
 #endif
-        return;
-    }
+		return;
+	}
 #endif
 ";
 }
 
-
 header_generated();
 createBodyHeader();
+for my $i (0..$#api) {
+	createFunctionHook
+}
 parse_gl_files({ $regexps{"glapi"} => \&createFunctionHook });
 createBodyFooter();

@@ -50,21 +50,21 @@ my %defined_types = ();
 
 sub print_type
 {
-    my $retval = shift;
-    my $pfname = shift;
-    printf  "\ntypedef $retval (APIENTRYP $pfname)(%s);",
-        join(", ", map { $_ } @_);
+	my $retval = shift;
+	my $pfname = shift;
+	printf  "\ntypedef $retval (APIENTRYP $pfname)(%s);",
+		join(", ", map { $_ } @_);
 }
 
 sub createFPType
 {
-    my ($retval, $fname, $argString) = @_;
-    return if $defined_types{$fname};
+	my ($retval, $fname, $argString) = @_;
+	return if $defined_types{$fname};
 
-    $retval =~ s/^\s+|\s+$//g;
-    my @arguments = buildArgumentList($argString);
-    print_type($retval, "PFN${fname}PROC", @arguments);
-    $defined_types{$fname} = 1;
+	$retval =~ s/^\s+|\s+$//g;
+	my @arguments = buildArgumentList($argString);
+	print_type($retval, "PFN${fname}PROC", @arguments);
+	$defined_types{$fname} = 1;
 }
 
 
@@ -72,14 +72,14 @@ header_generated();
 
 # Add PFN definitions first
 foreach my $pfndef (@pfn) {
-    $defined_types{uc($pfndef->[2])} = 1;
+	$defined_types{uc($pfndef->[2])} = 1;
 }
 
 # Add missing functions
 foreach my $apidef (@api) {
-    # Uppercase then lowercase variants
-    createFPType($apidef->[2], uc($apidef->[3]), $apidef->[4]);
-    createFPType($apidef->[2], $apidef->[3], $apidef->[4]);
+	# Uppercase then lowercase variants
+	createFPType($apidef->[2], uc($apidef->[3]), $apidef->[4]);
+	createFPType($apidef->[2], $apidef->[3], $apidef->[4]);
 }
 
 print "\n";

@@ -37,6 +37,8 @@ message(STATUS "Generate debug library")
 generate_file(FunctionRef.pl functionRefs.inc)
 generate_file(GetProcAddressHook.pl getProcAddressHook.inc)
 generate_file(FunctionPointerTypes.pl functionPointerTypes.inc)
+generate_file(streamHintRef.pl streamHintRefs.inc)
+
 execute_process(COMMAND ${PERL_EXECUTABLE}
     WORKING_DIRECTORY ${GENERATOR_DIR}
     INPUT_FILE ReplayFunc.pl

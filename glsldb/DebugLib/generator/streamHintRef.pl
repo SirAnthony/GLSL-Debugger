@@ -26,52 +26,41 @@ use strict;
 use warnings;
 use Getopt::Std;
 use genTools;
+use streamHints;
+
+our %stream_hints;
+our @stream_hints_types;
 our $opt_p;
 getopt('p');
 
-my $WIN32 = ($^O =~ /Win32/);
 my $line_length = 10;
 
 require "$opt_p/glheaders.pm";
 our @api;
 
-
 sub createRefs
 {
-    my @functions = @_;
-    my (@orig, @hooked, @names);
-    my $count = scalar @functions;
-    my $type = (defined $WIN32) ? "PVOID" : "void";
+	my @functions = @_;
+	my @groups;
+	my ($count, $start) = (scalar @functions, 0);
+	while ($start <= $count) {
+		push @groups, join(", ",
+			 map { $stream_hints_types[$stream_hints{$_} or 0] }
+			 grep { defined $_ and /\S/ }
+				@functions[$start..$start+$line_length]);
+		$start += $line_length;
+	}
 
-    my $start = 0;
-    while ($start <= $count) {
-        my @group = grep { /\S/ } @functions[$start..$start+$line_length];
-        push @names, join ", ", map { "\"$_\"" } @group;
-        if ($WIN32) {
-            push @orig, join ", ", map { "&((PVOID)Orig$_)" } @group;
-            push @hooked, join ", ", map { "Hooked$_" } @group;
-        } else {
-            push @orig, join ", ", map { "(void*)$_" } @group;
-        }
-        $start += $line_length;
-    }
-
-    printf "#define FUNC_REFS_COUNT $count
-$type* refs_OrigFuncs[FUNC_REFS_COUNT] = {
+	printf "
+enum StreamHints {
 %s
 };
-const char* refs_FuncsNames[FUNC_REFS_COUNT] = {
+
+refs_StreamHint[FUNC_REFS_COUNT] = {
 %s
 };
-", join(",\n", @orig), join(",\n", @names);
-
-    if ($WIN32) {
-        printf "$type refs_HookedFuncs[FUNC_REFS_COUNT] = {
-%s
-};
-", join(",\n", @hooked);
-    }
-
+", join(",\n", @stream_hints_types),
+   join(",\n", @groups);
 }
 
 header_generated();
