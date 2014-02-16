@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright (c) 2013 SirAnthony <anthony at adsorbtion.org>
+# Copyright (c) 2013, 2014 SirAnthony <anthony at adsorbtion.org>
 # Copyright (C) 2006-2009 Institute for Visualization and Interactive Systems
 # (VIS), Universität Stuttgart.
 # All rights reserved.
@@ -32,29 +32,31 @@
 #
 ################################################################################
 
+use strict;
+use warnings;
+use Getopt::Std;
 require genTypes;
 require genTools;
 our %regexps;
-our %files;
+our $opt_p;
+getopt('p');
 
+require "$opt_p/glheaders.pm";
+our @api;
+our @pfn;
 
-if ($^O =~ /Win32/) {
-    $WIN32 = 1;
-}
-
+my $WIN32 = ($^O =~ /Win32/);
 my %defined_types = ();
-my %defined_upper = ();
-
 
 # This extensions was enabled in one file (gl.h, for example) but
 # another file contains #ifndef for it, which ignored by preprocessor
 # but not this parser
-my @skipped_extnames = (
-    "GL_VERSION_1_1",
-    "GL_VERSION_1_2",
-    "GL_VERSION_1_3",
-    "GL_ARB_imaging",
-);
+#~ my @skipped_extnames = (
+    #~ "GL_VERSION_1_1",
+    #~ "GL_VERSION_1_2",
+    #~ "GL_VERSION_1_3",
+    #~ "GL_ARB_imaging",
+#~ );
 
 
 sub print_type
@@ -67,23 +69,7 @@ sub print_type
 
 sub createFPType
 {
-    my $retval = shift;
-    my $fname = shift;
-    my $argString = shift;
-    my $ufname = uc($fname);
-    return if $defined_upper{$ufname};
-
-    $retval =~ s/^\s+|\s+$//g;
-    my @arguments = buildArgumentList($argString);
-    print_type($retval, "PFN${ufname}PROC", @arguments);
-    $defined_upper{$ufname} = 1;
-}
-
-sub createFPlowercaseType
-{
-    my $retval = shift;
-    my $fname = shift;
-    my $argString = shift;
+    my ($retval, $fname, $argString) = @_;
     return if $defined_types{$fname};
 
     $retval =~ s/^\s+|\s+$//g;
@@ -92,78 +78,19 @@ sub createFPlowercaseType
     $defined_types{$fname} = 1;
 }
 
-
-sub add_definition
-{
-    my $isExtension = shift;
-    my $extname = shift;
-    my $fname = shift;
-    $defined_upper{uc($fname)} = 1;
-}
-
-sub add_definition_check
-{
-    my $line = shift;
-    my $extname = shift;
-    my $fname = shift;
-    if (not grep { /^$extname$/ } @skipped_extnames) {
-        $defined_upper{uc($fname)} = 1;
-    }
-}
-
-sub create_func
-{
-    my $isExtension = shift;
-    my $extname = shift;
-    createFPType(@_);
-    createFPlowercaseType(@_);
-}
-
-sub create_func_glx
-{
-    my $isExtension = shift;
-    my $extname = shift;
-    if ($extname eq "GLX_VERSION_1_1" || $extname eq "GLX_VERSION_1_0") {
-        createFPType(@_);
-    }
-
-    # No way to parse functions returning a not "typedef'ed"
-    # function pointer in a simple way :-(
-    if ($_[2] eq "glXGetProcAddressARB") {
-        createFPlowercaseType("__GLXextFuncPtr", "glXGetProcAddressARB",
-                              "const GLubyte *");
-    } else {
-        createFPlowercaseType(@_);
-    }
-}
-
-my $gl_actions = {    
-    $regexps{"glapi"} => \&create_func
-};
-
-my $add_actions;
-if (defined $WIN32) {
-    $add_actions = {
-        $regexps{"winapifunc"} => \&create_func,
-        $regexps{"wingdi"} => \&create_func,
-    }
-} else {
-    $add_actions = {$regexps{"glxfunc"} => \&create_func_glx}
-};
-
 header_generated();
+
 # Add PFN definitions first
-my $defines = {$regexps{"pfn"} => \&add_definition};
-my $defines_check = {$regexps{"pfn"} => \&add_definition_check};
-my @params = ([$files{"gl"}[0], "GL_VERSION_1_0", "GL_", $defines],
-              [$files{"gl"}[1], "GL_VERSION_1_0", "GL_", $defines_check]);
-foreach my $entry (@params) {
-    parse_output(@$entry, 1);
+foreach my $pfndef (@pfn) {
+    $defined_types{uc($pfndef->[2])} = 1;
 }
 
-
-# Then add absent definitions
-parse_gl_files($gl_actions, $add_actions, defined $WIN32, \&create_func);
+# Add missing functions
+foreach my $apidef (@api) {
+    # Uppercase then lowercase variants
+    createFPType($apidef->[2], uc($apidef->[3]), $apidef->[4]);
+    createFPType($apidef->[2], $apidef->[3], $apidef->[4]);
+}
 
 print "\n";
 

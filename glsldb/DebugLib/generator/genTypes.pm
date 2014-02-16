@@ -235,8 +235,6 @@ sub buildArgumentList
 		s/^\s*//;
 		s/\s+/ /;
 		my @argItems = grep { not /^\s*$/ } split(/(\s|[*\[])/);
-		#/(.*?GL\w+(?:\s*[*]){0,2})/;
-		#/(.*)/;
 		my $instruct = 0;
 		my $haveType = 0;
 		my $haveTypeQualifier = 0;

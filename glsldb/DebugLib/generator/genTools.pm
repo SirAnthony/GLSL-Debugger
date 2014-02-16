@@ -55,9 +55,9 @@ sub parse_output {
     my $proto = $extname;
     my $api_re = qr/^#ifndef\s+($api\S+)/;
     my $isNative = grep { $$_[0] eq $filename } values %files;
-    my @skip = 0;
-    my $indef = 0;
-    my @ifdir;
+    my @matched_defines;
+    my $current_define = 0;
+    my $last_define = 0;
 
     my $ifh;
     my $is_stdin = 0;
@@ -89,7 +89,7 @@ sub parse_output {
 
         # Prototype name in #define or in comment
         my $reg_match = $extname_matches{$_};
-        if ($reg_match || ($indef eq $ifdir[$#ifdir] &&
+        if ($reg_match || ($current_define eq $last_define &&
                 /^#define\s+$extname\s+1/)) {
             if ($reg_match){
                 push @definitions, $extname;
@@ -99,7 +99,7 @@ sub parse_output {
         }
 
         # Run each supplied regexp here
-        if ($indef eq $ifdir[$#ifdir]) {
+        if ($current_define eq $last_define) {
             my $isExtension = ($force_extensions_map{$extname} or !$isNative);
             foreach my $group (@$actions){
                 my ($regexp, $func) = @$group;
@@ -109,26 +109,30 @@ sub parse_output {
             }
         }
 
-        if (/^#endif/ and (scalar @ifdir)) {
-            my $ifdef = pop @ifdir;
-            next if $ifdef and $skip_defines_map{$1};
+        # Exit from selection
+        if (/^#endif/ and (scalar @matched_defines)) {
+            my $ifdef = pop @matched_defines;
+            next if $ifdef and $skip_defines_map{$ifdef};
+            $last_define = $matched_defines[-1];
 
-            if ($ifdef =~ $api and $ifdir[$#ifdir] eq $indef){
-                $indef = $ifdir[$#ifdir];
+            if ($ifdef =~ $api and $ifdef eq $current_define){
+                $current_define = $last_define;
                 $extname = pop @definitions;
                 $proto = $bextname;
             }
         }
 
+        # Enter selection
         if (/^#if/) {
             my $ifdef = /^#ifn?def\s+(\S+)/;
-            push @ifdir, $1;
-            $indef = $1 if !$indef;
+            push @matched_defines, $1;
+            $current_define = $1 if !$current_define;
             next if $ifdef and $skip_defines_map{$1};
+            $last_define = $1;
             if (/$api_re/) {
                 push @definitions, $extname;
                 $extname = $1;
-                $indef = $ifdir[$#ifdir];
+                $current_define = $last_define;
             }
         }
     }

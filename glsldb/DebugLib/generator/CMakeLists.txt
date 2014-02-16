@@ -5,6 +5,15 @@ find_package(Perl REQUIRED)
 set(GENERATOR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 file(MAKE_DIRECTORY ${GENERATOR_OUTPUT_DIR})
 
+function(generate_file input output)
+    execute_process(
+        COMMAND ${PERL_EXECUTABLE} ${input} -p ${GENERATOR_OUTPUT_DIR}
+        WORKING_DIRECTORY ${GENERATOR_DIR}
+        OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/${output}
+    )
+endfunction()
+
+
 # Read gl and build api definition
 message(STATUS "Reading gl headers")
 execute_process(COMMAND ${PERL_EXECUTABLE}
@@ -16,34 +25,18 @@ execute_process(COMMAND ${PERL_EXECUTABLE}
 
 # Generate enumerants
 message(STATUS "Generate enumerants")
-execute_process(
-    COMMAND ${PERL_EXECUTABLE} Enumerants.pl -p ${GENERATOR_OUTPUT_DIR}
-    WORKING_DIRECTORY ${GENERATOR_DIR}
-    OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/glenumerants.h
-)
-
+generate_file(Enumerants.pl glenumerants.h)
 
 # Generate generator for list of allowed functions between begin/end
 message(STATUS "Generate allowed function list generator.")
-execute_process(COMMAND ${PERL_EXECUTABLE}
-    WORKING_DIRECTORY ${GENERATOR_DIR}
-    INPUT_FILE BeginEndFunctionTest.pl
-    OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/beginEndFunctionTest.c
-)
+generate_file(BeginEndFunctionTest.pl beginEndFunctionTest.c)
 
 
 # Generate debug library
 message(STATUS "Generate debug library")
-execute_process(COMMAND ${PERL_EXECUTABLE}
-    WORKING_DIRECTORY ${GENERATOR_DIR}
-    INPUT_FILE GetProcAddressHook.pl
-    OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/getProcAddressHook.inc
-)
-execute_process(COMMAND ${PERL_EXECUTABLE}
-    WORKING_DIRECTORY ${GENERATOR_DIR}
-    INPUT_FILE FunctionPointerTypes.pl
-    OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/functionPointerTypes.inc
-)
+generate_file(FunctionRef.pl functionRefs.inc)
+generate_file(GetProcAddressHook.pl getProcAddressHook.inc)
+generate_file(FunctionPointerTypes.pl functionPointerTypes.inc)
 execute_process(COMMAND ${PERL_EXECUTABLE}
     WORKING_DIRECTORY ${GENERATOR_DIR}
     INPUT_FILE ReplayFunc.pl

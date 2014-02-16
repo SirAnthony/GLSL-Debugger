@@ -37,7 +37,7 @@ require genTools;
 our %regexps;
 
 my @functions;
-
+my $WIN32 = ($^O =~ /Win32/);
 
 if ($^O =~ /Win32/) {
     $WIN32 = 1;
@@ -45,65 +45,35 @@ if ($^O =~ /Win32/) {
 
 sub createBody
 {
-    my ($orig, $hooked, $names);
-    my $count = scalar @functions;
-    my $type = (defined $WIN32) ? "PVOID" : "void";
-    my $iter = 0;
-    if (defined $WIN32) {
-        $hooked .= "$type gpa_HookedFuncs[GPA_FUNCS_COUNT] = {"
-    }
-    foreach (@functions) {
-        my $newline = ($iter++ % 10) ? "" : "\n";
-        if (defined $WIN32) {
-            $orig .= $newline . " &((PVOID)Orig$_),";
-            $hooked .= $newline . " Hooked$_,";
-        } else {
-            $orig .= $newline . " (void*)$_,";
-        }
-        $names .= $newline . " \"$_\",";
-    }
-
-    if (defined $WIN32) {
-        $hooked .= "
-};"
-    }
-
-
-    print "#define GPA_FUNCS_COUNT $count
-$type* gpa_OrigFuncs[GPA_FUNCS_COUNT] = {$orig
-};
-$hooked
-const char* gpa_FuncsNames[GPA_FUNCS_COUNT] = {$names
-};
-
-";
+    print '#include "generator/functionRefs.inc"
+';
 
     if (defined $WIN32) {
         print qq|
 __declspec(dllexport) PROC APIENTRY HookedwglGetProcAddress(LPCSTR arg0) {
     int i;
     dbgPrint(DBGLVL_DEBUG, "HookedwglGetProcAddress(\\"%s\\")\\n", arg0);
-    for (i = 0; i < GPA_FUNCS_COUNT; ++i) {
-        if (!strcmp(gpa_FuncsNames[i], arg0)) {
-            if (*gpa_OrigFuncs[i] == NULL) {
-                /* *gpa_OrigFuncs[i] = (PFN${fname}PROC)OrigwglGetProcAddress(gpa_FuncsNames[i]); */
+    for (i = 0; i < FUNC_REFS_COUNT; ++i) {
+        if (!strcmp(refs_FuncsNames[i], arg0)) {
+            if (*refs_OrigFuncs[i] == NULL) {
+                /* *refs_OrigFuncs[i] = (PFN${fname}PROC)OrigwglGetProcAddress(refs_FuncsNames[i]); */
                 /* HAZARD BUG OMGWTF This is plain wrong. Use GetCurrentThreadId() */
                 DbgRec *rec = getThreadRecord(GetCurrentProcessId());
                 rec->isRecursing = 1;
                 initExtensionTrampolines();
                 rec->isRecursing = 0;
-                if (*gpa_OrigFuncs[i] == NULL) {
-                    dbgPrint(DBGLVL_DEBUG, \"Could not get %s address\\n\", gpa_FuncsNames[i]);
+                if (*refs_OrigFuncs[i] == NULL) {
+                    dbgPrint(DBGLVL_DEBUG, \"Could not get %s address\\n\", refs_FuncsNames[i]);
                 }
             }
-            return (PROC) gpa_HookedFuncs[i];
+            return (PROC) refs_HookedFuncs[i];
         }
     }
     return NULL;
 }
 |;
     } else {
-        my $pfname = join("","PFN",uc($fname),"PROC");
+        #my $pfname = join("","PFN",uc($fname),"PROC");
         print qq|
 DBGLIBLOCAL void (*glXGetProcAddressHook(const GLubyte *arg0))(void)
 {
@@ -117,9 +87,9 @@ DBGLIBLOCAL void (*glXGetProcAddressHook(const GLubyte *arg0))(void)
         return (void(*)(void))glXGetProcAddressHook;
     }
 
-    for (i = 0; i < GPA_FUNCS_COUNT; ++i) {
-        if (!strcmp(gpa_FuncsNames[i], arg0))
-            return (void(*)(void))gpa_OrigFuncs[i];
+    for (i = 0; i < FUNC_REFS_COUNT; ++i) {
+        if (!strcmp(refs_FuncsNames[i], arg0))
+            return (void(*)(void))refs_OrigFuncs[i];
     }
 
     {
@@ -132,42 +102,7 @@ DBGLIBLOCAL void (*glXGetProcAddressHook(const GLubyte *arg0))(void)
 }
 |;
     }
-
-}
-
-sub createFunctionHook
-{
-    my ($isExtension, $extname, $retval, $fname, $argString) = @_;
-    push @functions, $fname;
-}
-
-sub createXFunctionHook {
-    my $fname = $_[3];
-    if ($fname eq "glXGetProcAddressARB") {
-        createFunctionHook($_[0], $_[1], "__GLXextFuncPtr",
-                            "glXGetProcAddressARB", "const GLubyte *");
-    } else {
-        createFunctionHook(@_);
-    }
 }
 
 header_generated();
-
-my $gl_actions = {
-        $regexps{"glapi"} => \&createFunctionHook
-};
-
-my $add_actions;
-if (defined $WIN32) {
-    $add_actions = {
-        $regexps{"wingdi"} => \&createFunctionHook,
-        $regexps{"winapifunc"} => \&createXFunctionHook
-    }
-} else {
-    $add_actions = {$regexps{"glxfunc"} => \&createXFunctionHook}
-}
-
-parse_gl_files($gl_actions, $add_actions, defined $WIN32,
-                \&createFunctionHook);
-
 createBody();
