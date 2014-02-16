@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright (c) 2013 SirAnthony <anthony at adsorbtion.org>
+# Copyright (c) 2014 SirAnthony <anthony at adsorbtion.org>
 # Copyright (C) 2006-2009 Institute for Visualization and Interactive Systems
 # (VIS), Universität Stuttgart.
 # All rights reserved.
@@ -32,15 +32,15 @@
 #
 ################################################################################
 
+use strict;
+use warnings;
+use Getopt::Std;
 require genTypes;
 require genTools;
-our %regexps;
-our %files;
+our $opt_p;
+getopt('p');
+my $WIN32 = ($^O =~ /Win32/);
 
-
-if ($^O =~ /Win32/) {
-	$WIN32 = 1;
-}
 
 sub createHeader
 {
@@ -90,18 +90,12 @@ void testFunc(void) {
 
 sub createBody
 {
-	my $line = shift;
-	my $extname = shift;
-	my $retval = shift;
-	my $fname = shift;
-	my $argString = shift;
-
-	my $isExtension = $line !~ /WINGDIAPI/;
+	my ($isExtension, $extname, $retval, $fname, $argString) = @_;
 	my @arguments = buildArgumentList($argString);
 	my $pfname = join("","PFN",uc($fname),"PROC");
 
 	my $funcstring = "($pfname)glXGetProcAddressARB((const GLubyte *)\"$fname\")";
-	if (defined $WIN32) {
+	if ($WIN32) {
 		if ($isExtension) {
 			$funcstring = "($pfname)wglGetProcAddress((const GLubyte *)\"$fname\")";
 		} else {
@@ -144,18 +138,20 @@ sub createBody
 ", join(", ", map {getDummyValue($_)} @arguments);
 }
 
-my $actions = {
-	$regexps{"typegl"} => \&addTypeMapping,
-	$regexps{"wingdi"} => \&createBody,
-	$regexps{"glapi"} => \&createBody
-};
 
+require "$opt_p/glheaders.pm";
+our @typedefs;
+our @api;
+
+foreach my $typedef (@typedefs) {
+    addTypeMapping(@$typedef);
+}
 
 header_generated();
 createHeader();
 
-foreach my $filename (@{$files{"gl"}}) {
-	parse_output($filename, "GL_VERSION_1_0", "GL_", $actions);
+foreach my $func (@api) {
+    createBody(@$func);
 }
 
 print "
