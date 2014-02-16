@@ -30,38 +30,38 @@ my ($api, $typedef, $pfn, $defines) = ([], [], [], []);
 
 sub push_to_array
 {
-    my $arrayr = shift;
-    return sub { push @{$arrayr}, [map { $_ } @_]; }
+	my $arrayr = shift;
+	return sub { push @{$arrayr}, [map { $_ } @_]; }
 }
 
 sub print_array
 {
-    my ($name, $format, $array) = @_;
-    printf "our $name = (\n%s
+	my ($name, $format, $array) = @_;
+	printf "our $name = (\n%s
 );\n", join ",\n", map { sprintf $format, @$_ } @$array;
 }
 
 my @arrays = (
-    [$api, "glapi", "wingdi", "winapifunc", "glxfunc"],
-    [$typedef, "typegl", "typewgl", "typeglx"],
-    [$pfn, "pfn"],
-    [$defines, "glvar", "wglvar", "glxvar"]
+	[$api, "glapi", "wingdi", "winapifunc", "glxfunc"],
+	[$typedef, "typegl", "typewgl", "typeglx"],
+	[$pfn, "pfn"],
+	[$defines, "glvar", "wglvar", "glxvar"]
 );
 
 my %output = (
-    '@api' => ['["%s", "%s", "%s", "%s", "%s"]', $api],
-    '@typedefs' => ['["%s", "%s", "%s", "%s"]', $typedef],
-    '@pfn' => ['["%s", "%s", "%s"]', $pfn],
-    '@defines' => ['["%s", "%s", "%s"]', $defines],
+	'@api' => ['["%s", "%s", "%s", "%s", "%s"]', $api],
+	'@typedefs' => ['["%s", "%s", "%s", "%s"]', $typedef],
+	'@pfn' => ['["%s", "%s", "%s"]', $pfn],
+	'@defines' => ['["%s", "%s", "%s"]', $defines],
 );
 
 header_generated("#");
 my @actions;
 foreach my $type (@arrays){
-    my $sub = push_to_array(shift @$type);
-    foreach my $regexp (@{$type}){
-        push @actions, [$regexps{$regexp}, $sub];
-    }
+	my $sub = push_to_array(shift @$type);
+	foreach my $regexp (@{$type}){
+		push @actions, [$regexps{$regexp}, $sub];
+	}
 };
 
 parse_gl_files(\@actions, $WIN32, push_to_array($api));

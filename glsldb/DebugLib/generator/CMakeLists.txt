@@ -22,19 +22,6 @@ execute_process(
     OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/glenumerants.h
 )
 
-#~ if(GLSLDB_LINUX OR GLSLDB_OSX)
-    #~ execute_process(COMMAND ${PERL_EXECUTABLE} Enumerants.pl -m glx
-        #~ WORKING_DIRECTORY ${GENERATOR_DIR}
-        #~ OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/glxenumerants.h
-    #~ )
-#~ endif()
-#~ if(GLSLDB_WIN)
-    #~ execute_process(COMMAND ${PERL_EXECUTABLE} Enumerants.pl -m wgl
-        #~ WORKING_DIRECTORY ${GENERATOR_DIR}
-        #~ OUTPUT_FILE ${GENERATOR_OUTPUT_DIR}/wglenumerants.h
-    #~ )
-#~ endif()
-
 
 # Generate generator for list of allowed functions between begin/end
 message(STATUS "Generate allowed function list generator.")
