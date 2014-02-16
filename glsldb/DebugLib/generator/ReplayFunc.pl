@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright (c) 2013 SirAnthony <anthony at adsorbtion.org>
+# Copyright (c) 2013, 2014 SirAnthony <anthony at adsorbtion.org>
 # Copyright (C) 2006-2009 Institute for Visualization and Interactive Systems
 # (VIS), Universität Stuttgart.
 # All rights reserved.

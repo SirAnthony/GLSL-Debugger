@@ -48,17 +48,6 @@ our @pfn;
 my $WIN32 = ($^O =~ /Win32/);
 my %defined_types = ();
 
-# This extensions was enabled in one file (gl.h, for example) but
-# another file contains #ifndef for it, which ignored by preprocessor
-# but not this parser
-#~ my @skipped_extnames = (
-    #~ "GL_VERSION_1_1",
-    #~ "GL_VERSION_1_2",
-    #~ "GL_VERSION_1_3",
-    #~ "GL_ARB_imaging",
-#~ );
-
-
 sub print_type
 {
     my $retval = shift;
@@ -77,6 +66,7 @@ sub createFPType
     print_type($retval, "PFN${fname}PROC", @arguments);
     $defined_types{$fname} = 1;
 }
+
 
 header_generated();
 
