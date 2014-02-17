@@ -8,16 +8,16 @@
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#   * Redistributions of source code must retain the above copyright notice, this
-#     list of conditions and the following disclaimer.
+#  * Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
 #
-#   * Redistributions in binary form must reproduce the above copyright notice, this
-#   list of conditions and the following disclaimer in the documentation and/or
-#   other materials provided with the distribution.
+#  * Redistributions in binary form must reproduce the above copyright notice, this
+#    list of conditions and the following disclaimer in the documentation and/or
+#    other materials provided with the distribution.
 #
-#   * Neither the name of the name of VIS, Universitдt Stuttgart nor the names
-#   of its contributors may be used to endorse or promote products derived from
-#   this software without specific prior written permission.
+#  * Neither the name of the name of VIS, Universitдt Stuttgart nor the names
+#    of its contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -32,15 +32,28 @@
 #
 ################################################################################
 
+use strict;
+use warnings;
+use Getopt::Std;
 require genTypes;
 require genTools;
 our %files;
 our %regexps;
 
+our ($opt_p, $opt_m);
+getopt('pm');
+require "$opt_p/glheaders.pm";
+our @api;
+
+my @modes = ("decl", "def", "exp");
+if (not grep(/^$opt_m$/, @modes)) {
+	die "Argument must be one of " . join(", ", @modes) . "\n";
+}
+
 my @initializer = ();
 my @extinitializer = ();
 my @functions = ();
-my %trampoline_generated = ();
+
 
 sub defines {
 	my $mode = shift;
@@ -64,90 +77,12 @@ EXPORTS
 	}
 }
 
-sub createUtils {
-	print qq|
-static VOID _dbg_Dump(PBYTE pbBytes, LONG nBytes, PBYTE pbTarget)
-{
-	LONG n, m;
-	for (n = 0; n < nBytes; n += 16) {
-		dbgPrintNoPrefix(DBGLVL_DEBUG, "    %p: ", pbBytes + n);
-		for (m = n; m < n + 16; m++) {
-			if (m >= nBytes) {
-				dbgPrintNoPrefix(DBGLVL_DEBUG, "  ");
-			}
-			else {
-				dbgPrintNoPrefix(DBGLVL_DEBUG, "%02x", pbBytes[m]);
-			}
-			if (m % 4 == 3) {
-				dbgPrintNoPrefix(DBGLVL_DEBUG, " ");
-			}
-		}
-		if (n == 0 && pbTarget != DETOUR_INSTRUCTION_TARGET_NONE) {
-			dbgPrintNoPrefix(DBGLVL_DEBUG, " [%p]", pbTarget);
-		}
-		dbgPrintNoPrefix(DBGLVL_DEBUG, "\\n");
-	}
-}
-
-static VOID _dbg_Decode(PCSTR pszDesc, PBYTE pbCode, PBYTE pbOther, PBYTE pbPointer, LONG nInst)
-{
-	PBYTE pbSrc;
-	PBYTE pbEnd;
-	PVOID pbTarget;
-	LONG n;
-
-	if (pbCode != pbPointer) {
-		dbgPrint(DBGLVL_DEBUG, "  %s = %p [%p]\\n", pszDesc, pbCode, pbPointer);
-	}
-	else {
-		dbgPrint(DBGLVL_DEBUG, "  %s = %p\\n", pszDesc, pbCode);
-	}
-
-	if (pbCode == pbOther) {
-		dbgPrint(DBGLVL_DEBUG, "    ... unchanged ...\\n");
-		return;
-	}
-
-	pbSrc = pbCode;
-	for (n = 0; n < nInst; n++) {
-		pbEnd = (PBYTE)DetourCopyInstruction(NULL, NULL, (PVOID)pbSrc, (PVOID*)(&pbTarget), NULL);
-		_dbg_Dump(pbSrc, (int)(pbEnd - pbSrc), (PBYTE)pbTarget);
-		pbSrc = pbEnd;
-	}
-}
-
-
-VOID WINAPI _dbg_Verify(PCHAR pszFunc, PVOID pvPointer)
-{
-	PVOID pvCode = DetourCodeFromPointer(pvPointer, NULL);
-
-	_dbg_Decode(pszFunc, (PBYTE)pvCode, NULL, (PBYTE)pvPointer, 3);
-}
-|;
-}
-
 sub footer {
 	my $mode = shift;
 	if ($mode eq "def") {
-		my $count = scalar @functions;
-		my $orig, $hooked, $names;
-		my $iter = 0;
-		foreach (@functions) {
-			my $newline = ($iter++ % 10) ? "" : "\n";
-			$orig .= $newline . " &((PVOID)Orig$_),";
-			$hooked .= $newline . " Hooked$_,";
-			$names .= $newline . " \"$_\",";
-		}
-
-		printf "
-#define TRMP_FUNCS_COUNT $count
-PVOID* trmp_OrigFuncs[TRMP_FUNCS_COUNT] = {$orig
-};
-PVOID trmp_HookedFuncs[TRMP_FUNCS_COUNT] = {$hooked
-};
-const char* trmp_FuncsNames[TRMP_FUNCS_COUNT] = {$names
-};
-
+		printf qq|
+#include "functionRefs.inc"
+		
 void initTrampolines() {
 %s
 }
@@ -155,17 +90,20 @@ void initTrampolines() {
 void initExtensionTrampolines() {
 %s
 }
-", join("\n", @initializer), join("\n", @extinitializer);
+|, join("\n", @initializer), join("\n", @extinitializer);
 
 		print qq|
+
 int attachTrampolines() {
 	int i;
 	initTrampolines();
-	for (i = 0; i < TRMP_FUNCS_COUNT; ++i) {
-		dbgPrint(DBGLVL_DEBUG, "Attaching %s 0x%x\\n", trmp_FuncsNames[i], *trmp_OrigFuncs[i]);
-		/* _dbg_Verify(trmp_FuncsNames[i], (PBYTE)trmp_OrigFuncs[i]); */
-		if (!Mhook_SetHook(trmp_OrigFuncs[i], trmp_HookedFuncs[i])) {
-			dbgPrint(DBGLVL_DEBUG, "Mhook_SetHook(%s) failed.\\n", trmp_FuncsNames[i]);
+	for (i = 0; i < FUNC_REFS_COUNT; ++i) {
+		/* Do not attach extension functions, it will be loaded with wglGetProcAddress */
+		if (refs_ExtFuncs[i])
+			continue;
+		dbgPrint(DBGLVL_DEBUG, "Attaching %s 0x%x\\n", refs_FuncsNames[i], *refs_OrigFuncs[i]);
+		if (!Mhook_SetHook(refs_OrigFuncs[i], refs_HookedFuncs[i])) {
+			dbgPrint(DBGLVL_DEBUG, "Mhook_SetHook(%s) failed.\\n", refs_FuncsNames[i]);
 			return 0;
 		}
 	}
@@ -174,9 +112,12 @@ int attachTrampolines() {
 
 int detachTrampolines() {
 	int i;
-	for (i = 0; i < TRMP_FUNCS_COUNT; ++i) {
-		if (!Mhook_Unhook(&((PVOID)trmp_OrigFuncs[i]))) {
-			dbgPrint(DBGLVL_DEBUG, "Mhook_Unhook(%s) failed.\\n", trmp_FuncsNames[i]);
+	for (i = 0; i < FUNC_REFS_COUNT; ++i) {
+		/* Extensions was not attached */
+		if (refs_ExtFuncs[i])
+			continue;
+		if (!Mhook_Unhook(&((PVOID)refs_OrigFuncs[i]))) {
+			dbgPrint(DBGLVL_DEBUG, "Mhook_Unhook(%s) failed.\\n", refs_FuncsNames[i]);
 			return 0;
 		}
 	}
@@ -195,10 +136,10 @@ int detachTrampolines();
 	print "\n";
 }
 
-sub addFunction 
+sub addFunction
 {
 	my ($isExtension, $retval, $fname, $argList) = @_;
-	
+
 	if ($isExtension){
 		push @extinitializer, "	Orig$fname = ($retval (APIENTRYP)($argList)) OrigwglGetProcAddress(\"$fname\");";
 	} else {
@@ -211,12 +152,9 @@ sub addFunction
 sub createTrampoline
 {
 	my ($mode, $isExtension, $extname, $retval, $fname, $argString) = @_;
-	return "" if $trampoline_generated{$fname};
-
 	my @arguments = buildArgumentList($argString);
 	my $argList = join(", ", @arguments);
-	my $ret = "    Orig$fname";
-	$trampoline_generated{$fname} = 1;
+	my $ret = "	Orig$fname";
 
 	if ($mode eq "def") {
 		$ret = "$retval (APIENTRYP Orig$fname)($argList) = NULL;
@@ -229,44 +167,10 @@ sub createTrampoline
 	return $ret;
 }
 
-
-my @modes = ("decl", "def", "exp");
-$mode = $ARGV[0];
-if (not grep(/^$mode$/, @modes)) {
-	die "Argument must be one of " . join(", ", @modes) . "\n";
-}
-
-
-# Setup parser
-sub gl_trampoline
-{
-	print createTrampoline($mode, @_) . "\n";
-}
-
-my $gl_actions = {
-	$regexps{"glapi"} => \&gl_trampoline
-};
-
-my $win_actions = {
-	$regexps{"wingdi"} => \&gl_trampoline,
-	$regexps{"winapifunc"} => \&gl_trampoline,
-};
-
-my @params = ([$files{"gl"}, "GL_VERSION_1_0", "GL_", $gl_actions],
-			  [$files{"wgl"}, "WGL_VERSION_1_0", "WGL_", $win_actions]);
-
-
 # Begin output
-header_generated($mode eq "exp" ? ";" : "//");
-defines($mode);
-
-# This windows-specific call is everywhere
-gl_trampoline(0, "WGL_VERSION_1_0", "BOOL", "SwapBuffers", "HDC");
-foreach my $entry (@params) {
-	my $filenames = shift @$entry;
-	foreach my $filename (@$filenames) {
-		parse_output($filename, @$entry);
-	}
+header_generated($opt_m eq "exp" ? ";" : "//");
+defines($opt_m);
+foreach my $apidef (@api) {
+	print createTrampoline($opt_m, @$apidef) . "\n";
 }
-
-footer($mode);
+footer($opt_m);

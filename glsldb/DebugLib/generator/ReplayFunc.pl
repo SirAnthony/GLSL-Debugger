@@ -65,8 +65,6 @@ sub createBodyHeader
 #include "debuglibInternal.h"
 #include "streamRecording.h"
 #include "replayFunction.h"
-#include "streamHintRefs.inc"
-
 
 void replayFunctionCall(StoredCall *f, int final)
 {

@@ -40,41 +40,52 @@ sub min ($$) { $_[$_[0] > $_[1]] }
 sub createRefs
 {
 	my @functions = @_;
-	my (@orig, @hooked, @names);
-	my $count = $#functions;
+	my (@orig, @isExt, @hooked, @names);
+	my $count = scalar @functions;
 	my $type = $WIN32 ? "PVOID" : "void";
 
 	my $start = 0;
-	while ($start <= $count) {
-		my @group = @functions[$start..(min($start+$line_length, $count)-1)];
-		push @names, join ", ", map { "\"$_\"" } @group;
+	while ($start < $count) {
+		my $end = min($start + $line_length, $count) - 1;
+		my %group = map { $_->[1] => ($_->[0] or 0) } @functions[$start..$end];
+		push @names, join ", ", map { "\"$_\"" } keys %group;
+		push @isExt, join ", ", map { "$_" } values %group;
 		if ($WIN32) {
-			push @orig, join ", ", map { "&((PVOID)Orig$_)" } @group;
-			push @hooked, join ", ", map { "Hooked$_" } @group;
+			push @orig, join ", ", map { "&((PVOID)Orig$_)" } keys %group;
+			push @hooked, join ", ", map { "Hooked$_" } keys %group;
 		} else {
-			push @orig, join ", ", map { "(void*)$_" } @group;
+			push @orig, join ", ", map { "(void*)$_" } keys %group;
 		}
 		$start += $line_length;
 	}
 
-	$count += 2;
-	printf "#define FUNC_REFS_COUNT $count
-$type* refs_OrigFuncs[FUNC_REFS_COUNT] = {
+	printf "
+#ifndef __FUNC_REFS
+#define __FUNC_REFS
+#pragma once
+
+#define FUNC_REFS_COUNT $count
+static $type* refs_OrigFuncs[FUNC_REFS_COUNT] = {
 %s
 };
-const char* refs_FuncsNames[FUNC_REFS_COUNT] = {
+static int refs_ExtFuncs[FUNC_REFS_COUNT] = {
 %s
 };
-", join(",\n", @orig), join(",\n", @names);
+static const char* refs_FuncsNames[FUNC_REFS_COUNT] = {
+%s
+};
+", join(",\n", @orig), join(",\n", @isExt), join(",\n", @names);
 
 	if ($WIN32) {
-		printf "$type refs_HookedFuncs[FUNC_REFS_COUNT] = {
+		printf "static $type refs_HookedFuncs[FUNC_REFS_COUNT] = {
 %s
 };
+
+#endif /* __FUNC_REFS */
 ", join(",\n", @hooked);
 	}
 
 }
 
 header_generated();
-createRefs(map { $_->[3] } @api);
+createRefs(map { [$_->[0], $_->[3]] } @api);

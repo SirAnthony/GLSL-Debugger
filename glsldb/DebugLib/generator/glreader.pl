@@ -27,11 +27,14 @@ our %regexps;
 
 my $WIN32 = ($^O =~ /Win32/);
 my ($api, $typedef, $pfn, $defines) = ([], [], [], []);
+my ($apimap, $typedefmap, $pfnmap, $definesmap) = ({}, {}, {}, {});
 
 sub push_to_array
 {
-	my $arrayr = shift;
-	return sub { push @{$arrayr}, [map { $_ } @_]; }
+	my ($arrayr, $mapr, $refnum) = @_;
+	return sub {
+		push @{$arrayr}, [map { $_ } @_] if not $mapr{@_[$refnum]}++;
+	}
 }
 
 sub print_array
@@ -42,10 +45,10 @@ sub print_array
 }
 
 my @arrays = (
-	[$api, "glapi", "wingdi", "winapifunc", "glxfunc"],
-	[$typedef, "typegl", "typewgl", "typeglx"],
-	[$pfn, "pfn"],
-	[$defines, "glvar", "wglvar", "glxvar"]
+	[$api, $apimap, 3, "glapi", "wingdi", "winapifunc", "glxfunc"],
+	[$typedef, $typedefmap, 3, "typegl", "typewgl", "typeglx"],
+	[$pfn, $pfnmap, 2, "pfn"],
+	[$defines, $definesmap, 2, "glvar", "wglvar", "glxvar"]
 );
 
 my %output = (
@@ -58,7 +61,7 @@ my %output = (
 header_generated("#");
 my @actions;
 foreach my $type (@arrays){
-	my $sub = push_to_array(shift @$type);
+	my $sub = push_to_array(splice @$type, 0, 3);
 	foreach my $regexp (@{$type}){
 		push @actions, [$regexps{$regexp}, $sub];
 	}

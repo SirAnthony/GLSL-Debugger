@@ -225,6 +225,8 @@ BOOL openSharedMemory(HANDLE *outShMem, void **outBaseAddr, const int size)
 }
 
 
+/* FIXME: Do we need this stuff? */
+
 /** Window class for GL context window. */
 static const char *INITCTX_WNDCLASS_NAME = "GLSLDEVIL DEBUGLIB WINDOW";
 

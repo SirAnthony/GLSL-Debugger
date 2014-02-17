@@ -56,9 +56,6 @@ my $WIN32 = ($^O =~ /Win32/);
 
 sub print_defines
 {
-	printf '#include "streamHintRefs.inc"
-';
-
 	if ($WIN32)	{
 		print "#define ENTER_CS EnterCriticalSection
 #define EXIT_CS LeaveCriticalSection

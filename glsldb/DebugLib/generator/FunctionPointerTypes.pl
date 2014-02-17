@@ -72,7 +72,7 @@ header_generated();
 
 # Add PFN definitions first
 foreach my $pfndef (@pfn) {
-	$defined_types{uc($pfndef->[2])} = 1;
+	#$defined_types{uc($pfndef->[2])} = 1;
 }
 
 # Add missing functions

@@ -111,11 +111,15 @@ sub parse_output {
 
         # Exit from selection
         if (/^#endif/ and (scalar @matched_defines)) {
-            my $ifdef = pop @matched_defines;
-            next if $ifdef and $skip_defines_map{$ifdef};
-            $last_define = $matched_defines[-1];
-
-            if ($ifdef =~ $api and $ifdef eq $current_define){
+            my $endif = pop @matched_defines;
+            next if $endif and $skip_defines_map{$endif};
+			# ugh
+			for my $define (reverse @matched_defines){
+				$last_define = $define;
+				last if not $skip_defines_map{$define};
+			}
+			
+            if ($endif =~ $api and $endif eq $current_define){
                 $current_define = $last_define;
                 $extname = pop @definitions;
                 $proto = $bextname;
@@ -127,7 +131,7 @@ sub parse_output {
             my $ifdef = /^#ifn?def\s+(\S+)/;
             push @matched_defines, $1;
             $current_define = $1 if !$current_define;
-            next if $ifdef and $skip_defines_map{$1};
+            next if not $ifdef or $skip_defines_map{$1};
             $last_define = $1;
             if (/$api_re/) {
                 push @definitions, $extname;

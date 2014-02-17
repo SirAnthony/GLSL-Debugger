@@ -45,9 +45,6 @@ if ($^O =~ /Win32/) {
 
 sub createBody
 {
-	print '#include "generator/functionRefs.inc"
-';
-
 	if (defined $WIN32) {
 		print qq|
 __declspec(dllexport) PROC APIENTRY HookedwglGetProcAddress(LPCSTR arg0) {

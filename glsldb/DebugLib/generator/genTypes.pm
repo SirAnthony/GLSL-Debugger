@@ -84,6 +84,7 @@ our %typeMap = (
 	"DMbuffer" => "void *",
 	"DMparams" => "struct",
 	"HDC" => "void *",
+	"VOID" => "void",
 	"HANDLE" => "void *",
 	"UINT" => "unsigned int",
 	"FLOAT" => "float",
