@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+################################################################################
+#
+# Copyright (c) 2014 SirAnthony <anthony at adsorbtion.org>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+################################################################################
+
+from reg import Registry, write
+from lxml import etree
+from generators import EnumGeneratorOptions
+import sys
+
+regFilename = '../../GL/gl.xml'
+
+prefixStrings = [
+    """/***********************************************************
+ *
+ *   THIS FILE IS GENERATED AUTOMATICALLY {date} {time}
+ *
+ * Copyright (c) {year} Python generator
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the \"Software\"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ ***********************************************************/"""
+]
+
+
+reg = Registry()
+tree = etree.parse(regFilename)
+reg.loadElementTree(tree)
+errWarn = sys.stderr
+
+buildList = [
+    # GL API 1.2+ + extensions - GL/glext.h
+    EnumGeneratorOptions(
+        filename          = 'enumerants.inc',
+        apiname           = 'gl',
+        profile           = 'core',
+        defaultExtensions = 'gl',                   # Default extensions for GL
+        prefixText        = prefixStrings,
+        protectFeature    = True),
+]
+
+def genFiles():
+    generated = 0
+    for genOpts in buildList:
+        write('*** Building', genOpts.filename)
+        generated = generated + 1
+        gen = genOpts.generatorClass(errFile=errWarn,
+                               warnFile=errWarn,
+                               diagFile=errWarn)
+        reg.setGenerator(gen)
+        reg.apiGen(genOpts)
+        write('** Generated', genOpts.filename)
+
+genFiles()

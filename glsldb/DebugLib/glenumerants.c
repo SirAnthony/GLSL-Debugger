@@ -49,6 +49,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #else
 #  include "../GL/wglext.h"
 #endif
+#include "../utils/hash.h"
+
+
+static Hash Enumerants;
+
 #include "generated/glenumerants.h"
 
 
