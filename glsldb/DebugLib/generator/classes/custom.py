@@ -96,7 +96,7 @@ class CustomOutputGenerator(OutputGenerator):
         self.cmdBody = ''
 
     def endFeature(self):
-        if (self.emit):
+        if (self.emit and not self.empty()):
             self.newline()
             if (self.genOpts.protectFeature):
                 write(self.featureBegin[0], self.featureName,
@@ -109,6 +109,9 @@ class CustomOutputGenerator(OutputGenerator):
                 write(self.featureEnd[0], self.featureName,
                         self.featureEnd[1], file=self.outFile)
         OutputGenerator.endFeature(self)
+
+    def empty(self):
+        return False
 
     def genType(self, typeinfo, name):
         pass
