@@ -53,6 +53,7 @@ typedef struct {
 	HashFunc hashFunc;
 	CompFunc compFunc;
 	int freeDataPointers;
+    int multival;
 } Hash;
 
 /* initialize hash */
@@ -67,11 +68,18 @@ UTILSLOCAL void hash_free(Hash *hash);
  */
 UTILSLOCAL int hash_insert(Hash *hash, const void *key, void *data);
 
+/* insert (key, data) pair; Does not check if key is already exists.
+ */
+UTILSLOCAL void hash_insert_many(Hash *hash, const void *key, void *data);
+
 /* remove data item associated with key */
 UTILSLOCAL void hash_remove(Hash *hash, void *key);
 
 /* return data associated with key */
 UTILSLOCAL void *hash_find(Hash *hash, const void *key);
+
+/* return array of data elements associated with key */
+UTILSLOCAL void hash_find_many(Hash *hash, const void *key, void **elements, int *count);
 
 /* return number of elements in hash */
 UTILSLOCAL int hash_count(Hash *hash);

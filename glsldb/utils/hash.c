@@ -43,6 +43,7 @@ void hash_create(Hash *hash, HashFunc hashFunc, CompFunc compFunc,
 	hash->hashFunc = hashFunc;
 	hash->compFunc = compFunc;
 	hash->freeDataPointers = freeDataPointers;
+    hash->multival = 0;
 	/* TODO: mem check */
 	hash->table = (HashNode**) malloc(numBuckets * sizeof(HashNode*));
 	for (i = 0; i < numBuckets; i++) {
@@ -100,6 +101,30 @@ int hash_insert(Hash *hash, const void *key, void *data)
 	return 0;
 }
 
+void hash_insert_many(Hash *hash, const void *key, void *data)
+{
+    int n = hash->hashFunc(key, hash->numBuckets);
+	HashNode *node = hash->table[n];
+	HashNode *prev = NULL;
+	while (node) {
+		prev = node;
+		node = node->next;
+	}
+	if (prev == NULL) {
+		/* TODO: mem check */
+		hash->table[n] = (HashNode*) malloc(sizeof(HashNode));
+		node = hash->table[n];
+	} else {
+		/* TODO: mem check */
+		prev->next = (HashNode*) malloc(sizeof(HashNode));
+		node = prev->next;
+	}
+	node->data = data;
+	node->key = key;
+	node->next = NULL;
+    hash->multival = 1;
+}
+
 void hash_remove(Hash *hash, void *key)
 {
 	int n = hash->hashFunc(key, hash->numBuckets);
@@ -133,6 +158,30 @@ void *hash_find(Hash *hash, const void *key)
 		node = node->next;
 	}
 	return NULL;
+}
+
+void hash_find_many(Hash *hash, const void *key, void **elements, int *count)
+{
+    HashNode *node = hash->table[hash->hashFunc(key, hash->numBuckets)];
+    *count = 0;
+
+    if (!hash->multival) {
+        node = hash_find(hash, key);
+        if (node) {
+            *count = 1;
+            *elements = (void*)malloc(*elements, 1);
+            *elements[0] = node->data;
+        }
+        return;
+    }
+
+	while (node) {
+		if (hash->compFunc(node->key, key)) {
+            *elements = (void*)realloc(*elements, *count + 1);
+            *elements[*count++] = node->data;
+		}
+		node = node->next;
+	}
 }
 
 int hash_count(Hash *hash)
@@ -197,5 +246,3 @@ int compString(const void *key1, const void *key2)
 {
 	return !strcmp((const char*) key1, (const char*) key2);
 }
-
-

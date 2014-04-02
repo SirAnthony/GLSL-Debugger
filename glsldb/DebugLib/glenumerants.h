@@ -51,10 +51,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 GLENUMERANTSLOCAL const char *lookupEnum(GLenum e);
-/* FIXME: check why it cannot be GLenum */
-/* FIXME: well, it seems, this function not used anywhere */
-GLENUMERANTSLOCAL const char *lookupExtEnum(int e);
-GLENUMERANTSLOCAL char *lookupAllEnum(GLenum e);
 GLENUMERANTSLOCAL char *dissectBitfield(GLbitfield b);
 
 #endif

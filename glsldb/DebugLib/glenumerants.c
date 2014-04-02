@@ -53,6 +53,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 static Hash Enumerants;
+static Hash BitFields;
 
 #include "generated/glenumerants.h"
 
@@ -101,12 +102,6 @@ const char *lookupEnum(GLenum e)
 	return lookupEnumInMap(glEnumerantsMap, e);
 }
 
-const char *lookupExtEnum(int e)
-{
-	return lookupEnumInMap(extEnumerantsMap, e);
-}
-
-
 static void concatEnumsInMap(char** result, EnumerantsMap map[], int e)
 {
 	int i = 0;
@@ -119,23 +114,6 @@ static void concatEnumsInMap(char** result, EnumerantsMap map[], int e)
 		}
 		i++;
 	}
-}
-
-char *lookupAllEnum(GLenum e)
-{
-	char *result = NULL;
-
-	concatenate(&result, "{");
-	concatEnumsInMap(&result, glEnumerantsMap, e);
-	concatEnumsInMap(&result, extEnumerantsMap, e);
-
-	if (strlen(result) == 1) {
-		result = realloc(result, 14 * sizeof(char));
-		strcpy(result, "UNKNOWN ENUM!");
-	} else {
-		result[strlen(result) - 1] = '}';
-	}
-	return result;
 }
 
 char *dissectBitfield(GLbitfield b)
