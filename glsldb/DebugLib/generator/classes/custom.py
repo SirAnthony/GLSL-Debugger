@@ -53,6 +53,10 @@ class CustomGeneratorOptions(GeneratorOptions):
 class CustomOutputGenerator(OutputGenerator):
     """Generate specified API interfaces in a specific style, such as a C header"""
 
+    # Subclasses can specify some headers and footers for files
+    header = ''
+    footer = ''
+
     # Begin and end tokens of feature. Subclasses can overload this
     featureBegin = ('#ifdef', '')
     featureEnd = ('#endif /*', '*/')
@@ -67,10 +71,6 @@ class CustomOutputGenerator(OutputGenerator):
         self.enumBody = ''
         self.cmdBody = ''
 
-        # Subclasses can specify some headers and footers for files
-        self.header = ''
-        self.footer = ''
-
     def newline(self):
         write('', file=self.outFile)
 
@@ -81,13 +81,11 @@ class CustomOutputGenerator(OutputGenerator):
         date = datetime.now()
         write(header.format(date=date.strftime("%d.%m.%y %H:%M:%S"),
                 year=date.year), file=self.outFile)
-        if self.header:
-            write(self.header)
+        write(self.header, file=self.outFile)
 
     def endFile(self):
         self.newline()
-        if self.footer:
-            write(self.footer)
+        write(self.footer, file=self.outFile)
         OutputGenerator.endFile(self)
 
     def beginFeature(self, interface, emit):

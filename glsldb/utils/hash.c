@@ -46,9 +46,8 @@ void hash_create(Hash *hash, HashFunc hashFunc, CompFunc compFunc,
     hash->multival = 0;
 	/* TODO: mem check */
 	hash->table = (HashNode**) malloc(numBuckets * sizeof(HashNode*));
-	for (i = 0; i < numBuckets; i++) {
+	for (i = 0; i < numBuckets; i++)
 		hash->table[i] = NULL;
-	}
 }
 
 void hash_free(Hash *hash)
@@ -60,14 +59,14 @@ void hash_free(Hash *hash)
 			HashNode *node = hash->table[i];
 			while (node) {
 				HashNode *next = node->next;
-				if (hash->freeDataPointers && node->data) {
+				if (hash->freeDataPointers && node->data)
 					free(node->data);
-				}
 				free(node);
 				node = next;
 			}
 		}
 	}
+
 	free(hash->table);
 	hash->table = NULL;
 	hash->numBuckets = 0;
@@ -132,16 +131,15 @@ void hash_remove(Hash *hash, void *key)
 	HashNode *prev = node;
 	while (node) {
 		if (hash->compFunc(node->key, key)) {
-			if (prev == node) {
+			if (prev == node)
 				hash->table[n] = node->next;
-			} else {
+			else
 				prev->next = node->next;
-			}
-			if (hash->freeDataPointers && node->data) {
+			if (hash->freeDataPointers && node->data)
 				free(node->data);
-			}
 			free(node);
-			return;
+            if (!hash_multival)
+                return;
 		}
 		prev = node;
 		node = node->next;
@@ -152,9 +150,8 @@ void *hash_find(Hash *hash, const void *key)
 {
 	HashNode *node = hash->table[hash->hashFunc(key, hash->numBuckets)];
 	while (node) {
-		if (hash->compFunc(node->key, key)) {
+		if (hash->compFunc(node->key, key))
 			return node->data;
-		}
 		node = node->next;
 	}
 	return NULL;
@@ -208,9 +205,8 @@ void *hash_element(Hash *hash, int n)
 		if (hash->table[i]) {
 			HashNode *node = hash->table[i];
 			while (node) {
-				if (count == n) {
+				if (count == n)
 					return node->data;
-				}
 				node = node->next;
 				count++;
 			}
@@ -236,9 +232,8 @@ int hashString(const void *key, int numBuckets)
 	char *s = (char *) key;
 	/* universal hash function, R. Sedgewick, Algorithms in C++, p. 593 */
 	int h, a = 31415, b = 27183;
-	for (h = 0; *s != 0; s++, a = a * b % (numBuckets - 1)) {
+	for (h = 0; *s != 0; s++, a = a * b % (numBuckets - 1))
 		h = (a * h + *s) % numBuckets;
-	}
 	return (h < 0) ? (h + numBuckets) : h;
 }
 

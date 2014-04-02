@@ -5,11 +5,8 @@ from classes.custom import CustomOutputGenerator, CustomGeneratorOptions
 
 enums_header = """
 
-#define ADD_BITFIELD(name, value) \
-    hash_insert_many(bitfields, value, name);
-
-#define ADD_ENUM(name, value) \
-    hash_insert(enumerants, value, name);
+#define ADD_BITFIELD(name, value) hash_insert_many(bitfields, value, name);
+#define ADD_ENUM(name, value) hash_insert(enumerants, value, name);
 
 int load_enumerants(Hash* enumerants, Hash* bitfields)
 {
@@ -24,10 +21,8 @@ enums_footer = """
 
 class EnumOutputGenerator(CustomOutputGenerator):
 
-    def __init__(self, *args, **kwargs):
-        CustomOutputGenerator.__init__(self, *args, **kwargs)
-        self.header = enums_header
-        self.footer = enums_footer
+    header = enums_header
+    footer = enums_footer
 
     #
     # Enumerant generation
