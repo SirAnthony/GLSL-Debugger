@@ -427,7 +427,7 @@ ShVariable* copyShVariableCtx(ShVariable *src, void* mem_ctx)
 	if (!src)
 		return NULL;
 
-	ShVariable* ret = (ShVariable*) rzalloc(mem_ctx, ShVariable);
+	ShVariable* ret = rzalloc(mem_ctx, ShVariable);
 	assert(ret || !"not enough memory to copy ShVariable");
 
 	ret->uniqueId = src->uniqueId;
@@ -442,15 +442,18 @@ ShVariable* copyShVariableCtx(ShVariable *src, void* mem_ctx)
 	ret->matrixSize[0] = src->matrixSize[0];
 	ret->matrixSize[1] = src->matrixSize[1];
 	ret->isArray = src->isArray;
-	for (int i = 0; i < MAX_ARRAYS; i++)
-		ret->arraySize[i] = src->arraySize[i];
+	if (ret->isArray) {
+		ret->arrayDepth = src->arrayDepth;
+		ret->arraySize = rzalloc_array(ret, int, src->arrayDepth);
+		memcpy(ret->arraySize, src->arraySize, ret->arrayDepth);
+	}
 
 	if (src->structName)
 		ret->structName = ralloc_strdup(ret, src->structName);
 
 	ret->structSize = src->structSize;
 	if (ret->structSize) {
-		ret->structSpec = (ShVariable**) rzalloc_array(ret, ShVariable*, ret->structSize);
+		ret->structSpec = rzalloc_array(ret, ShVariable*, ret->structSize);
 		assert(ret->structSpec || !"not enough memory to copy structSpec of ShVariable");
 		for (int i = 0; i < ret->structSize; i++)
 			ret->structSpec[i] = copyShVariableCtx(src->structSpec[i], ret->structSpec);
@@ -529,8 +532,14 @@ static void glsltypeToShVariable(ShVariable* var, const struct glsl_type* vtype,
 
 	// Array handling
 	var->isArray = vtype->is_array();
-	for (int i = 0; i < MAX_ARRAYS; i++) {
-		var->arraySize[i] = vtype->array_size();
+	if (var->isArray) {
+		var->arrayDepth = 1;
+		const glsl_type* atype = vtype;
+		while (atype->is_array()) {
+			var->arraySize = reralloc(var, var->arraySize, int, var->arrayDepth);
+			var->arraySize[var->arrayDepth++] = atype->length;
+			atype = atype->fields.array;
+		}
 	}
 
 	if (vtype->base_type == GLSL_TYPE_STRUCT) {
@@ -540,7 +549,7 @@ static void glsltypeToShVariable(ShVariable* var, const struct glsl_type* vtype,
 		var->structName = ralloc_strdup(var, vtype->name);
 		for (int i = 0; i < var->structSize; ++i) {
 			struct glsl_struct_field* field = &vtype->fields.structure[i];
-			ShVariable* svar = (ShVariable*)rzalloc(var->structSpec, ShVariable);
+			ShVariable* svar = rzalloc(var->structSpec, ShVariable);
 			svar->uniqueId = -1;
 			if (qualifier & SH_BUILTIN)
 				svar->qualifier = SH_BUILTIN;
@@ -577,7 +586,7 @@ ShVariable* astToShVariable(ast_node* decl, variableQualifier qualifier,
 
 	ShVariable* var = findShVariable(decl->debug_id);
 	if (!var) {
-		var = (ShVariable*)rzalloc(mem_ctx, ShVariable);
+		var = rzalloc(mem_ctx, ShVariable);
 		var->uniqueId = -1;
 		var->builtin = qualifier & SH_BUILTIN;
 		var->name = ralloc_strdup(var, identifier);
@@ -613,7 +622,7 @@ void ShDumpVariable(ShVariable *v, int depth)
 	dbgPrint(DBGLVL_COMPILERINFO, " %s", v->name);
 
 	if (v->isArray) {
-		for (int i = 0; i < MAX_ARRAYS; i++) {
+		for (int i = 0; i < v->arrayDepth; i++) {
 			if (v->arraySize[i] < 0)
 				break;
 			dbgPrint(DBGLVL_COMPILERINFO, "[%i]", v->arraySize[i]);

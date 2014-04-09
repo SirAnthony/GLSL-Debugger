@@ -373,7 +373,8 @@ typedef struct ShVariable {
     int matrixSize[2];
 
     int isArray;
-    int arraySize[MAX_ARRAYS];
+    int arrayDepth;
+    int* arraySize;
 
     char *structName;
     int structSize;

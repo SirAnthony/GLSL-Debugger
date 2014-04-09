@@ -36,8 +36,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef _RESOURCE_LIMITS_INCLUDED_
 #define _RESOURCE_LIMITS_INCLUDED_
 
-#define MAX_ARRAYS 2
-
 struct TBuiltInResource {
     int maxLights;
     int maxClipPlanes;
