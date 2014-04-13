@@ -68,62 +68,62 @@ typedef enum {
 	DF_LAST
 } varDataFields;
 
-ShVarItem::ShVarItem(const QList<QVariant> &i_qData, ShVarItem *i_qParent)
+OldShVarItem::OldShVarItem(const QList<QVariant> &i_qData, OldShVarItem *i_qParent)
 {
 	m_qData = i_qData;
 	m_qParent = i_qParent;
 }
 
-ShVarItem::~ShVarItem()
+OldShVarItem::~OldShVarItem()
 {
 	qDeleteAll(m_qChilds);
 }
 
-void ShVarItem::appendChild(ShVarItem *i_qChild)
+void OldShVarItem::appendChild(OldShVarItem *i_qChild)
 {
 	m_qChilds.append(i_qChild);
 }
 
-ShVarItem* ShVarItem::child(int i_nRow)
+OldShVarItem* OldShVarItem::child(int i_nRow)
 {
 	return m_qChilds.value(i_nRow);
 
 }
 
-ShVarItem *ShVarItem::parent()
+OldShVarItem *OldShVarItem::parent()
 {
 	return m_qParent;
 }
 
-int ShVarItem::childCount() const
+int OldShVarItem::childCount() const
 {
 	return m_qChilds.count();
 }
 
-int ShVarItem::columnCount() const
+int OldShVarItem::columnCount() const
 {
 	return m_qData.count();
 }
 
-int ShVarItem::row() const
+int OldShVarItem::row() const
 {
 	if (m_qParent) {
-		return m_qParent->m_qChilds.indexOf(const_cast<ShVarItem*>(this));
+		return m_qParent->m_qChilds.indexOf(const_cast<OldShVarItem*>(this));
 	}
 	return 0;
 }
 
-QVariant ShVarItem::data(int i_nColumn) const
+QVariant OldShVarItem::data(int i_nColumn) const
 {
 	return m_qData.value(i_nColumn);
 }
 
-void ShVarItem::setData(int i_nColumn, QVariant i_qData)
+void OldShVarItem::setData(int i_nColumn, QVariant i_qData)
 {
 	m_qData[i_nColumn] = i_qData;
 }
 
-ShChangeable* ShVarItem::getShChangeable(void)
+ShChangeable* OldShVarItem::getShChangeable(void)
 {
 	ShChangeable *cgbl = NULL;
 
@@ -148,7 +148,7 @@ ShChangeable* ShVarItem::getShChangeable(void)
 	return cgbl;
 }
 
-void ShVarItem::setPixelBoxPointer(PixelBox *fb)
+void OldShVarItem::setPixelBoxPointer(PixelBox *fb)
 {
 	if (fb) {
 		dbgPrint(DBGLVL_DEBUG,
@@ -159,7 +159,7 @@ void ShVarItem::setPixelBoxPointer(PixelBox *fb)
 	setData(DF_DATA_PIXELBOX, QVariant::fromValue<void*>((void*) fb));
 }
 
-PixelBox* ShVarItem::getPixelBoxPointer(void)
+PixelBox* OldShVarItem::getPixelBoxPointer(void)
 {
 	QVariant v = data(DF_DATA_PIXELBOX);
 	if (v.value<void*>() == NULL) {
@@ -172,7 +172,7 @@ PixelBox* ShVarItem::getPixelBoxPointer(void)
 	}
 }
 
-void ShVarItem::setVertexBoxPointer(VertexBox *vb)
+void OldShVarItem::setVertexBoxPointer(VertexBox *vb)
 {
 	if (vb) {
 		dbgPrint(DBGLVL_DEBUG,
@@ -183,7 +183,7 @@ void ShVarItem::setVertexBoxPointer(VertexBox *vb)
 	setData(DF_DATA_VERTEXBOX, QVariant::fromValue<void*>((void*) vb));
 }
 
-VertexBox* ShVarItem::getVertexBoxPointer(void)
+VertexBox* OldShVarItem::getVertexBoxPointer(void)
 {
 	QVariant v = data(DF_DATA_VERTEXBOX);
 	if (v.value<void*>() == NULL) {
@@ -194,7 +194,7 @@ VertexBox* ShVarItem::getVertexBoxPointer(void)
 	}
 }
 
-void ShVarItem::setCurrentPointer(VertexBox *vb)
+void OldShVarItem::setCurrentPointer(VertexBox *vb)
 {
 	if (vb) {
 		dbgPrint(DBGLVL_DEBUG,
@@ -205,7 +205,7 @@ void ShVarItem::setCurrentPointer(VertexBox *vb)
 	setData(DF_DATA_CURRENTBOX, QVariant::fromValue<void*>((void*) vb));
 }
 
-VertexBox* ShVarItem::getCurrentPointer(void)
+VertexBox* OldShVarItem::getCurrentPointer(void)
 {
 	QVariant v = data(DF_DATA_CURRENTBOX);
 	if (v.value<void*>() == NULL) {
@@ -216,58 +216,58 @@ VertexBox* ShVarItem::getCurrentPointer(void)
 	}
 }
 
-bool ShVarItem::isChanged(void)
+bool OldShVarItem::isChanged(void)
 {
 	return data(DF_CHANGED).toBool();
 }
 
-bool ShVarItem::isSelectable(void)
+bool OldShVarItem::isSelectable(void)
 {
 	return data(DF_SELECTABLE).toBool();
 }
 
-bool ShVarItem::isInScope(void)
+bool OldShVarItem::isInScope(void)
 {
 	return data(DF_SCOPE).toInt() == InScope
 			|| data(DF_SCOPE).toInt() == NewInScope;
 }
 
-bool ShVarItem::hasEnteredScope(void)
+bool OldShVarItem::hasEnteredScope(void)
 {
 	return data(DF_SCOPE).toInt() == NewInScope;
 }
 
-bool ShVarItem::hasLeftScope(void)
+bool OldShVarItem::hasLeftScope(void)
 {
 	return data(DF_SCOPE).toInt() == LeftScope;
 }
 
-bool ShVarItem::isInScopeStack(void)
+bool OldShVarItem::isInScopeStack(void)
 {
 	return data(DF_SCOPE).toInt() == InScopeStack;
 }
 
-bool ShVarItem::isBuildIn(void)
+bool OldShVarItem::isBuildIn(void)
 {
 	return data(DF_BUILTIN).toBool();
 }
 
-bool ShVarItem::isUniform(void)
+bool OldShVarItem::isUniform(void)
 {
 	return data(DF_QUALIFIER).toString() == "uniform";
 }
 
-bool ShVarItem::isActiveUniform(void)
+bool OldShVarItem::isActiveUniform(void)
 {
 	return isUniform() && data(DF_DEBUG_UNIFORM_VALUE) != QVariant();
 }
 
-QString ShVarItem::getFullName(void)
+QString OldShVarItem::getFullName(void)
 {
 	return data(DF_FULLNAME).toString();
 }
 
-int ShVarItem::getReadbackFormat()
+int OldShVarItem::getReadbackFormat()
 {
 	int varType = data(DF_TYPE).toInt();
 
@@ -278,36 +278,7 @@ int ShVarItem::getReadbackFormat()
 		return GL_INT;
 	case SH_UINT:
 	case SH_BOOL:
-	case SH_SAMPLER_1D:
-	case SH_ISAMPLER_1D:
-	case SH_USAMPLER_1D:
-	case SH_SAMPLER_2D:
-	case SH_ISAMPLER_2D:
-	case SH_USAMPLER_2D:
-	case SH_SAMPLER_3D:
-	case SH_ISAMPLER_3D:
-	case SH_USAMPLER_3D:
-	case SH_SAMPLER_CUBE:
-	case SH_ISAMPLER_CUBE:
-	case SH_USAMPLER_CUBE:
-	case SH_SAMPLER_1D_SHADOW:
-	case SH_SAMPLER_2D_SHADOW:
-	case SH_SAMPLER_2D_RECT:
-	case SH_ISAMPLER_2D_RECT:
-	case SH_USAMPLER_2D_RECT:
-	case SH_SAMPLER_2D_RECT_SHADOW:
-	case SH_SAMPLER_1D_ARRAY:
-	case SH_ISAMPLER_1D_ARRAY:
-	case SH_USAMPLER_1D_ARRAY:
-	case SH_SAMPLER_2D_ARRAY:
-	case SH_ISAMPLER_2D_ARRAY:
-	case SH_USAMPLER_2D_ARRAY:
-	case SH_SAMPLER_BUFFER:
-	case SH_ISAMPLER_BUFFER:
-	case SH_USAMPLER_BUFFER:
-	case SH_SAMPLER_1D_ARRAY_SHADOW:
-	case SH_SAMPLER_2D_ARRAY_SHADOW:
-	case SH_SAMPLER_CUBE_SHADOW:
+	case SH_SAMPLER:
 		return GL_UNSIGNED_INT;
 	case SH_STRUCT:
 	default:
@@ -317,7 +288,7 @@ int ShVarItem::getReadbackFormat()
 	}
 }
 
-ShVarModel::ShVarModel(ShVariableList *i_pVL, QObject *i_qParent,
+OldShVarModel::OldShVarModel(ShVariableList *i_pVL, QObject *i_qParent,
 		QCoreApplication *i_qApp) :
 		QAbstractItemModel(i_qParent)
 {
@@ -327,7 +298,7 @@ ShVarModel::ShVarModel(ShVariableList *i_pVL, QObject *i_qParent,
 			<< "Changed" << "Scope" << "Selectable" << "Watched"
 			<< "Data PixelBox" << "Data VertexBox" << "Data CurrentBox"
 			<< "Selection Value" << "Value";
-	m_qRootItem = new ShVarItem(rootData);
+	m_qRootItem = new OldShVarItem(rootData);
 	setupModelData(i_pVL, m_qRootItem);
 
 	m_qAllProxy = new QSortFilterProxyModel(this);
@@ -365,23 +336,23 @@ ShVarModel::ShVarModel(ShVariableList *i_pVL, QObject *i_qParent,
 	m_qApp = i_qApp;
 }
 
-ShVarModel::~ShVarModel()
+OldShVarModel::~OldShVarModel()
 {
 	delete m_qRootItem;
 }
 
-QModelIndex ShVarModel::index(int i_nRow, int i_nColumn,
+QModelIndex OldShVarModel::index(int i_nRow, int i_nColumn,
 		const QModelIndex &i_qParent) const
 {
-	ShVarItem *parentItem;
+	OldShVarItem *parentItem;
 
 	if (!i_qParent.isValid()) {
 		parentItem = m_qRootItem;
 	} else {
-		parentItem = static_cast<ShVarItem*>(i_qParent.internalPointer());
+		parentItem = static_cast<OldShVarItem*>(i_qParent.internalPointer());
 	}
 
-	ShVarItem *childItem = parentItem->child(i_nRow);
+	OldShVarItem *childItem = parentItem->child(i_nRow);
 	if (childItem) {
 		return createIndex(i_nRow, i_nColumn, childItem);
 	} else {
@@ -389,24 +360,24 @@ QModelIndex ShVarModel::index(int i_nRow, int i_nColumn,
 	}
 }
 
-QModelIndex ShVarModel::getIndex(ShVarItem *i_qItem, int i_nColumn)
+QModelIndex OldShVarModel::getIndex(OldShVarItem *i_qItem, int i_nColumn)
 {
 	if (i_qItem->parent() != m_qRootItem) {
-		return ShVarModel::index(i_qItem->row(), i_nColumn,
+		return OldShVarModel::index(i_qItem->row(), i_nColumn,
 				getIndex(i_qItem->parent(), i_nColumn));
 	} else {
-		return ShVarModel::index(i_qItem->row(), i_nColumn);
+		return OldShVarModel::index(i_qItem->row(), i_nColumn);
 	}
 }
 
-QModelIndex ShVarModel::parent(const QModelIndex &i_qIndex) const
+QModelIndex OldShVarModel::parent(const QModelIndex &i_qIndex) const
 {
 	if (!i_qIndex.isValid()) {
 		return QModelIndex();
 	}
 
-	ShVarItem *childItem = static_cast<ShVarItem*>(i_qIndex.internalPointer());
-	ShVarItem *parentItem = childItem->parent();
+	OldShVarItem *childItem = static_cast<OldShVarItem*>(i_qIndex.internalPointer());
+	OldShVarItem *parentItem = childItem->parent();
 
 	if (parentItem == m_qRootItem) {
 		return QModelIndex();
@@ -415,35 +386,35 @@ QModelIndex ShVarModel::parent(const QModelIndex &i_qIndex) const
 	return createIndex(parentItem->row(), 0, parentItem);
 }
 
-int ShVarModel::rowCount(const QModelIndex &i_qParent) const
+int OldShVarModel::rowCount(const QModelIndex &i_qParent) const
 {
-	ShVarItem *parentItem;
+	OldShVarItem *parentItem;
 
 	if (!i_qParent.isValid()) {
 		parentItem = m_qRootItem;
 	} else {
-		parentItem = static_cast<ShVarItem*>(i_qParent.internalPointer());
+		parentItem = static_cast<OldShVarItem*>(i_qParent.internalPointer());
 	}
 
 	return parentItem->childCount();
 }
 
-int ShVarModel::columnCount(const QModelIndex &i_qParent) const
+int OldShVarModel::columnCount(const QModelIndex &i_qParent) const
 {
 	if (i_qParent.isValid()) {
-		return static_cast<ShVarItem*>(i_qParent.internalPointer())->columnCount();
+		return static_cast<OldShVarItem*>(i_qParent.internalPointer())->columnCount();
 	} else {
 		return m_qRootItem->columnCount();
 	}
 }
 
-QVariant ShVarModel::data(const QModelIndex &i_qIndex, int i_nRole) const
+QVariant OldShVarModel::data(const QModelIndex &i_qIndex, int i_nRole) const
 {
 	if (!i_qIndex.isValid()) {
 		return QVariant();
 	}
 
-	ShVarItem *item = static_cast<ShVarItem*>(i_qIndex.internalPointer());
+	OldShVarItem *item = static_cast<OldShVarItem*>(i_qIndex.internalPointer());
 
 	switch (i_nRole) {
 	case Qt::DisplayRole:
@@ -474,13 +445,13 @@ QVariant ShVarModel::data(const QModelIndex &i_qIndex, int i_nRole) const
 	return QVariant();
 }
 
-Qt::ItemFlags ShVarModel::flags(const QModelIndex &i_qIndex) const
+Qt::ItemFlags OldShVarModel::flags(const QModelIndex &i_qIndex) const
 {
 	if (!i_qIndex.isValid()) {
 		return Qt::ItemIsEnabled;
 	}
 
-	ShVarItem *item = static_cast<ShVarItem*>(i_qIndex.internalPointer());
+	OldShVarItem *item = static_cast<OldShVarItem*>(i_qIndex.internalPointer());
 	if (item->data(DF_SELECTABLE).toBool() == true) {
 		return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 	} else {
@@ -488,7 +459,7 @@ Qt::ItemFlags ShVarModel::flags(const QModelIndex &i_qIndex) const
 	}
 }
 
-QVariant ShVarModel::headerData(int i_nSection, Qt::Orientation i_qOrientation,
+QVariant OldShVarModel::headerData(int i_nSection, Qt::Orientation i_qOrientation,
 		int i_nRole) const
 {
 	if (i_qOrientation == Qt::Horizontal && i_nRole == Qt::DisplayRole) {
@@ -498,7 +469,7 @@ QVariant ShVarModel::headerData(int i_nSection, Qt::Orientation i_qOrientation,
 	return QVariant();
 }
 
-void ShVarModel::clearChanged(ShVarItem *i_qItem)
+void OldShVarModel::clearChanged(OldShVarItem *i_qItem)
 {
 	/* Hint: this does not emit any dataChanged signal */
 
@@ -513,7 +484,7 @@ void ShVarModel::clearChanged(ShVarItem *i_qItem)
 	}
 }
 
-void ShVarModel::setRecursiveScope(ShVarItem *i_qItem, ShVarItem::Scope scope)
+void OldShVarModel::setRecursiveScope(OldShVarItem *i_qItem, OldShVarItem::Scope scope)
 {
 	int j;
 
@@ -527,7 +498,7 @@ void ShVarModel::setRecursiveScope(ShVarItem *i_qItem, ShVarItem::Scope scope)
 	}
 }
 
-void ShVarModel::setRecursiveChanged(ShVarItem *i_qItem)
+void OldShVarModel::setRecursiveChanged(OldShVarItem *i_qItem)
 {
 	int j;
 
@@ -541,7 +512,7 @@ void ShVarModel::setRecursiveChanged(ShVarItem *i_qItem)
 	}
 }
 
-void ShVarModel::setChangedAndScope(ShChangeableList &i_pCL, DbgRsScope &i_pSL,
+void OldShVarModel::setChangedAndScope(ShChangeableList &i_pCL, DbgRsScope &i_pSL,
 		DbgRsScope &i_pSSL)
 {
 	int i, j, l, m;
@@ -557,13 +528,12 @@ void ShVarModel::setChangedAndScope(ShChangeableList &i_pCL, DbgRsScope &i_pSL,
 		for (j = 0; j < m_qRootItem->childCount(); j++) {
 			QVariant id = m_qRootItem->child(j)->data(DF_UNIQUE_ID);
 			if (id == QVariant(c->id)) {
-				ShVarItem *item = m_qRootItem->child(j);
+				OldShVarItem *item = m_qRootItem->child(j);
 				item->setData(DF_CHANGED, true);
 
 				for (l = 0; l < c->numIndices; l++) {
 					switch (c->indices[l]->type) {
-					case SH_CGB_ARRAY_DIRECT:
-					case SH_CGB_ARRAY_INDIRECT:
+					case SH_CGB_ARRAY:
 					case SH_CGB_STRUCT:
 						if (c->indices[l]->index == -1) {
 							item->setData(DF_CHANGED, true);
@@ -604,22 +574,22 @@ void ShVarModel::setChangedAndScope(ShChangeableList &i_pCL, DbgRsScope &i_pSL,
 
 	/* check scope */
 	for (j = 0; j < m_qRootItem->childCount(); j++) {
-		ShVarItem *item = m_qRootItem->child(j);
+		OldShVarItem *item = m_qRootItem->child(j);
 		if (item->isBuildIn()) {
 			continue;
 		}
 		QVariant id = item->data(DF_UNIQUE_ID);
-		ShVarItem::Scope oldScope =
-				(ShVarItem::Scope) item->data(DF_SCOPE).toInt();
+		OldShVarItem::Scope oldScope =
+				(OldShVarItem::Scope) item->data(DF_SCOPE).toInt();
 		/* check scope list */
 		for (i = 0; i < i_pSL.numIds; i++) {
 			int varId = i_pSL.ids[i];
 			if (id == varId) {
-				if (oldScope == ShVarItem::InScope) {
-				} else if (oldScope == ShVarItem::NewInScope) {
-					setRecursiveScope(item, ShVarItem::InScope);
+				if (oldScope == OldShVarItem::InScope) {
+				} else if (oldScope == OldShVarItem::NewInScope) {
+					setRecursiveScope(item, OldShVarItem::InScope);
 				} else {
-					setRecursiveScope(item, ShVarItem::NewInScope);
+					setRecursiveScope(item, OldShVarItem::NewInScope);
 				}
 				break;
 			}
@@ -630,30 +600,30 @@ void ShVarModel::setChangedAndScope(ShChangeableList &i_pCL, DbgRsScope &i_pSL,
 			for (i = 0; i < i_pSSL.numIds; i++) {
 				int varId = i_pSSL.ids[i];
 				if (id == varId) {
-					setRecursiveScope(item, ShVarItem::InScopeStack);
+					setRecursiveScope(item, OldShVarItem::InScopeStack);
 					break;
 				}
 			}
 			/* not in scope stack */
 			if (i == i_pSSL.numIds) {
-				if (oldScope == ShVarItem::LeftScope) {
-					setRecursiveScope(item, ShVarItem::OutOfScope);
+				if (oldScope == OldShVarItem::LeftScope) {
+					setRecursiveScope(item, OldShVarItem::OutOfScope);
 				} else {
-					setRecursiveScope(item, ShVarItem::LeftScope);
+					setRecursiveScope(item, OldShVarItem::LeftScope);
 				}
 			}
 		}
 	}
 
-	ShVarItem *item;
+	OldShVarItem *item;
 	item = m_qRootItem->child(0);
-	QModelIndex indexBegin = ShVarModel::index(item->row(), DF_NAME);
+	QModelIndex indexBegin = OldShVarModel::index(item->row(), DF_NAME);
 	item = m_qRootItem->child(m_qRootItem->childCount() - 1);
-	QModelIndex indexEnd = ShVarModel::index(item->row(), DF_LAST - 1);
+	QModelIndex indexEnd = OldShVarModel::index(item->row(), DF_LAST - 1);
 	emit dataChanged(indexBegin, indexEnd);
 }
 
-void ShVarItem::setCurrentValue(int key0, int key1)
+void OldShVarItem::setCurrentValue(int key0, int key1)
 {
 	if (key0 >= 0 && key1 >= 0 && data(DF_WATCHED).toBool()) {
 		if (data(DF_DATA_PIXELBOX).value<void*>() != NULL) {
@@ -673,7 +643,7 @@ void ShVarItem::setCurrentValue(int key0, int key1)
 	setData(DF_DEBUG_SELECTED_VALUE, QVariant());
 }
 
-void ShVarItem::setCurrentValue(int key0)
+void OldShVarItem::setCurrentValue(int key0)
 {
 	if (key0 >= 0 && data(DF_WATCHED).toBool()) {
 		if (data(DF_DATA_CURRENTBOX).value<void*>() != NULL) {
@@ -703,7 +673,7 @@ void ShVarItem::setCurrentValue(int key0)
 	setData(DF_DEBUG_SELECTED_VALUE, QVariant());
 }
 
-void ShVarItem::resetCurrentValue(void)
+void OldShVarItem::resetCurrentValue(void)
 {
 	if (data(DF_WATCHED).toBool()) {
 		setData(DF_DEBUG_SELECTED_VALUE, "?");
@@ -712,7 +682,7 @@ void ShVarItem::resetCurrentValue(void)
 	}
 }
 
-void ShVarModel::setCurrentValues(int key0, int key1)
+void OldShVarModel::setCurrentValues(int key0, int key1)
 {
 	for (int j = 0; j < m_qWatchListItems.count(); j++) {
 		m_qWatchListItems[j]->setCurrentValue(key0, key1);
@@ -721,7 +691,7 @@ void ShVarModel::setCurrentValues(int key0, int key1)
 	currentValuesChanged();
 }
 
-void ShVarModel::setCurrentValues(int key0)
+void OldShVarModel::setCurrentValues(int key0)
 {
 	for (int j = 0; j < m_qWatchListItems.count(); j++) {
 		m_qWatchListItems[j]->setCurrentValue(key0);
@@ -730,7 +700,7 @@ void ShVarModel::setCurrentValues(int key0)
 	currentValuesChanged();
 }
 
-void ShVarModel::resetCurrentValues(void)
+void OldShVarModel::resetCurrentValues(void)
 {
 	for (int j = 0; j < m_qWatchListItems.count(); j++) {
 		m_qWatchListItems[j]->resetCurrentValue();
@@ -739,16 +709,16 @@ void ShVarModel::resetCurrentValues(void)
 	currentValuesChanged();
 }
 
-void ShVarModel::currentValuesChanged(void)
+void OldShVarModel::currentValuesChanged(void)
 {
 	/* TODO: is there a way to notify the view more efficiently? I.e . how to
 	 * access a single column?
 	 */
-	ShVarItem *item;
+	OldShVarItem *item;
 	item = m_qRootItem->child(0);
-	QModelIndex indexBegin = ShVarModel::index(item->row(), DF_NAME);
+	QModelIndex indexBegin = OldShVarModel::index(item->row(), DF_NAME);
 	item = m_qRootItem->child(m_qRootItem->childCount() - 1);
-	QModelIndex indexEnd = ShVarModel::index(item->row(), DF_LAST - 1);
+	QModelIndex indexEnd = OldShVarModel::index(item->row(), DF_LAST - 1);
 	emit dataChanged(indexBegin, indexEnd);
 }
 
@@ -1058,7 +1028,7 @@ QString Uniform::toString(int arrayElement) const
 	}
 }
 
-void ShVarModel::setUniformValues(char *pSerializedUniforms, int numUniforms)
+void OldShVarModel::setUniformValues(char *pSerializedUniforms, int numUniforms)
 {
 	char *p = pSerializedUniforms;
 
@@ -1067,7 +1037,7 @@ void ShVarModel::setUniformValues(char *pSerializedUniforms, int numUniforms)
 		p += u.initialize(p);
 
 		for (int j = 0; j < m_qRootItem->childCount(); j++) {
-			ShVarItem *item = m_qRootItem->child(j);
+			OldShVarItem *item = m_qRootItem->child(j);
 			if (item->isBuildIn() || !item->isUniform()) {
 				continue;
 			}
@@ -1076,7 +1046,7 @@ void ShVarModel::setUniformValues(char *pSerializedUniforms, int numUniforms)
 	}
 }
 
-void ShVarModel::setRecursiveUniformValues(ShVarItem *item, const Uniform& u)
+void OldShVarModel::setRecursiveUniformValues(OldShVarItem *item, const Uniform& u)
 {
 	if (!item)
 		return;
@@ -1084,8 +1054,8 @@ void ShVarModel::setRecursiveUniformValues(ShVarItem *item, const Uniform& u)
 	if (item->getFullName() == u.name()) {
 		dbgPrint(DBGLVL_INFO, "found uniform: %s\n", u.name().toAscii().data());
 		item->setData(DF_DEBUG_UNIFORM_VALUE, u.toString());
-		emit dataChanged(ShVarModel::getIndex(item, 0),
-				ShVarModel::getIndex(item, DF_LAST - 1));
+		emit dataChanged(OldShVarModel::getIndex(item, 0),
+				OldShVarModel::getIndex(item, DF_LAST - 1));
 	} else {
 		for (int i = 0; i < item->childCount(); ++i) {
 			setRecursiveUniformValues(item->child(i), u);
@@ -1103,7 +1073,7 @@ typedef enum {
 
 static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 		bool i_bForceBuiltIn, forceTypes i_eForceType, const int i_pSubs[],
-		ShVarItem *i_qParent)
+		OldShVarItem *i_qParent)
 {
 	int i, j[2], id;
 	QList<QVariant> varData;
@@ -1168,7 +1138,8 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 	varData << id; /* DF_UNIQUE_ID */
 	switch (i_eForceType) {
 	case FORCE_ARRAY:
-		varData << SH_CGB_ARRAY_INDIRECT; /* DF_CGBL_TYPE */
+	case FORCE_VECTOR:
+		varData << SH_CGB_ARRAY; /* DF_CGBL_TYPE */
 		varData << i_pSubs[0]; /* DF_CGBL_INDEX_A */
 		varData << QVariant(); /* DF_CGBL_INDEX_B */
 		break;
@@ -1178,14 +1149,9 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 		varData << QVariant(); /* DF_CGBL_INDEX_B */
 		break;
 	case FORCE_MATRIX:
-		varData << SH_CGB_ARRAY_INDIRECT; /* DF_CGBL_TYPE */
+		varData << SH_CGB_ARRAY; /* DF_CGBL_TYPE */
 		varData << i_pSubs[0]; /* DF_CGBL_INDEX_A */
 		varData << i_pSubs[1]; /* DF_CGBL_INDEX_B */
-		break;
-	case FORCE_VECTOR:
-		varData << SH_CGB_ARRAY_DIRECT; /* DF_CGBL_TYPE */
-		varData << i_pSubs[0]; /* DF_CGBL_INDEX_A */
-		varData << QVariant(); /* DF_CGBL_INDEX_B */
 		break;
 	default:
 		varData << QVariant(); /* DF_CGBL_TYPE */
@@ -1199,13 +1165,13 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 	}
 	varData << false; /* DF_CHANGED */
 	if (i_bForceBuiltIn || i_pVar->builtin) {
-		varData << ShVarItem::InScope; /* DF_SCOPE */
+		varData << OldShVarItem::InScope; /* DF_SCOPE */
 	} else {
-		varData << ShVarItem::OutOfScope; /* DF_SCOPE */
+		varData << OldShVarItem::OutOfScope; /* DF_SCOPE */
 	}
 
 	// Note: Allow selecting all but samplers and batch insert into watch list.
-	if (ShIsSampler(i_pVar->type)) {
+	if (i_pVar->type == SH_SAMPLER) {
 		varData << false; /* DF_SELECTABLE */
 	} else {
 		varData << true; /* DF_SELECTABLE */
@@ -1219,7 +1185,7 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 
 	free(typeString);
 
-	ShVarItem *newVar = new ShVarItem(varData, i_qParent);
+	OldShVarItem *newVar = new OldShVarItem(varData, i_qParent);
 	i_qParent->appendChild(newVar);
 
 	if (i_pVar->isArray) {
@@ -1227,8 +1193,8 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 
 		/* delete first array */
 		int i;
-		for (i = 0; i < MAX_ARRAYS; i++) {
-			if (i + 1 >= MAX_ARRAYS) {
+		for (i = 0; i < 2; i++) {
+			if (i + 1 >= 2) {
 				arrayAtom->arraySize[i] = -1;
 			} else {
 				arrayAtom->arraySize[i] = i_pVar->arraySize[i + 1];
@@ -1265,11 +1231,11 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 	if (i_pVar->isMatrix) {
 		ShVariable *arrayAtom = copyShVariable((ShVariable*) i_pVar);
 		arrayAtom->isMatrix = false;
-		arrayAtom->matrixSize[0] = 0;
-		arrayAtom->matrixSize[1] = 0;
+		arrayAtom->size = 0;
+		arrayAtom->matrixColumns = 0;
 
-		for (j[0] = 0; j[0] < i_pVar->matrixSize[0]; j[0]++) {
-			for (j[1] = 0; j[1] < i_pVar->matrixSize[1]; j[1]++) {
+		for (j[0] = 0; j[0] < (i_pVar->size / i_pVar->matrixColumns); j[0]++) {
+			for (j[1] = 0; j[1] < i_pVar->matrixColumns; j[1]++) {
 				addShVariable(arrayAtom, fullName, i_bForceBuiltIn,
 						FORCE_MATRIX, j, newVar);
 			}
@@ -1293,21 +1259,21 @@ static void addShVariable(const ShVariable *i_pVar, QString i_qName,
 
 }
 
-void ShVarModel::setRecursiveWatched(ShVarItem *i_qItem)
+void OldShVarModel::setRecursiveWatched(OldShVarItem *i_qItem)
 {
 	if (!i_qItem)
 		return;
 
 	i_qItem->setData(DF_WATCHED, true);
-	emit dataChanged(ShVarModel::getIndex(i_qItem, 0),
-			ShVarModel::getIndex(i_qItem, DF_LAST - 1));
+	emit dataChanged(OldShVarModel::getIndex(i_qItem, 0),
+			OldShVarModel::getIndex(i_qItem, DF_LAST - 1));
 
 	if (i_qItem->parent() != m_qRootItem) {
 		setRecursiveWatched(i_qItem->parent());
 	}
 }
 
-void ShVarModel::setRecursiveExpand(ShVarItem *i_qItem)
+void OldShVarModel::setRecursiveExpand(OldShVarItem *i_qItem)
 {
 	int i;
 
@@ -1320,19 +1286,19 @@ void ShVarModel::setRecursiveExpand(ShVarItem *i_qItem)
 
 	if (m_qWatchList) {
 		for (i = 0; i < DF_LAST; i++) {
-			QModelIndex testItem = ShVarModel::getIndex(i_qItem, i);
+			QModelIndex testItem = OldShVarModel::getIndex(i_qItem, i);
 			QModelIndex watchItem = m_qWatchProxy->mapFromSource(testItem);
 			m_qWatchList->expand(watchItem);
 		}
-		emit dataChanged(ShVarModel::getIndex(i_qItem, 0),
-				ShVarModel::getIndex(i_qItem, DF_LAST - 1));
+		emit dataChanged(OldShVarModel::getIndex(i_qItem, 0),
+				OldShVarModel::getIndex(i_qItem, DF_LAST - 1));
 	}
 }
 
-void ShVarModel::setItemWatched(const QModelIndex & i_qIndex)
+void OldShVarModel::setItemWatched(const QModelIndex & i_qIndex)
 {
 	if (i_qIndex.isValid()) {
-		ShVarItem *item = static_cast<ShVarItem*>(i_qIndex.internalPointer());
+		OldShVarItem *item = static_cast<OldShVarItem*>(i_qIndex.internalPointer());
 		if ((item->data(DF_SELECTABLE).toBool() == true)
 				&& (item->childCount() > 0
 						|| item->data(DF_WATCHED).toBool() == false)) {
@@ -1365,7 +1331,7 @@ void ShVarModel::setItemWatched(const QModelIndex & i_qIndex)
 	}
 }
 
-void ShVarModel::unsetRecursiveWatched(ShVarItem *i_qItem)
+void OldShVarModel::unsetRecursiveWatched(OldShVarItem *i_qItem)
 {
 	bool descent = true;
 	int i;
@@ -1387,17 +1353,17 @@ void ShVarModel::unsetRecursiveWatched(ShVarItem *i_qItem)
 	}
 }
 
-void ShVarModel::unsetItemWatched(const QModelIndex & i_qIndex)
+void OldShVarModel::unsetItemWatched(const QModelIndex & i_qIndex)
 {
 	QStack<QModelIndex> stack;
-	ShVarItem *item = NULL;
+	OldShVarItem *item = NULL;
 
 	if (i_qIndex.isValid()) {
 		stack.push(m_qWatchProxy->mapToSource(i_qIndex));
 
 		while (!stack.isEmpty()) {
 			QModelIndex idx = stack.pop();
-			item = static_cast<ShVarItem*>(idx.internalPointer());
+			item = static_cast<OldShVarItem*>(idx.internalPointer());
 
 			if (item != NULL) {
 				item->setData(DF_WATCHED, false);
@@ -1452,30 +1418,30 @@ void ShVarModel::unsetItemWatched(const QModelIndex & i_qIndex)
 	} /* end if (i_qIndex.isValid()) */
 }
 
-ShVarItem* ShVarModel::getWatchItemPointer(const QModelIndex & i_qIndex)
+OldShVarItem* OldShVarModel::getWatchItemPointer(const QModelIndex & i_qIndex)
 {
 	if (i_qIndex.isValid()) {
 		QModelIndex qSourceIndex = m_qWatchProxy->mapToSource(i_qIndex);
-		ShVarItem *item =
-				static_cast<ShVarItem*>(qSourceIndex.internalPointer());
+		OldShVarItem *item =
+				static_cast<OldShVarItem*>(qSourceIndex.internalPointer());
 		return item;
 	} else {
 		return NULL;
 	}
 }
 
-QList<ShVarItem*> ShVarModel::getAllWatchItemPointers(void)
+QList<OldShVarItem*> OldShVarModel::getAllWatchItemPointers(void)
 {
 	return m_qWatchListItems;
 }
 
-QList<ShVarItem*> ShVarModel::getChangedWatchItemPointers(void)
+QList<OldShVarItem*> OldShVarModel::getChangedWatchItemPointers(void)
 {
-	QList<ShVarItem*> changedWatchItems;
+	QList<OldShVarItem*> changedWatchItems;
 	int i;
 
 	for (i = 0; i < m_qWatchListItems.count(); i++) {
-		ShVarItem* item = m_qWatchListItems[i];
+		OldShVarItem* item = m_qWatchListItems[i];
 		if (item->data(DF_CHANGED).toBool() == true) {
 			changedWatchItems << item;
 		}
@@ -1484,7 +1450,7 @@ QList<ShVarItem*> ShVarModel::getChangedWatchItemPointers(void)
 	return changedWatchItems;
 }
 
-QSortFilterProxyModel* ShVarModel::getFilterModel(tvDisplayRole role)
+QSortFilterProxyModel* OldShVarModel::getFilterModel(tvDisplayRole role)
 {
 	switch (role) {
 	case TV_BUILTIN:
@@ -1500,7 +1466,7 @@ QSortFilterProxyModel* ShVarModel::getFilterModel(tvDisplayRole role)
 	}
 }
 
-void ShVarModel::onDoubleClickedAll(const QModelIndex & i_qIndex)
+void OldShVarModel::onDoubleClickedAll(const QModelIndex & i_qIndex)
 {
 	if (i_qIndex.isValid()) {
 		QModelIndex qSourceIndex = m_qAllProxy->mapToSource(i_qIndex);
@@ -1508,7 +1474,7 @@ void ShVarModel::onDoubleClickedAll(const QModelIndex & i_qIndex)
 	}
 }
 
-void ShVarModel::onDoubleClickedBuiltIns(const QModelIndex & i_qIndex)
+void OldShVarModel::onDoubleClickedBuiltIns(const QModelIndex & i_qIndex)
 {
 	if (i_qIndex.isValid()) {
 		QModelIndex qSourceIndex = m_qBuiltInProxy->mapToSource(i_qIndex);
@@ -1516,7 +1482,7 @@ void ShVarModel::onDoubleClickedBuiltIns(const QModelIndex & i_qIndex)
 	}
 }
 
-void ShVarModel::onDoubleClickedScope(const QModelIndex & i_qIndex)
+void OldShVarModel::onDoubleClickedScope(const QModelIndex & i_qIndex)
 {
 	if (i_qIndex.isValid()) {
 		QModelIndex qSourceIndex = m_qScopeProxy->mapToSource(i_qIndex);
@@ -1524,7 +1490,7 @@ void ShVarModel::onDoubleClickedScope(const QModelIndex & i_qIndex)
 	}
 }
 
-void ShVarModel::onDoubleClickedUniforms(const QModelIndex & i_qIndex)
+void OldShVarModel::onDoubleClickedUniforms(const QModelIndex & i_qIndex)
 {
 	if (i_qIndex.isValid()) {
 		QModelIndex qSourceIndex = m_qUniformProxy->mapToSource(i_qIndex);
@@ -1532,8 +1498,8 @@ void ShVarModel::onDoubleClickedUniforms(const QModelIndex & i_qIndex)
 	}
 }
 
-void ShVarModel::setupModelData(const ShVariableList *i_pVL,
-		ShVarItem *i_qParent)
+void OldShVarModel::setupModelData(const ShVariableList *i_pVL,
+		OldShVarItem *i_qParent)
 {
 	int i;
 
@@ -1543,7 +1509,7 @@ void ShVarModel::setupModelData(const ShVariableList *i_pVL,
 	}
 }
 
-void ShVarModel::attach(QTreeView *tView, tvDisplayRole role)
+void OldShVarModel::attach(QTreeView *tView, tvDisplayRole role)
 {
 	switch (role) {
 	case TV_ALL:
@@ -1658,7 +1624,7 @@ void ShVarModel::attach(QTreeView *tView, tvDisplayRole role)
 	}
 }
 
-void ShVarModel::detach(QAbstractItemView *view)
+void OldShVarModel::detach(QAbstractItemView *view)
 {
 	view->setModel(NULL);
 
@@ -1687,11 +1653,11 @@ bool ScopeSortFilterProxyModel::filterAcceptsRow(int sourceRow,
 	// no builtins, no uniforms, but everything else in scope
 	return !sourceModel()->data(builtInIndex).toBool()
 			&& sourceModel()->data(qualifierIndex).toString() != "uniform"
-			&& (sourceModel()->data(scopeIndex).toInt() == ShVarItem::InScope
+			&& (sourceModel()->data(scopeIndex).toInt() == OldShVarItem::InScope
 					|| sourceModel()->data(scopeIndex).toInt()
-							== ShVarItem::NewInScope
+							== OldShVarItem::NewInScope
 					|| sourceModel()->data(scopeIndex).toInt()
-							== ShVarItem::InScopeStack);
+							== OldShVarItem::InScopeStack);
 }
 
 SamplerSortFilterProxyModel::SamplerSortFilterProxyModel(QObject *parent) :
@@ -1706,7 +1672,7 @@ bool SamplerSortFilterProxyModel::filterAcceptsRow(int sourceRow,
 			sourceParent);
 
 	// only samplers
-	return ShIsSampler((variableType) sourceModel()->data(typeIndex).toInt());
+	return ((variableType) sourceModel()->data(typeIndex).toInt()) == SH_SAMPLER;
 }
 
 UniformSortFilterProxyModel::UniformSortFilterProxyModel(QObject *parent) :

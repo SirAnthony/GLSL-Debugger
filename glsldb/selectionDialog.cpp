@@ -140,7 +140,7 @@ SelectionDialog::SelectionDialog(PixelBoxFloat *fb, bool elseBranch,
 
 /* Geometry Shader */
 SelectionDialog::SelectionDialog(VertexBox *vbCondition,
-		QList<ShVarItem*> &watchItems, int inPrimitiveType,
+		QList<OldShVarItem*> &watchItems, int inPrimitiveType,
 		int outPrimitiveType, VertexBox *primitiveMap,
 		VertexBox *vertexCountMap, bool elseBranch, QWidget *parent) :
 		QDialog(parent)
@@ -236,7 +236,7 @@ SelectionDialog::SelectionDialog(VertexBox *vbCondition,
 
 /* Vertex Shader */
 SelectionDialog::SelectionDialog(VertexBox *vbCondition,
-		QList<ShVarItem*> &watchItems, bool elseBranch, QWidget *parent) :
+		QList<OldShVarItem*> &watchItems, bool elseBranch, QWidget *parent) :
 		QDialog(parent)
 {
 	/* Statistics */

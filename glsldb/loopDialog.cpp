@@ -67,7 +67,7 @@ LoopDialog::LoopDialog(LoopData *data, QWidget *parent) :
 }
 
 /* Geometry Shader */
-LoopDialog::LoopDialog(LoopData *data, QList<ShVarItem*> &watchItems,
+LoopDialog::LoopDialog(LoopData *data, QList<OldShVarItem*> &watchItems,
 		int inPrimitiveType, int outPrimitiveType, VertexBox *primitiveMap,
 		VertexBox *vertexCountMap, QWidget *parent) :
 		QDialog(parent)
@@ -104,7 +104,7 @@ LoopDialog::LoopDialog(LoopData *data, QList<ShVarItem*> &watchItems,
 }
 
 /* Vertex Shader */
-LoopDialog::LoopDialog(LoopData *data, QList<ShVarItem*> &watchItems,
+LoopDialog::LoopDialog(LoopData *data, QList<OldShVarItem*> &watchItems,
 		QWidget *parent) :
 		QDialog(parent)
 {

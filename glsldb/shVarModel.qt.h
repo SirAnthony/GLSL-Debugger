@@ -138,15 +138,15 @@ private:
 	UniformData* m_data;
 };
 
-class ShVarItem {
+class OldShVarItem {
 public:
-	ShVarItem(const QList<QVariant> &i_qData, ShVarItem *i_qParent = 0);
-	~ShVarItem();
+	OldShVarItem(const QList<QVariant> &i_qData, OldShVarItem *i_qParent = 0);
+	~OldShVarItem();
 
-	void appendChild(ShVarItem *i_qChild);
+	void appendChild(OldShVarItem *i_qChild);
 
-	ShVarItem *child(int i_nRow);
-	ShVarItem *parent();
+	OldShVarItem *child(int i_nRow);
+	OldShVarItem *parent();
 
 	int childCount() const;
 	int columnCount() const;
@@ -193,18 +193,18 @@ public:
 
 private:
 
-	QList<ShVarItem*> m_qChilds;
+	QList<OldShVarItem*> m_qChilds;
 	QList<QVariant> m_qData;
-	ShVarItem *m_qParent;
+	OldShVarItem *m_qParent;
 };
 
-class ShVarModel: public QAbstractItemModel {
+class OldShVarModel: public QAbstractItemModel {
 Q_OBJECT
 
 public:
-	ShVarModel(ShVariableList *i_pVL, QObject *i_qParent,
+	OldShVarModel(ShVariableList *i_pVL, QObject *i_qParent,
 			QCoreApplication *i_qApp);
-	~ShVarModel();
+	~OldShVarModel();
 
 	QModelIndex index(int i_nRow, int i_nColumn, const QModelIndex &i_qParent =
 			QModelIndex()) const;
@@ -225,7 +225,7 @@ public:
 	void currentValuesChanged(void);
 
 	void setUniformValues(char *pSerializedUniforms, int numUniforms);
-	void setRecursiveUniformValues(ShVarItem *item, const Uniform &u);
+	void setRecursiveUniformValues(OldShVarItem *item, const Uniform &u);
 
 	typedef enum {
 		TV_ALL,
@@ -239,14 +239,14 @@ public:
 	void detach(QAbstractItemView *view);
 
 	void unsetItemWatched(const QModelIndex & i_qIndex);
-	ShVarItem* getWatchItemPointer(const QModelIndex & i_qIndex);
-	QList<ShVarItem*> getAllWatchItemPointers(void);
-	QList<ShVarItem*> getChangedWatchItemPointers(void);
+	OldShVarItem* getWatchItemPointer(const QModelIndex & i_qIndex);
+	QList<OldShVarItem*> getAllWatchItemPointers(void);
+	QList<OldShVarItem*> getChangedWatchItemPointers(void);
 
 	QSortFilterProxyModel* getFilterModel(tvDisplayRole role);
 
 signals:
-	void newWatchItem(ShVarItem*);
+	void newWatchItem(OldShVarItem*);
 
 private slots:
 	void onDoubleClickedAll(const QModelIndex & index);
@@ -255,21 +255,21 @@ private slots:
 	void onDoubleClickedUniforms(const QModelIndex & index);
 
 private:
-	QModelIndex getIndex(ShVarItem *i_qItem, int i_nColumn);
+	QModelIndex getIndex(OldShVarItem *i_qItem, int i_nColumn);
 
-	void setupModelData(const ShVariableList *i_pVL, ShVarItem *i_qParent);
+	void setupModelData(const ShVariableList *i_pVL, OldShVarItem *i_qParent);
 
-	void setRecursiveWatched(ShVarItem *i_qItem);
-	void setRecursiveExpand(ShVarItem *i_qItem);
+	void setRecursiveWatched(OldShVarItem *i_qItem);
+	void setRecursiveExpand(OldShVarItem *i_qItem);
 	void setItemWatched(const QModelIndex & i_qIndex);
-	void unsetRecursiveWatched(ShVarItem *i_qItem);
+	void unsetRecursiveWatched(OldShVarItem *i_qItem);
 
-	void clearChanged(ShVarItem *i_qItem);
-	void setRecursiveScope(ShVarItem *i_qItem, ShVarItem::Scope scope);
-	void setRecursiveChanged(ShVarItem *i_qItem);
+	void clearChanged(OldShVarItem *i_qItem);
+	void setRecursiveScope(OldShVarItem *i_qItem, OldShVarItem::Scope scope);
+	void setRecursiveChanged(OldShVarItem *i_qItem);
 
 	QCoreApplication *m_qApp;
-	ShVarItem *m_qRootItem;
+	OldShVarItem *m_qRootItem;
 
 	QSortFilterProxyModel *m_qAllProxy;
 	QSortFilterProxyModel *m_qBuiltInProxy;
@@ -279,7 +279,7 @@ private:
 
 	QTreeView *m_qWatchList;
 
-	QList<ShVarItem*> m_qWatchListItems;
+	QList<OldShVarItem*> m_qWatchListItems;
 };
 
 class ScopeSortFilterProxyModel: public QSortFilterProxyModel {

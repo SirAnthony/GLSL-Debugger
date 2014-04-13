@@ -32,8 +32,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0501
-#include "attachToProcess.qt.h"
 #endif
+
+#include "attachToProcess.qt.h"
 
 #ifdef _WIN32
 #include <cassert>
@@ -46,7 +47,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 
 #include <QtCore/QVariant>
-
 #include "dbgprint.h"
 
 #ifdef _WIN32

@@ -49,10 +49,10 @@ Q_OBJECT
 
 public:
 	SelectionDialog(PixelBoxFloat *fb, bool elseBranch, QWidget *parent = 0);
-	SelectionDialog(VertexBox *vbCondition, QList<ShVarItem*> &watchItems,
+	SelectionDialog(VertexBox *vbCondition, QList<OldShVarItem*> &watchItems,
 			int inPrimitiveType, int outPrimitiveType, VertexBox *primitiveMap,
 			VertexBox *vertexCountMap, bool elseBranch, QWidget *parent);
-	SelectionDialog(VertexBox *vbCondition, QList<ShVarItem*> &watchItems,
+	SelectionDialog(VertexBox *vbCondition, QList<OldShVarItem*> &watchItems,
 			bool elseBranch, QWidget *parent);
 
 	typedef enum {

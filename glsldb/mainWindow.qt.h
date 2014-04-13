@@ -134,7 +134,7 @@ private slots:
 	 ****************/
 
 	void setRunLevel(int);
-	void updateWatchItemData(ShVarItem*);
+	void updateWatchItemData(OldShVarItem*);
 	void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
 	void setMouseOverValues(int x, int y, const bool *active,
 			const QVariant *values);
@@ -230,7 +230,7 @@ private:
 	TBuiltInResource m_dShResources;
 	ShVariableList m_dShVariableList;
 
-	ShVarModel *m_pShVarModel;
+	OldShVarModel *m_pShVarModel;
 	QStack<LoopData*> m_qLoopData;
 
 	char *m_pShaders[3];

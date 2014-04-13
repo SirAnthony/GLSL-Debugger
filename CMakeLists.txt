@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.10)
 project(glsldb)
 
-option(USE_MESA "Use mesa glsl compiler" OFF)
+option(USE_MESA "Use mesa glsl compiler" ON)
 option(TESTS "Build tests" OFF)
 
 if(TESTS)

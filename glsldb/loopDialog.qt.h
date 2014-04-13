@@ -52,11 +52,11 @@ Q_OBJECT
 public:
 	LoopDialog(LoopData *data, QWidget *parent = 0);
 
-	LoopDialog(LoopData *data, QList<ShVarItem*> &watchItems,
+	LoopDialog(LoopData *data, QList<OldShVarItem*> &watchItems,
 			int inPrimitiveType, int outPrimitiveType, VertexBox *primitiveMap,
 			VertexBox *vertexCountMap, QWidget *parent = 0);
 
-	LoopDialog(LoopData *data, QList<ShVarItem*> &watchItems, QWidget *parent =
+	LoopDialog(LoopData *data, QList<OldShVarItem*> &watchItems, QWidget *parent =
 			0);
 
 	typedef enum {

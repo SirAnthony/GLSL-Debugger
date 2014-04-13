@@ -1268,43 +1268,24 @@ void MainWindow::on_tbPause_clicked()
 	}
 }
 
-void MainWindow::setGuiUpdates(bool b)
+void MainWindow::setGuiUpdates(bool enabled)
 {
-	if (b) {
-		lvGlTrace->setUpdatesEnabled(true);
-		teFragmentShader->setUpdatesEnabled(true);
-		teGeometryShader->setUpdatesEnabled(true);
-		teVertexShader->setUpdatesEnabled(true);
-		tvGlCalls->setUpdatesEnabled(true);
-		tvGlCallsPf->setUpdatesEnabled(true);
-		tvGlExt->setUpdatesEnabled(true);
-		tvGlExtPf->setUpdatesEnabled(true);
-		tvGlxCalls->setUpdatesEnabled(true);
-		tvGlxCallsPf->setUpdatesEnabled(true);
-		tvGlxExt->setUpdatesEnabled(true);
-		tvGlxExtPf->setUpdatesEnabled(true);
-		tvWglCalls->setUpdatesEnabled(true);
-		tvWglCallsPf->setUpdatesEnabled(true);
-		tvWglExt->setUpdatesEnabled(true);
-		tvWglExtPf->setUpdatesEnabled(true);
-	} else {
-		lvGlTrace->setUpdatesEnabled(false);
-		teFragmentShader->setUpdatesEnabled(false);
-		teGeometryShader->setUpdatesEnabled(false);
-		teVertexShader->setUpdatesEnabled(false);
-		tvGlCalls->setUpdatesEnabled(false);
-		tvGlCallsPf->setUpdatesEnabled(false);
-		tvGlExt->setUpdatesEnabled(false);
-		tvGlExtPf->setUpdatesEnabled(false);
-		tvGlxCalls->setUpdatesEnabled(false);
-		tvGlxCallsPf->setUpdatesEnabled(false);
-		tvGlxExt->setUpdatesEnabled(false);
-		tvGlxExtPf->setUpdatesEnabled(false);
-		tvWglCalls->setUpdatesEnabled(false);
-		tvWglCallsPf->setUpdatesEnabled(false);
-		tvWglExt->setUpdatesEnabled(false);
-		tvWglExtPf->setUpdatesEnabled(false);
-	}
+	lvGlTrace->setUpdatesEnabled(enabled);
+	teFragmentShader->setUpdatesEnabled(enabled);
+	teGeometryShader->setUpdatesEnabled(enabled);
+	teVertexShader->setUpdatesEnabled(enabled);
+	tvGlCalls->setUpdatesEnabled(enabled);
+	tvGlCallsPf->setUpdatesEnabled(enabled);
+	tvGlExt->setUpdatesEnabled(enabled);
+	tvGlExtPf->setUpdatesEnabled(enabled);
+	tvGlxCalls->setUpdatesEnabled(enabled);
+	tvGlxCallsPf->setUpdatesEnabled(enabled);
+	tvGlxExt->setUpdatesEnabled(enabled);
+	tvGlxExtPf->setUpdatesEnabled(enabled);
+	tvWglCalls->setUpdatesEnabled(enabled);
+	tvWglCallsPf->setUpdatesEnabled(enabled);
+	tvWglExt->setUpdatesEnabled(enabled);
+	tvWglExtPf->setUpdatesEnabled(enabled);
 }
 
 void MainWindow::on_tbToggleGuiUpdate_clicked(bool b)
@@ -1645,7 +1626,7 @@ bool MainWindow::getDebugImage(DbgCgOptions option, ShChangeableList *cl,
 	return true;
 }
 
-void MainWindow::updateWatchItemData(ShVarItem *watchItem)
+void MainWindow::updateWatchItemData(OldShVarItem *watchItem)
 {
 	ShChangeableList cl;
 
@@ -1737,7 +1718,7 @@ void MainWindow::updateWatchItemData(ShVarItem *watchItem)
 	freeShChangeable(&watchItemCgbl);
 }
 
-static void invalidateWatchItemData(ShVarItem *item)
+static void invalidateWatchItemData(OldShVarItem *item)
 {
 	if (item->getPixelBoxPointer()) {
 		item->getPixelBoxPointer()->invalidateData();
@@ -1754,7 +1735,7 @@ static void invalidateWatchItemData(ShVarItem *item)
 void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 		bool forceUpdate)
 {
-	QList<ShVarItem*> watchItems;
+	QList<OldShVarItem*> watchItems;
 	int i;
 
 	if (m_pShVarModel) {
@@ -1762,7 +1743,7 @@ void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 	}
 
 	for (i = 0; i < watchItems.count(); i++) {
-		ShVarItem *item = watchItems[i];
+		OldShVarItem *item = watchItems[i];
 
 		UT_NOTIFY_VA(LV_TRACE,
 				">>>>>>>>>>>>>>updateWatchListData: %s (%i, %i, %i, %i)\n", qPrintable(item->getFullName()), item->isChanged(), item->hasEnteredScope(), item->isInScope(), item->isInScopeStack());
@@ -1819,7 +1800,7 @@ void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 
 void MainWindow::updateWatchItemsCoverage(bool *coverage)
 {
-	QList<ShVarItem*> watchItems;
+	QList<OldShVarItem*> watchItems;
 	int i;
 
 	if (m_pShVarModel) {
@@ -1827,7 +1808,7 @@ void MainWindow::updateWatchItemsCoverage(bool *coverage)
 	}
 
 	for (i = 0; i < watchItems.count(); i++) {
-		ShVarItem *item = watchItems[i];
+		OldShVarItem *item = watchItems[i];
 		if (currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
 			PixelBox *fb = item->getPixelBoxPointer();
 			fb->setNewCoverage(coverage);
@@ -1848,13 +1829,13 @@ void MainWindow::updateWatchItemsCoverage(bool *coverage)
 
 void MainWindow::resetWatchListData(void)
 {
-	QList<ShVarItem*> watchItems;
+	QList<OldShVarItem*> watchItems;
 	int i;
 
 	if (m_pShVarModel) {
 		watchItems = m_pShVarModel->getAllWatchItemPointers();
 		for (i = 0; i < watchItems.count(); i++) {
-			ShVarItem *item = watchItems[i];
+			OldShVarItem *item = watchItems[i];
 			if (item->isInScope() || item->isBuildIn()) {
 				updateWatchItemData(item);
 				/* HACK: when an error occurs in shader debugging the runlevel
@@ -2046,7 +2027,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				}
 
 				/* Create list of all watch item boxes */
-				QList<ShVarItem*> watchItems;
+				QList<OldShVarItem*> watchItems;
 				if (m_pShVarModel) {
 					watchItems = m_pShVarModel->getAllWatchItemPointers();
 				}
@@ -2073,7 +2054,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				}
 
 				/* Create list of all watch item boxes */
-				QList<ShVarItem*> watchItems;
+				QList<OldShVarItem*> watchItems;
 				if (m_pShVarModel) {
 					watchItems = m_pShVarModel->getAllWatchItemPointers();
 				}
@@ -2201,7 +2182,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					break;
 				case RL_DBG_GEOMETRY_SHADER: {
 					/* Create list of all watch item boxes */
-					QList<ShVarItem*> watchItems;
+					QList<OldShVarItem*> watchItems;
 					if (m_pShVarModel) {
 						watchItems = m_pShVarModel->getAllWatchItemPointers();
 					}
@@ -2212,7 +2193,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					break;
 				case RL_DBG_VERTEX_SHADER: {
 					/* Create list of all watch item boxes */
-					QList<ShVarItem*> watchItems;
+					QList<OldShVarItem*> watchItems;
 					if (m_pShVarModel) {
 						watchItems = m_pShVarModel->getAllWatchItemPointers();
 					}
@@ -2556,17 +2537,17 @@ void MainWindow::on_tbShaderExecute_clicked()
 		return;
 	}
 
-	m_pShVarModel = new ShVarModel(&m_dShVariableList, this, qApp);
-	connect(m_pShVarModel, SIGNAL(newWatchItem(ShVarItem*)), this,
-			SLOT(updateWatchItemData(ShVarItem*)));
+	m_pShVarModel = new OldShVarModel(&m_dShVariableList, this, qApp);
+	connect(m_pShVarModel, SIGNAL(newWatchItem(OldShVarItem*)), this,
+			SLOT(updateWatchItemData(OldShVarItem*)));
 	QItemSelectionModel *selectionModel = new QItemSelectionModel(
-			m_pShVarModel->getFilterModel(ShVarModel::TV_WATCH_LIST));
+			m_pShVarModel->getFilterModel(OldShVarModel::TV_WATCH_LIST));
 
-	m_pShVarModel->attach(tvShVarAll, ShVarModel::TV_ALL);
-	m_pShVarModel->attach(tvShVarBuiltIn, ShVarModel::TV_BUILTIN);
-	m_pShVarModel->attach(tvShVarScope, ShVarModel::TV_SCOPE);
-	m_pShVarModel->attach(tvShVarUniform, ShVarModel::TV_UNIFORM);
-	m_pShVarModel->attach(tvWatchList, ShVarModel::TV_WATCH_LIST);
+	m_pShVarModel->attach(tvShVarAll, OldShVarModel::TV_ALL);
+	m_pShVarModel->attach(tvShVarBuiltIn, OldShVarModel::TV_BUILTIN);
+	m_pShVarModel->attach(tvShVarScope, OldShVarModel::TV_SCOPE);
+	m_pShVarModel->attach(tvShVarUniform, OldShVarModel::TV_UNIFORM);
+	m_pShVarModel->attach(tvWatchList, OldShVarModel::TV_WATCH_LIST);
 
 	tvWatchList->setSelectionModel(selectionModel);
 
@@ -2727,7 +2708,7 @@ QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 
 	while (!stack.isEmpty()) {
 		QModelIndex idx = stack.pop();
-		ShVarItem *item = this->m_pShVarModel->getWatchItemPointer(idx);
+		OldShVarItem *item = this->m_pShVarModel->getWatchItemPointer(idx);
 
 		// Item might be NULL because 'idx' can become invalid during recursion
 		// which causes the parent removal to crash.
@@ -2752,7 +2733,7 @@ WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
 	int i;
 
 	for (i = 0; i < list.count(); i++) {
-		ShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
+		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			if (!window) {
 				/* Create window */
@@ -2796,7 +2777,7 @@ WatchView* MainWindow::newWatchWindowVertexTable(QModelIndexList &list)
 	int i;
 
 	for (i = 0; i < list.count(); i++) {
-		ShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
+		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			if (!window) {
 				/* Create window */
@@ -2818,7 +2799,7 @@ WatchView* MainWindow::newWatchWindowGeoDataTree(QModelIndexList &list)
 	int i;
 
 	for (i = 0; i < list.count(); i++) {
-		ShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
+		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			if (!window) {
 				/* Create window */
@@ -2874,7 +2855,7 @@ void MainWindow::addToWatchWindowVertexTable(WatchView *watchView,
 	int i;
 
 	for (i = 0; i < list.count(); i++) {
-		ShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
+		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			window->attachVpData(item->getVertexBoxPointer(),
 					item->getFullName());
@@ -2889,7 +2870,7 @@ void MainWindow::addToWatchWindowFragment(WatchView *watchView,
 	int i;
 
 	for (i = 0; i < list.count(); i++) {
-		ShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
+		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			window->attachFpData(item->getPixelBoxPointer(),
 					item->getFullName());
@@ -2904,7 +2885,7 @@ void MainWindow::addToWatchWindowGeoDataTree(WatchView *watchView,
 	int i;
 
 	for (i = 0; i < list.count(); i++) {
-		ShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
+		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			window->attachData(item->getCurrentPointer(),
 					item->getVertexBoxPointer(), item->getFullName());
@@ -3067,7 +3048,7 @@ void MainWindow::leaveDBGState()
 
 void MainWindow::cleanupDBGShader()
 {
-	QList<ShVarItem*> watchItems;
+	QList<OldShVarItem*> watchItems;
 	int i;
 
 	pcErrorCode error = PCE_NONE;
@@ -3145,7 +3126,7 @@ void MainWindow::cleanupDBGShader()
 			m_pShVarModel->detach(tvShVarUniform);
 			m_pShVarModel->detach(tvWatchList);
 
-			disconnect(m_pShVarModel, SIGNAL(newWatchItem(ShVarItem*)), this,
+			disconnect(m_pShVarModel, SIGNAL(newWatchItem(OldShVarItem*)), this,
 					0);
 			delete m_pShVarModel;
 			m_pShVarModel = NULL;
