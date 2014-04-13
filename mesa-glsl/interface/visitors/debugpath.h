@@ -32,7 +32,7 @@ public:
 	{
 	}
 
-	void getPath(DbgRsScope&, AstShader*);
+	void getPath(DbgRsScopeStack&, AstShader*);
 	void run(exec_list*, enum DPOperation);
 	void processDebugable(ast_node*);
 

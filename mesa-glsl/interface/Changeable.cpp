@@ -19,11 +19,8 @@ void dumpShChangeable(ShChangeable *cgb)
 			ShChangeableIndex *idx = cgb->indices[j];
 			if (idx) {
 				switch (idx->type) {
-				case SH_CGB_ARRAY_DIRECT:
+				case SH_CGB_ARRAY:
 					dbgPrint(DBGLVL_INFO, "[%i]", idx->index);
-					break;
-				case SH_CGB_ARRAY_INDIRECT:
-					dbgPrint(DBGLVL_INFO, "[(%i)]", idx->index);
 					break;
 				case SH_CGB_STRUCT:
 					dbgPrint(DBGLVL_INFO, ".%i", idx->index);

@@ -18,7 +18,7 @@ static inline void childPath(ast_node* node, ast_node* child)
 			node->debug_state = ast_dbg_state_path;
 }
 
-void ast_debugpath_traverser_visitor::getPath(DbgRsScope& scope, AstShader* shader)
+void ast_debugpath_traverser_visitor::getPath(DbgRsScopeStack& scope, AstShader* shader)
 {
 	shader->path.clear();
 	path.copy(&shader->path);

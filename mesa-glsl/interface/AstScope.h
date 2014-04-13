@@ -30,7 +30,7 @@ public:
 };
 
 
-void addScopeToScopeStack(DbgRsScope& stack, exec_list *s, void* mem_ctx);
+void addScopeToScopeStack(DbgRsScopeStack& stack, exec_list *s, void* mem_ctx);
 void setDbgScope(DbgRsScope& target, exec_list *s, void* mem_ctx);
 
 #endif /* AST_SCOPE_H_ */

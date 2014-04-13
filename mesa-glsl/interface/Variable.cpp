@@ -36,7 +36,7 @@ namespace {
 }
 
 
-static const char* getShTypeString(ShVariable *v)
+static const char* getShTypeString(const ShVariable *v)
 {
 	switch (v->type) {
 	case SH_FLOAT:
@@ -51,66 +51,16 @@ static const char* getShTypeString(ShVariable *v)
 		return v->structName;
 	case SH_ARRAY:
 		return "array";
-	case SH_SAMPLER_1D:
-		return "sampler1D";
-	case SH_ISAMPLER_1D:
-		return "isampler1D";
-	case SH_USAMPLER_1D:
-		return "usampler1D";
-	case SH_SAMPLER_2D:
-		return "sampler2D";
-	case SH_ISAMPLER_2D:
-		return "isampler2D";
-	case SH_USAMPLER_2D:
-		return "usampler2D";
-	case SH_SAMPLER_3D:
-		return "sampler3D";
-	case SH_ISAMPLER_3D:
-		return "isampler3D";
-	case SH_USAMPLER_3D:
-		return "usampler3D";
-	case SH_SAMPLER_CUBE:
-		return "samplerCube";
-	case SH_ISAMPLER_CUBE:
-		return "isamplerCube";
-	case SH_USAMPLER_CUBE:
-		return "usamplerCube";
-	case SH_SAMPLER_1D_SHADOW:
-		return "sampler1DShadow";
-	case SH_SAMPLER_2D_SHADOW:
-		return "sampler2DShadow";
-	case SH_SAMPLER_2D_RECT:
-		return "sampler2DRect";
-	case SH_ISAMPLER_2D_RECT:
-		return "isampler2DRect";
-	case SH_USAMPLER_2D_RECT:
-		return "usampler2DRect";
-	case SH_SAMPLER_2D_RECT_SHADOW:
-		return "samplerRectShadow";
-	case SH_SAMPLER_1D_ARRAY:
-		return "sampler1DArray";
-	case SH_ISAMPLER_1D_ARRAY:
-		return "isampler1DArray";
-	case SH_USAMPLER_1D_ARRAY:
-		return "usampler1DArray";
-	case SH_SAMPLER_2D_ARRAY:
-		return "sampler2DArray";
-	case SH_ISAMPLER_2D_ARRAY:
-		return "isampler2DArray";
-	case SH_USAMPLER_2D_ARRAY:
-		return "usampler2DArray";
-	case SH_SAMPLER_BUFFER:
-		return "samplerBuffer";
-	case SH_ISAMPLER_BUFFER:
-		return "isamplerBuffer";
-	case SH_USAMPLER_BUFFER:
-		return "usamplerBuffer";
-	case SH_SAMPLER_1D_ARRAY_SHADOW:
-		return "sampler1DArrayShadow";
-	case SH_SAMPLER_2D_ARRAY_SHADOW:
-		return "sampler2DArrayShadow";
-	case SH_SAMPLER_CUBE_SHADOW:
-		return "samplerCubeShadow";
+	case SH_SAMPLER:
+		return "sampler";
+	case SH_IMAGE:
+		return "image";
+	case SH_ATOMIC:
+		return "atomic";
+	case SH_INTERFACE:
+		return "interface";
+	case SH_VOID:
+		return "void";
 	default:
 		return "unknown";
 	}
@@ -260,16 +210,6 @@ variableVaryingModifier modifierFromGLSL(struct glsl_struct_field* field, int in
 	return mod;
 }
 
-bool ShIsSampler(variableType v)
-{
-	if (v < SH_SAMPLER_GUARD_BEGIN || SH_SAMPLER_GUARD_END < v) {
-		return false;
-	} else {
-		return true;
-	}
-}
-
-
 void addShVariableCtx(ShVariableList *vl, ShVariable *v, int builtin, void* mem_ctx)
 {
 	int i;
@@ -326,10 +266,10 @@ char* ShGetTypeString(const ShVariable *v)
 
 	if (v->isArray) {
 		if (v->isMatrix) {
-			asprintf(&result, "array of mat[%i][%i]", v->matrixSize[0],
-					v->matrixSize[1]);
+			asprintf(&result, "array of mat[%i][%i]", v->size / v->matrixColumns,
+					v->matrixColumns);
 		} else if (v->size != 1) {
-			switch (v->type) {
+			switch (v->arrayType) {
 			case SH_FLOAT:
 				asprintf(&result, "array of vec%i", v->size);
 				break;
@@ -350,13 +290,13 @@ char* ShGetTypeString(const ShVariable *v)
 				return result;
 			}
 		} else {
-			asprintf(&result, "array of %s", getShTypeString((ShVariable*) v));
+			asprintf(&result, "array of %s", getShTypeString(v));
 			return result;
 		}
 	} else {
 		if (v->isMatrix) {
-			asprintf(&result, "mat[%i][%i]", v->matrixSize[0],
-					v->matrixSize[1]);
+			asprintf(&result, "mat[%i][%i]", v->size / v->matrixColumns,
+					v->matrixColumns);
 		} else if (v->size != 1) {
 			switch (v->type) {
 			case SH_FLOAT:
@@ -436,11 +376,12 @@ ShVariable* copyShVariableCtx(ShVariable *src, void* mem_ctx)
 		ret->name = ralloc_strdup(ret, src->name);
 
 	ret->type = src->type;
+	ret->gl_type = src->gl_type;
 	ret->qualifier = src->qualifier;
+	memcpy(&ret->sampler, &src->sampler, sizeof(ShVariable::samplerInfo));
 	ret->size = src->size;
 	ret->isMatrix = src->isMatrix;
-	ret->matrixSize[0] = src->matrixSize[0];
-	ret->matrixSize[1] = src->matrixSize[1];
+	ret->matrixColumns = src->matrixColumns;
 	ret->isArray = src->isArray;
 	if (ret->isArray) {
 		ret->arrayDepth = src->arrayDepth;
@@ -492,29 +433,43 @@ void freeShVariableList(ShVariableList *vl)
 	vl->numVariables = 0;
 }
 
+static variableType typeFromGlsl(const struct glsl_type* type)
+{
+	switch (type->base_type) {
+	case GLSL_TYPE_UINT:
+		return SH_UINT;
+	case GLSL_TYPE_INT:
+		return SH_INT;
+	case GLSL_TYPE_FLOAT:
+		return SH_FLOAT;
+	case GLSL_TYPE_BOOL:
+		return SH_BOOL;
+	case GLSL_TYPE_SAMPLER:
+		return SH_SAMPLER;
+	case GLSL_TYPE_IMAGE:
+		return SH_IMAGE;
+	case GLSL_TYPE_ATOMIC_UINT:
+		return SH_ATOMIC;
+	case GLSL_TYPE_STRUCT:
+		return SH_STRUCT;
+	case GLSL_TYPE_INTERFACE:
+		return SH_INTERFACE;
+	case GLSL_TYPE_ARRAY:
+		return SH_ARRAY;
+	case GLSL_TYPE_VOID:
+		return SH_VOID;
+	}
+	dbgPrint(DBGLVL_ERROR, "Type does not defined %x", type->base_type);
+	return SH_ERROR;
+}
+
+
 static void glsltypeToShVariable(ShVariable* var, const struct glsl_type* vtype,
 		variableQualifier qualifier, variableVaryingModifier modifier)
 {
-#define SET_TYPE(glsl, native) \
-    case glsl: \
-        var->type = native; \
-        break;
 
-	// Type of variable (SH_FLOAT/SH_INT/SH_BOOL/SH_STRUCT)
-	switch (vtype->base_type) {
-	SET_TYPE(GLSL_TYPE_UINT, SH_UINT)
-	SET_TYPE(GLSL_TYPE_INT, SH_INT)
-	SET_TYPE(GLSL_TYPE_FLOAT, SH_FLOAT)
-	SET_TYPE(GLSL_TYPE_BOOL, SH_BOOL)
-	SET_TYPE(GLSL_TYPE_SAMPLER, SH_SAMPLER_GUARD_BEGIN)
-	SET_TYPE(GLSL_TYPE_STRUCT, SH_STRUCT)
-	SET_TYPE(GLSL_TYPE_ARRAY, SH_ARRAY)
-	default:
-		dbgPrint( DBGLVL_ERROR, "Type does not defined %x", vtype->gl_type);
-		break;
-	}
-
-#undef SET_TYPE
+	var->type = typeFromGlsl(vtype);
+	var->gl_type = vtype->gl_type;
 
 	// Qualifier of variable
 	var->qualifier = qualifier;
@@ -527,13 +482,18 @@ static void glsltypeToShVariable(ShVariable* var, const struct glsl_type* vtype,
 
 	// Matrix handling
 	var->isMatrix = vtype->is_matrix();
-	var->matrixSize[0] = vtype->vector_elements;
-	var->matrixSize[1] = vtype->matrix_columns;
+	var->matrixColumns = vtype->matrix_columns;
+
+	var->sampler.array = vtype->sampler_array;
+	var->sampler.dimensionality = vtype->sampler_dimensionality;
+	var->sampler.shadow = vtype->sampler_shadow;
+	var->sampler.type = vtype->sampler_type;
 
 	// Array handling
 	var->isArray = vtype->is_array();
 	if (var->isArray) {
 		var->arrayDepth = 1;
+		var->arrayType = typeFromGlsl(vtype->fields.array);
 		const glsl_type* atype = vtype;
 		while (atype->is_array()) {
 			var->arraySize = reralloc(var, var->arraySize, int, var->arrayDepth);
@@ -563,6 +523,8 @@ static void glsltypeToShVariable(ShVariable* var, const struct glsl_type* vtype,
 		var->structSize = 0;
 		var->structSpec = NULL;
 	}
+
+#undef SET_TYPE
 }
 
 void addAstShVariable(ast_node* decl, ShVariable* var)

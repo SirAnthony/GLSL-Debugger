@@ -537,12 +537,8 @@ static void addVariableCode(char** prog, ShChangeable *cgb, ShVariableList *vl)
 		ShChangeableIndex *idx = cgb->indices[i];
 
 		switch (idx->type) {
-		case SH_CGB_ARRAY_INDIRECT:
+		case SH_CGB_ARRAY:
 			ralloc_asprintf_append(prog, "[%i]", idx->index);
-			break;
-		case SH_CGB_ARRAY_DIRECT:
-			// FIXME: Leak ahead
-			ralloc_asprintf_append(prog, ".%s", itoSwizzle(idx->index));
 			break;
 		case SH_CGB_STRUCT:
 			assert(idx->index < var->structSize || !"CodeInsertion - struct and changeable do not match\n");
@@ -565,8 +561,6 @@ static int getVariableSizeByArrayIndices(ShVariable *var, int numOfArrayIndices)
 			return var->arraySize[0] * var->size;
 		else if (var->structSpec)
 			return var->structSize;
-		else if (var->isMatrix)
-			return var->matrixSize[0] * var->matrixSize[1];
 		else
 			return var->size;
 	case 1:
@@ -631,13 +625,9 @@ static int getShChangeableSize(ShChangeable *cgb, ShVariableList *vl)
 	for (i = 0; i < cgb->numIndices; i++) {
 		ShChangeableIndex *idx = cgb->indices[i];
 		switch (idx->type) {
-		case SH_CGB_ARRAY_INDIRECT:
+		case SH_CGB_ARRAY:
 			arraySub++;
 			size = getVariableSizeByArrayIndices(var, arraySub);
-			break;
-		case SH_CGB_ARRAY_DIRECT:
-			/* TODO: check assumption that size resolves to '1' */
-			size = 1;
 			break;
 		case SH_CGB_STRUCT:
 			assert(idx->index < var->structSize || !"CodeInsertion - struct and changeable do not match\n");

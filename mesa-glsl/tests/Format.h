@@ -25,11 +25,8 @@ std::string formatChangeable(ShChangeable *cgb)
 			ss << " ";
 		if (idx) {
 			switch (idx->type) {
-			case SH_CGB_ARRAY_DIRECT:
+			case SH_CGB_ARRAY:
 				ss << "[" << idx->index <<"]";
-				break;
-			case SH_CGB_ARRAY_INDIRECT:
-				ss << "[(" << idx->index <<")]";
 				break;
 			case SH_CGB_STRUCT:
 				ss << "." << idx->index;

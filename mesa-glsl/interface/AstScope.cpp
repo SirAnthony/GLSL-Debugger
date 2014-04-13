@@ -22,17 +22,17 @@ changeable_item* changeable_item::clone(void * mem_ctx)
 	return new(mem_ctx) changeable_item(ch_copy);
 }
 
-static bool idInStack(DbgRsScope& stack, int id)
+static bool idInScope(DbgRsScope& scope, int id)
 {
-	for (int i = 0; i < stack.numIds; i++)
-		if (id == stack.ids[i])
+	for (int i = 0; i < scope.numIds; i++)
+		if (id == scope.ids[i])
 			return true;
 	return false;
 }
 
 static void addToScope(DbgRsScope& scope, scope_item* item, void* mem_ctx)
 {
-	if (idInStack(scope, item->id))
+	if (idInScope(scope, item->id))
 	    return;
 
     scope.numIds++;
@@ -40,7 +40,7 @@ static void addToScope(DbgRsScope& scope, scope_item* item, void* mem_ctx)
     scope.ids[scope.numIds-1] = item->id;
 }
 
-void addScopeToScopeStack(DbgRsScope& stack, exec_list *scope, void* mem_ctx)
+void addScopeToScopeStack(DbgRsScopeStack& stack, exec_list *scope, void* mem_ctx)
 {
     if (!scope)
         return;

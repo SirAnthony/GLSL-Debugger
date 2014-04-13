@@ -39,9 +39,9 @@
 #ifdef _WIN32
 #define C_DECL __cdecl
 #ifdef SH_EXPORTING
-    #define SH_IMPORT_EXPORT __declspec(dllexport)
+#define SH_IMPORT_EXPORT __declspec(dllexport)
 #else
-    #define SH_IMPORT_EXPORT __declspec(dllimport)
+#define SH_IMPORT_EXPORT __declspec(dllimport)
 #endif
 #else
 #define SH_IMPORT_EXPORT
@@ -57,7 +57,7 @@
 //
 
 #ifdef __cplusplus
-    extern "C" {
+extern "C" {
 #endif
 //
 // Driver must call this first, once, before doing any other
@@ -77,86 +77,84 @@ typedef enum {
 	EShLangGeometry,
 	EShLangFragment,
 	EShLangPack,
-    EShLangUnpack,
-    EShLangCount,
+	EShLangUnpack,
+	EShLangCount,
 } EShLanguage;
 
 //
 // Types of output the linker will create.
 //
 typedef enum {
-    EShExVertexFragment,
-    EShExPackFragment,
-    EShExUnpackFragment,
-    EShExFragment
+	EShExVertexFragment,
+	EShExPackFragment,
+	EShExUnpackFragment,
+	EShExFragment
 } EShExecutable;
 
 //
 // Optimization level for the compiler.
 //
 typedef enum {
-    EShOptNoGeneration,
-    EShOptNone,
-    EShOptSimple,       // Optimizations that can be done quickly
-    EShOptFull,         // Optimizations that will take more time
+	EShOptNoGeneration,
+	EShOptNone,
+	EShOptSimple,       // Optimizations that can be done quickly
+	EShOptFull,         // Optimizations that will take more time
 } EShOptimizationLevel;
 
-
 /*
-//
-// Build a table for bindings.  This can be used for locating
-// attributes, uniforms, globals, etc., as needed.
-//
-typedef struct {
-    char* name;
-    int binding;
-} ShBinding;
+ //
+ // Build a table for bindings.  This can be used for locating
+ // attributes, uniforms, globals, etc., as needed.
+ //
+ typedef struct {
+ char* name;
+ int binding;
+ } ShBinding;
 
-typedef struct {
-    int numBindings;
-	ShBinding* bindings;  // array of bindings
-} ShBindingTable;
+ typedef struct {
+ int numBindings;
+ ShBinding* bindings;  // array of bindings
+ } ShBindingTable;
 
-*/
+ */
 //
 // Typedefs for changeables
 //
 typedef enum {
-    SH_CGB_STRUCT,
-    SH_CGB_ARRAY_DIRECT,
-    SH_CGB_ARRAY_INDIRECT,
-    SH_CGB_SWIZZLE
+	SH_CGB_STRUCT,
+	SH_CGB_ARRAY,
+	SH_CGB_SWIZZLE
 } ShChangeableType;
 
-
 typedef struct {
-    ShChangeableType type;
-    int index;
+	ShChangeableType type;
+	int index;
 } ShChangeableIndex;
 
 typedef struct {
-    int id;
-    int numIndices;
-    ShChangeableIndex **indices;
+	int id;
+	int numIndices;
+	ShChangeableIndex **indices;
 } ShChangeable;
 
-
 typedef struct {
-    int numChangeables;
-    ShChangeable **changeables;
+	int numChangeables;
+	ShChangeable **changeables;
 } ShChangeableList;
 
 //
 // Some helper Functions for changeable handling
 //
 SH_IMPORT_EXPORT ShChangeable* createShChangeable(int id);
-SH_IMPORT_EXPORT ShChangeableIndex* createShChangeableIndex(ShChangeableType type, int index);
+SH_IMPORT_EXPORT ShChangeableIndex* createShChangeableIndex(ShChangeableType type,
+		int index);
 SH_IMPORT_EXPORT void dumpShChangeable(ShChangeable *cbl);
 SH_IMPORT_EXPORT void dumpShChangeableList(ShChangeableList *cl);
 SH_IMPORT_EXPORT void addShChangeable(ShChangeableList *cl, ShChangeable *c);
 SH_IMPORT_EXPORT void copyShChangeableList(ShChangeableList *clout, ShChangeableList *clin);
 SH_IMPORT_EXPORT void addShIndexToChangeable(ShChangeable *c, ShChangeableIndex *idx);
-SH_IMPORT_EXPORT void addShIndexToChangeableList(ShChangeableList *cl, int s, ShChangeableIndex *idx);
+SH_IMPORT_EXPORT void addShIndexToChangeableList(ShChangeableList *cl, int s,
+		ShChangeableIndex *idx);
 SH_IMPORT_EXPORT void freeShChangeable(ShChangeable **c);
 
 //
@@ -164,18 +162,17 @@ SH_IMPORT_EXPORT void freeShChangeable(ShChangeable **c);
 //
 
 typedef enum {
-    DBG_CG_ORIGINAL_SRC,
-    DBG_CG_COVERAGE,
-    DBG_CG_GEOMETRY_MAP,
-    DBG_CG_GEOMETRY_CHANGEABLE,
-    DBG_CG_VERTEX_COUNT,
-    DBG_CG_SELECTION_CONDITIONAL,
-    DBG_CG_SWITCH_CONDITIONAL,
-    DBG_CG_LOOP_CONDITIONAL,
-    DBG_CG_CHANGEABLE,
-    DBG_CG_LAST
+	DBG_CG_ORIGINAL_SRC,
+	DBG_CG_COVERAGE,
+	DBG_CG_GEOMETRY_MAP,
+	DBG_CG_GEOMETRY_CHANGEABLE,
+	DBG_CG_VERTEX_COUNT,
+	DBG_CG_SELECTION_CONDITIONAL,
+	DBG_CG_SWITCH_CONDITIONAL,
+	DBG_CG_LOOP_CONDITIONAL,
+	DBG_CG_CHANGEABLE,
+	DBG_CG_LAST
 } DbgCgOptions;
-
 
 // Must be pow2 - 1
 #define SWITCH_BRANCHES_COUNT 127
@@ -189,69 +186,75 @@ typedef enum {
 	DBG_BH_NO_ACTION = 0,                               // no default action
 	DBG_BH_SWITCH_BRANCH_FIRST = 1,                     // first switch branch
 	DBG_BH_SWITCH_BRANCH_LAST = SWITCH_BRANCHES_COUNT,  // last switch branch
-	DBG_BH_RESET = SWITCH_BRANCHES_COUNT + 1,           // reset debugging to the original program
-	DBG_BH_JUMP_INTO = DBG_BH_RESET << 1,               // trace function call, switch, selection then
-														// or current loop iteration
-	DBG_BH_FOLLOW_ELSE = DBG_BH_RESET << 2,             // evaluate else branch of a conditional
+	DBG_BH_RESET = SWITCH_BRANCHES_COUNT + 1,     // reset debugging to the original program
+	DBG_BH_JUMP_INTO = DBG_BH_RESET << 1,     // trace function call, switch, selection then
+											  // or current loop iteration
+	DBG_BH_FOLLOW_ELSE = DBG_BH_RESET << 2,         // evaluate else branch of a conditional
 	DBG_BH_JUMP_OVER = DBG_BH_RESET << 3,               // jump over any statement
-	DBG_BH_LOOP_NEXT_ITER = DBG_BH_RESET << 4           // jump to next iteration without debugging anything inbetween
+	DBG_BH_LOOP_NEXT_ITER = DBG_BH_RESET << 4  // jump to next iteration without debugging anything inbetween
 } DbgBehaviour;
 
 //
 // Debug result information
 //
 typedef enum DbgRsStatuses {
-    DBG_RS_STATUS_UNSET,
-    DBG_RS_STATUS_ERROR,
-    DBG_RS_STATUS_OK,
-    DBG_RS_STATUS_FINISHED
+	DBG_RS_STATUS_UNSET,
+	DBG_RS_STATUS_ERROR,
+	DBG_RS_STATUS_OK,
+	DBG_RS_STATUS_FINISHED
 } DbgRsStatus;
 
 typedef enum {
-    DBG_RS_POSITION_UNSET,
-    DBG_RS_POSITION_DECLARATION,
-    DBG_RS_POSITION_ASSIGMENT,
-    DBG_RS_POSITION_FUNCTION_CALL,
-    DBG_RS_POSITION_UNARY,
-    DBG_RS_POSITION_SELECTION_IF,
-    DBG_RS_POSITION_SELECTION_IF_ELSE,
-    DBG_RS_POSITION_SELECTION_IF_CHOOSE,
-    DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE,
-    DBG_RS_POSITION_SWITCH,
-    DBG_RS_POSITION_SWITCH_CHOOSE,
-    DBG_RS_POSITION_BRANCH,
-    DBG_RS_POSITION_LOOP_FOR,
-    DBG_RS_POSITION_LOOP_WHILE,
-    DBG_RS_POSITION_LOOP_DO,
-    DBG_RS_POSITION_LOOP_CHOOSE,
-    DBG_RS_POSITION_DUMMY
+	DBG_RS_POSITION_UNSET,
+	DBG_RS_POSITION_DECLARATION,
+	DBG_RS_POSITION_ASSIGMENT,
+	DBG_RS_POSITION_FUNCTION_CALL,
+	DBG_RS_POSITION_UNARY,
+	DBG_RS_POSITION_SELECTION_IF,
+	DBG_RS_POSITION_SELECTION_IF_ELSE,
+	DBG_RS_POSITION_SELECTION_IF_CHOOSE,
+	DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE,
+	DBG_RS_POSITION_SWITCH,
+	DBG_RS_POSITION_SWITCH_CHOOSE,
+	DBG_RS_POSITION_BRANCH,
+	DBG_RS_POSITION_LOOP_FOR,
+	DBG_RS_POSITION_LOOP_WHILE,
+	DBG_RS_POSITION_LOOP_DO,
+	DBG_RS_POSITION_LOOP_CHOOSE,
+	DBG_RS_POSITION_DUMMY
 } DbgRsTargetPosition;
 
 typedef struct {
-    int numIds;
-    int *ids;
+	int numIds;
+	int *ids;
 } DbgRsScope;
 
+typedef DbgRsScope DbgRsScopeStack;
+//typedef struct {
+//	int depth;
+//	DbgRsScope *scopes;
+//} DbgRsScopeStack;
+
 typedef struct {
-    int line;
-    int colum;
+	int line;
+	int colum;
 } DbgRsPos;
 
 typedef struct {
-    DbgRsPos left;
-    DbgRsPos right;
+	DbgRsPos left;
+	DbgRsPos right;
 } DbgRsRange;
 
 typedef struct {
-    DbgRsStatus status;
-    DbgRsTargetPosition position;
-    DbgRsRange range;
-    DbgRsScope scope;
-    DbgRsScope scopeStack;
-    ShChangeableList cgbls;
-    int loopIteration;
-    bool passedEmitVertex;
-    bool passedDiscard;
+	DbgRsStatus status;
+	DbgRsTargetPosition position;
+	DbgRsRange range;
+	DbgRsScope scope;
+	DbgRsScopeStack scopeStack;
+	ShChangeableList cgbls;
+	int loopIteration;
+	bool passedEmitVertex;
+	bool passedDiscard;
 } DbgResult;
 
 SH_IMPORT_EXPORT const char* getDbgRsStatus(DbgRsStatus s);
@@ -274,117 +277,96 @@ typedef void* ShHandle;
 //
 SH_IMPORT_EXPORT ShHandle ShConstructCompiler(const EShLanguage, int debugOptions);  // one per shader
 SH_IMPORT_EXPORT ShHandle ShConstructLinker(const EShExecutable, int debugOptions);  // one per shader pair
-SH_IMPORT_EXPORT ShHandle ShConstructUniformMap();                 // one per uniform namespace (currently entire program object)
+SH_IMPORT_EXPORT ShHandle ShConstructUniformMap();  // one per uniform namespace (currently entire program object)
 SH_IMPORT_EXPORT void ShDestruct(ShHandle);
-
 
 //
 // Typedefs for struct, variable, and builtin handling
 //
 
 typedef enum VariableTypes {
-    SH_FLOAT,
-    SH_INT,
-    SH_UINT,
-    SH_BOOL,
-    SH_STRUCT,
-    SH_ARRAY,
-    SH_SAMPLER_GUARD_BEGIN, // no type
-    SH_SAMPLER_1D,
-    SH_ISAMPLER_1D,
-    SH_USAMPLER_1D,
-    SH_SAMPLER_2D,
-    SH_ISAMPLER_2D,
-    SH_USAMPLER_2D,
-    SH_SAMPLER_3D,
-    SH_ISAMPLER_3D,
-    SH_USAMPLER_3D,
-    SH_SAMPLER_CUBE,
-    SH_ISAMPLER_CUBE,
-    SH_USAMPLER_CUBE,
-    SH_SAMPLER_1D_SHADOW,
-    SH_SAMPLER_2D_SHADOW,
-    SH_SAMPLER_2D_RECT,
-    SH_ISAMPLER_2D_RECT,
-    SH_USAMPLER_2D_RECT,
-    SH_SAMPLER_2D_RECT_SHADOW,
-    SH_SAMPLER_1D_ARRAY,
-    SH_ISAMPLER_1D_ARRAY,
-    SH_USAMPLER_1D_ARRAY,
-    SH_SAMPLER_2D_ARRAY,
-    SH_ISAMPLER_2D_ARRAY,
-    SH_USAMPLER_2D_ARRAY,
-    SH_SAMPLER_BUFFER,
-    SH_ISAMPLER_BUFFER,
-    SH_USAMPLER_BUFFER,
-    SH_SAMPLER_1D_ARRAY_SHADOW,
-    SH_SAMPLER_2D_ARRAY_SHADOW,
-    SH_SAMPLER_CUBE_SHADOW,
-    SH_SAMPLER_GUARD_END // no type
+	SH_ERROR,
+	SH_FLOAT,
+	SH_INT,
+	SH_UINT,
+	SH_BOOL,
+	SH_STRUCT,
+	SH_ARRAY,
+	SH_SAMPLER,
+	SH_IMAGE,
+	SH_ATOMIC,
+	SH_INTERFACE,
+	SH_VOID
 } variableType;
 
-bool ShIsSampler(variableType v);
-
-/* This is crazy, but I want to save compatability */
+/* This is crazy, but I want to save compatibility */
 typedef enum VariableQualifiers {
-    SH_UNSET		= 0x0,
-    SH_CONST		= 0x1,
-    SH_TEMPORARY	= 0x2,
-    SH_GLOBAL		= 0x4,
-    SH_BUILTIN		= 0x8,
-    SH_IN			= 0x10,
-    SH_OUT			= 0x20,
-    SH_UNIFORM		= 0x40,
-    SH_ATTRIBUTE	= 0x80,
-    SH_VARYING		= 0x100,
-    SH_VARYING_IN	= 0x110,
-    SH_VARYING_OUT	= 0x120,
-    SH_PARAM		= 0x200,
-    SH_PARAM_CONST	= 0x201,
-    SH_PARAM_IN		= 0x210,
-    SH_PARAM_OUT	= 0x220,
-    SH_PARAM_INOUT	= 0x230,
-    SH_BUILTIN_READ	= 0x408,
-    SH_BUILTIN_WRITE = 0x808,
+	SH_UNSET = 0x0,
+	SH_CONST = 0x1,
+	SH_TEMPORARY = 0x2,
+	SH_GLOBAL = 0x4,
+	SH_BUILTIN = 0x8,
+	SH_IN = 0x10,
+	SH_OUT = 0x20,
+	SH_UNIFORM = 0x40,
+	SH_ATTRIBUTE = 0x80,
+	SH_VARYING = 0x100,
+	SH_VARYING_IN = 0x110,
+	SH_VARYING_OUT = 0x120,
+	SH_PARAM = 0x200,
+	SH_PARAM_CONST = 0x201,
+	SH_PARAM_IN = 0x210,
+	SH_PARAM_OUT = 0x220,
+	SH_PARAM_INOUT = 0x230,
+	SH_BUILTIN_READ = 0x408,
+	SH_BUILTIN_WRITE = 0x808,
 } variableQualifier;
 
 typedef enum {
-    SH_VM_NONE = 0,
-    SH_VM_INVARIANT = 1,
-    SH_VM_FLAT = 2,
-    SH_VM_CENTROID = 4,
-    SH_VM_NOPERSPECTIVE = 8,
-    SH_VM_SMOOTH = 16
+	SH_VM_NONE = 0,
+	SH_VM_INVARIANT = 1,
+	SH_VM_FLAT = 2,
+	SH_VM_CENTROID = 4,
+	SH_VM_NOPERSPECTIVE = 8,
+	SH_VM_SMOOTH = 16
 } variableVMTypes;
 
 typedef int variableVaryingModifier;
 
 typedef struct ShVariable {
-    int uniqueId;
-    int builtin;
-    char *name;
-    variableType type;
-    variableQualifier qualifier;
-    variableVaryingModifier varyingModifier;
+	int uniqueId;
+	int builtin;
+	char *name;
+	int gl_type;
+	variableType type;
+	variableQualifier qualifier;
+	variableVaryingModifier varyingModifier;
 
-    int size;                      // Size of vector
+	int size;                      // Size of vector
+								   // For matrix it is elements * matrixColumns
+	int isMatrix;
+	int matrixColumns;
 
-    int isMatrix;
-    int matrixSize[2];
+	int isArray;
+	int arrayDepth;
+	variableType arrayType;
+	int* arraySize;
 
-    int isArray;
-    int arrayDepth;
-    int* arraySize;
+	char *structName;
+	int structSize;
+	ShVariable **structSpec;
 
-    char *structName;
-    int structSize;
-    ShVariable **structSpec;
+	struct samplerInfo {
+		unsigned dimensionality:3; /**< \see glsl_sampler_dim */
+		unsigned shadow:1;
+		unsigned array:1;
+		unsigned type:2; /* SH_FLOAT, SH_INT, SH_UINT */
+	} sampler;
 } XX_SHVARIABLE;
 
-
 typedef struct ShVariableList {
-    int numVariables;
-    ShVariable **variables;
+	int numVariables;
+	ShVariable **variables;
 } XX_SHVARIABLELIST;
 
 SH_IMPORT_EXPORT char* ShGetTypeString(const ShVariable *v);
@@ -398,7 +380,6 @@ SH_IMPORT_EXPORT ShVariable* copyShVariable(ShVariable *src);
 SH_IMPORT_EXPORT void freeShVariable(ShVariable **var);
 SH_IMPORT_EXPORT void freeShVariableList(ShVariableList *vl);
 
-
 //
 // The return value of ShCompile is boolean, indicating
 // success or failure.
@@ -406,58 +387,38 @@ SH_IMPORT_EXPORT void freeShVariableList(ShVariableList *vl);
 // The info-log should be written by ShCompile into
 // ShHandle, so it can answer future queries.
 //
-SH_IMPORT_EXPORT int ShCompile(
-    const ShHandle,
-    const char* const shaderStrings[],
-    const int numStrings,
-    const EShOptimizationLevel,
-    const TBuiltInResource *resources,
-    int debugOptions,
-    ShVariableList *vl
-    );
+SH_IMPORT_EXPORT int ShCompile(const ShHandle, const char* const shaderStrings[],
+		const int numStrings, const EShOptimizationLevel, const TBuiltInResource *resources,
+		int debugOptions, ShVariableList *vl);
 
 //
 // Advancing the debugger
 //
-SH_IMPORT_EXPORT DbgResult* ShDebugJumpToNext(
-        const ShHandle,
-        int debugOptions,
-        int dgbBh
-        );
+SH_IMPORT_EXPORT DbgResult* ShDebugJumpToNext(const ShHandle, int debugOptions, int dgbBh);
 
 //
 // Get debug program to a given changeable
 //
-SH_IMPORT_EXPORT char* ShDebugGetProg(
-        const ShHandle,
-        ShChangeableList *cgbl,
-        ShVariableList *vl,
-        DbgCgOptions dbgCgOptions
-        );
+SH_IMPORT_EXPORT char* ShDebugGetProg(const ShHandle, ShChangeableList *cgbl,
+		ShVariableList *vl, DbgCgOptions dbgCgOptions);
 
 //
 // Similar to ShCompile, but accepts an opaque handle to an
 // intermediate language structure.
 //
-SH_IMPORT_EXPORT int ShCompileIntermediate(
-    ShHandle compiler,
-    ShHandle intermediate,
-    const EShOptimizationLevel,
-    int debuggable           // boolean
-    );
+SH_IMPORT_EXPORT int ShCompileIntermediate(ShHandle compiler, ShHandle intermediate,
+		const EShOptimizationLevel, int debuggable           // boolean
+		);
 
-SH_IMPORT_EXPORT int ShLink(
-    const ShHandle,               // linker object
-    const ShHandle h[],           // compiler objects to link together
-    const int numHandles,
-    ShHandle uniformMap,          // updated with new uniforms
-    short int** uniformsAccessed,  // returned with indexes of uniforms accessed
-    int* numUniformsAccessed);
+SH_IMPORT_EXPORT int ShLink(const ShHandle,               // linker object
+		const ShHandle h[],           // compiler objects to link together
+		const int numHandles, ShHandle uniformMap,          // updated with new uniforms
+		short int** uniformsAccessed,  // returned with indexes of uniforms accessed
+		int* numUniformsAccessed);
 
-SH_IMPORT_EXPORT int ShLinkExt(
-    const ShHandle,               // linker object
-    const ShHandle h[],           // compiler objects to link together
-    const int numHandles);
+SH_IMPORT_EXPORT int ShLinkExt(const ShHandle,               // linker object
+		const ShHandle h[],           // compiler objects to link together
+		const int numHandles);
 
 //
 // ShSetEncrpytionMethod is a place-holder for specifying
@@ -486,14 +447,14 @@ SH_IMPORT_EXPORT int ShExcludeAttributes(const ShHandle, int *attributes, int co
 SH_IMPORT_EXPORT int ShGetUniformLocation(const ShHandle uniformMap, const char* name);
 
 enum TDebugOptions {
-	EDebugOpNone               = 0x000,
-	EDebugOpIntermediate       = 0x001,
-	EDebugOpAssembly           = 0x002,
-    EDebugOpObjectCode         = 0x004,
-	EDebugOpLinkMaps           = 0x008
+	EDebugOpNone = 0x000,
+	EDebugOpIntermediate = 0x001,
+	EDebugOpAssembly = 0x002,
+	EDebugOpObjectCode = 0x004,
+	EDebugOpLinkMaps = 0x008
 };
 #ifdef __cplusplus
-    }
+}
 #endif
 
 #endif // _COMPILER_INTERFACE_INCLUDED_
