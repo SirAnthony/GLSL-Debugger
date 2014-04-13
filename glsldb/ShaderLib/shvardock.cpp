@@ -1,11 +1,11 @@
+
 #include "shvardock.h"
 #include "ui_shvardock.h"
 #include "shproxytreeview.h"
 
 ShVarDock::ShVarDock(QWidget *parent) :
 	QDockWidget(parent), ui(new Ui::ShVarDock)
-{
-	this->model = new ShVarModel();
+{	
 	ui->setupUi(this);
 
 	ui->tTabWidget->addTab(newTab<ShProxyTreeView>(), "All");

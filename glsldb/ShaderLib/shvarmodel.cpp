@@ -28,11 +28,63 @@ void ShVarModel::setRecursive(QVariant data, varDataFields field, ShVarItem *ite
 	if (!item)
 		return;
 
-	if (item != this->invisibleRootItem())
+	if (item != this->invisibleRootItem()){
 		item->setData(data, field);
+		emit dataChanged(item->index(), item->index());
+	}
 
 	for (int row = 0; row < item->rowCount(); ++row)
 		setRecursive(field, data, item->child(row));
+}
+
+void ShVarModel::setWatched(ShVarItem *item)
+{
+	if (!item)
+		return;
+
+	if (item->data(DF_SELECTABLE).toBool() && (item->rowCount() > 0
+				|| !item->data(DF_WATCHED).toBool())) {
+
+		if (item->rowCount() < 1) {
+			setRecursive(true, DF_WATCHED, item);
+			//m_qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+			emit addWatchItem(item);
+		} else {
+			for (int i = 0; i < item->rowCount(); i++)
+				this->setWatched(item->child(i));
+		}
+	}
+}
+
+void ShVarModel::unsetWatched(ShVarItem *item)
+{
+	if (!item)
+		return;
+
+	for (int i = 0; i < item->rowCount(); ++i)
+		unsetWatched(item->child(i)->index());
+
+	/*
+	if (item->getPixelBoxPointer() != NULL) {
+		PixelBox *fb = item->getPixelBoxPointer();
+		item->setPixelBoxPointer(NULL);
+		delete fb;
+	}
+	if (item->getCurrentPointer() != NULL) {
+		VertexBox *vb = item->getCurrentPointer();
+		item->setCurrentPointer(NULL);
+		delete vb;
+	}
+	if (item->getVertexBoxPointer() != NULL) {
+		VertexBox *vb = item->getVertexBoxPointer();
+		item->setVertexBoxPointer(NULL);
+		delete vb;
+	} */
+
+	item->setData(false, DF_WATCHED);
+	emit dataChanged(item->index(), item->index());
+	if (item->parent() != this->invisibleRootItem())
+		unsetWatched(item->parent()->index());
 }
 
 void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, DbgRsScopeStack &stack)

@@ -11,15 +11,16 @@ class ShVarModel : public QStandardItemModel
 public:
 	ShVarModel(QObject *parent = 0);
 	void appendRow(const ShVariableList *items);
-	
-	void setRecursive(QVariant data, varDataFields field, ShVarItem *item);
+
+	void setRecursive(QVariant data, varDataFields field, ShVarItem *item);	
 	void setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope,
 			DbgRsScopeStack &stack);
 
+	void setWatched(ShVarItem *item);
+	void unsetWatched(ShVarItem *item);
 
 signals:
-	
-public slots:
+	void addWatchItem(ShVarItem* item);
 	
 };
 

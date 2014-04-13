@@ -1,4 +1,5 @@
 add_subdirectory(DebugLib)
+add_subdirectory(ShaderLib)
 add_subdirectory(DebugFunctions)
 add_subdirectory(utils)
 

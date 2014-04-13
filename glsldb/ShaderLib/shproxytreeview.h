@@ -4,7 +4,6 @@
 #include <QSortFilterProxyModel>
 #include "shtreeview.h"
 
-
 class ShProxyTreeView : public ShTreeView
 {
 	Q_OBJECT

@@ -102,6 +102,10 @@ QVariant ShVarItem::data(int role) const
 		return this->changed;
 	case DF_SCOPE:
 		return this->scope;
+	case DF_SELECTABLE:
+		return this->selectable;
+	case DF_WATCHED:
+		return this->watched;
 	case DF_CGBL_INDEX_B:
 		return this->changeableIndex[1];
 	default:
@@ -119,7 +123,7 @@ void ShVarItem::setData(const QVariant &value, int role)
 	switch (role) {
 	case DF_CHANGED:
 		this->changed = value.toBool();
-		break;
+		break;		
 	case DF_SCOPE:
 		this->scope = value.toInt();
 		break;
