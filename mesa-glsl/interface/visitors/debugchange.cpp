@@ -168,9 +168,9 @@ bool ast_debugchange_traverser_visitor::enter(class ast_expression* node)
 		if (node->changeables.is_empty())
 			return false;
 
-		ShChangeableIndex *cgbIdx = getChangeableIndex(node, shader);
 		ShChangeable* cgb = ((changeable_item*) node->changeables.get_head())->changeable;
-		addShIndexToChangeableCtx(cgb, cgbIdx, shader);
+		ShChangeableIndex *cgbIdx = getChangeableIndex(node, cgb);
+		addShIndexToChangeableCtx(cgb, cgbIdx);
 
 		return false;
 		break;

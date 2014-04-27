@@ -518,7 +518,7 @@ char* itoMultiSwizzle(int i)
 	return swizzle;
 }
 
-static void addVariableCode(char** prog, ShChangeable *cgb, ShVariableList *vl)
+static void addVariableCode(char** prog, const ShChangeable *cgb, ShVariableList *vl)
 {
 	ShVariable *var;
 
@@ -534,7 +534,7 @@ static void addVariableCode(char** prog, ShChangeable *cgb, ShVariableList *vl)
 
 	int i;
 	for (i = 0; i < cgb->numIndices; i++) {
-		ShChangeableIndex *idx = cgb->indices[i];
+		const ShChangeableIndex *idx = cgb->indices[i];
 
 		switch (idx->type) {
 		case SH_CGB_ARRAY:
@@ -607,7 +607,7 @@ static int getVariableSizeByArrayIndices(ShVariable *var, int numOfArrayIndices)
 	return 0;
 }
 
-static int getShChangeableSize(ShChangeable *cgb, ShVariableList *vl)
+static int getShChangeableSize(const ShChangeable *cgb, ShVariableList *vl)
 {
 	int size, i;
 	int arraySub = 0;
@@ -623,7 +623,7 @@ static int getShChangeableSize(ShChangeable *cgb, ShVariableList *vl)
 	size = var->size;
 
 	for (i = 0; i < cgb->numIndices; i++) {
-		ShChangeableIndex *idx = cgb->indices[i];
+		const ShChangeableIndex *idx = cgb->indices[i];
 		switch (idx->type) {
 		case SH_CGB_ARRAY:
 			arraySub++;

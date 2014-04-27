@@ -194,12 +194,12 @@ ShHandle ShConstructLinker(const EShExecutable executable, int debugOptions)
 
 void ShDestruct(ShHandle handle)
 {
-	if( handle == 0 )
+	if (handle == 0)
 		return;
 
 	ShaderHolder* holder = reinterpret_cast< ShaderHolder* >( handle );
 
-	if( holder->ctx )
+	if (holder->ctx)
 		ralloc_free(holder->ctx);
 
 	ralloc_free(holder);

@@ -12,7 +12,7 @@
 #include <sstream>
 
 
-std::string formatChangeable(ShChangeable *cgb)
+std::string formatChangeable(const ShChangeable *cgb)
 {
 	if (!cgb)
 		return "";
@@ -20,7 +20,7 @@ std::string formatChangeable(ShChangeable *cgb)
 	std::stringstream ss;
 	ss << cgb->id << "{";
 	for (int j = 0; j < cgb->numIndices; j++) {
-		ShChangeableIndex *idx = cgb->indices[j];
+		const ShChangeableIndex *idx = cgb->indices[j];
 		if (j)
 			ss << " ";
 		if (idx) {

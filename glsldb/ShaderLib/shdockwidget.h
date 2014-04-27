@@ -20,7 +20,7 @@ public:
 		trLast
 	} tabRole;
 
-private:
+protected:
 	static ShVarModel* model;
 };
 

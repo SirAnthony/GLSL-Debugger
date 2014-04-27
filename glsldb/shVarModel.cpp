@@ -128,20 +128,20 @@ ShChangeable* OldShVarItem::getShChangeable(void)
 	ShChangeable *cgbl = NULL;
 
 	if (data(DF_UNIQUE_ID).toInt() != -1) {
-		cgbl = createShChangeable(data(DF_UNIQUE_ID).toInt());
+		//cgbl = createShChangeable(data(DF_UNIQUE_ID).toInt());
 	} else {
 		cgbl = m_qParent->getShChangeable();
-		ShChangeableIndex* index;
-		index = createShChangeableIndex(
-				(ShChangeableType) (data(DF_CGBL_TYPE).toInt()),
-				data(DF_CGBL_INDEX_A).toInt());
-		addShIndexToChangeable(cgbl, index);
+		//ShChangeableIndex* index;
+		//index = createShChangeableIndex(
+		//		(ShChangeableType) (data(DF_CGBL_TYPE).toInt()),
+		//		data(DF_CGBL_INDEX_A).toInt());
+		//addShIndexToChangeable(cgbl, index);
 		if (data(DF_CGBL_INDEX_B).isValid()) {
-			ShChangeableIndex* matIdx;
-			matIdx = createShChangeableIndex(
-					(ShChangeableType) (data(DF_CGBL_TYPE).toInt()),
-					data(DF_CGBL_INDEX_B).toInt());
-			addShIndexToChangeable(cgbl, matIdx);
+			//ShChangeableIndex* matIdx;
+			//matIdx = createShChangeableIndex(
+			//		(ShChangeableType) (data(DF_CGBL_TYPE).toInt()),
+			//		data(DF_CGBL_INDEX_B).toInt());
+			//addShIndexToChangeable(cgbl, matIdx);
 		}
 	}
 
@@ -523,7 +523,7 @@ void OldShVarModel::setChangedAndScope(ShChangeableList &i_pCL, DbgRsScope &i_pS
 
 	/* Changed? */
 	for (i = 0; i < i_pCL.numChangeables; i++) {
-		ShChangeable *c = i_pCL.changeables[i];
+		const ShChangeable *c = i_pCL.changeables[i];
 
 		for (j = 0; j < m_qRootItem->childCount(); j++) {
 			QVariant id = m_qRootItem->child(j)->data(DF_UNIQUE_ID);

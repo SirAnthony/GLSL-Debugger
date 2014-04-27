@@ -41,53 +41,48 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtGui/QMessageBox>
 #include <QtCore/QVariant>
 
-#include "dbgprint.h"
+#include "utils/dbgprint.h"
 
 #define CLAMP(x, min, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
 
 template<typename vType>
-TypedPixelBox<vType>::TypedPixelBox(int i_nWidth, int i_nHeight, int i_nChannel,
-		vType *i_pData, bool *i_pCoverage, QObject *i_qParent) :
-		PixelBox(i_qParent)
+TypedPixelBox<vType>::TypedPixelBox(int _width, int _height, int _channel,
+		vType *_data, bool *_coverage, QObject *_parent) :
+		PixelBox(_parent)
 {
-	int i;
+	width = _width;
+	height = _height;
+	channel = _channel;
 
-	m_nWidth = i_nWidth;
-	m_nHeight = i_nHeight;
-	m_nChannel = i_nChannel;
-
-	m_pData = new vType[m_nWidth * m_nHeight * m_nChannel];
-	m_pDataMap = new bool[m_nWidth * m_nHeight];
+	boxData = new vType[width * height * channel];
+	boxDataMap = new bool[width * height];
 
 	/* Initially use all given data */
-	if (i_pData) {
-		memcpy(m_pData, i_pData,
-				m_nWidth * m_nHeight * m_nChannel * sizeof(vType));
-	} else {
-		memset(m_pData, 0, m_nWidth * m_nHeight * m_nChannel * sizeof(vType));
-	}
+	if (_data)
+		memcpy(boxData, _data, width * height * channel * sizeof(vType));
+	else
+		memset(boxData, 0, width * height * channel * sizeof(vType));
 
 	/* Initially use all given data */
-	if (i_pCoverage) {
-		memcpy(m_pDataMap, i_pCoverage, m_nWidth * m_nHeight * sizeof(bool));
+	if (_coverage) {
+		memcpy(boxDataMap, _coverage, width * height * sizeof(bool));
 	} else {
-		for (i = 0; i < m_nWidth * m_nHeight; i++) {
-			m_pDataMap[i] = true;
-		}
+		for (int i = 0; i < width * height; i++)
+			boxDataMap[i] = true;
 	}
-	m_pCoverage = i_pCoverage;
+	coverage = _coverage;
 
-	if (i_nChannel && i_pData) {
-		m_nMinData = new vType[m_nChannel];
-		m_nMaxData = new vType[m_nChannel];
-		m_nAbsMinData = new vType[m_nChannel];
-		m_nAbsMaxData = new vType[m_nChannel];
-		calcMinMax(this->m_minMaxArea);
+	if (_channel && _data) {
+		boxDataMin = new vType[channel];
+		boxDataMax = new vType[channel];
+		boxDataMinAbs = new vType[channel];
+		boxDataMaxAbs = new vType[channel];
+		calcMinMax(this->minMaxArea);
 	} else {
-		m_nMinData = NULL;
-		m_nMaxData = NULL;
-		m_nAbsMinData = NULL;
-		m_nAbsMaxData = NULL;
+		boxDataMin = NULL;
+		boxDataMax = NULL;
+		boxDataMinAbs = NULL;
+		boxDataMaxAbs = NULL;
 	}
 }
 
@@ -95,94 +90,82 @@ template<typename vType>
 TypedPixelBox<vType>::TypedPixelBox(TypedPixelBox *src) :
 		PixelBox(src->parent())
 {
-	m_nWidth = src->m_nWidth;
-	m_nHeight = src->m_nHeight;
-	m_nChannel = src->m_nChannel;
-	m_pCoverage = src->m_pCoverage;
+	width = src->width;
+	height = src->height;
+	channel = src->channel;
+	coverage = src->coverage;
 
-	m_pData = new vType[m_nWidth * m_nHeight * m_nChannel];
-	m_pDataMap = new bool[m_nWidth * m_nHeight];
+	boxData = new vType[width * height * channel];
+	boxDataMap = new bool[width * height];
 
-	memcpy(m_pData, src->m_pData,
-			m_nWidth * m_nHeight * m_nChannel * sizeof(vType));
-	memcpy(m_pDataMap, src->m_pDataMap, m_nWidth * m_nHeight * sizeof(bool));
+	memcpy(boxData, src->boxData,
+			width * height * channel * sizeof(vType));
+	memcpy(boxDataMap, src->boxDataMap, width * height * sizeof(bool));
 
-	m_nMinData = new vType[m_nChannel];
-	m_nMaxData = new vType[m_nChannel];
-	m_nAbsMinData = new vType[m_nChannel];
-	m_nAbsMaxData = new vType[m_nChannel];
+	boxDataMin = new vType[channel];
+	boxDataMax = new vType[channel];
+	boxDataMinAbs = new vType[channel];
+	boxDataMaxAbs = new vType[channel];
 
-	memcpy(m_nMinData, src->m_nMinData, m_nChannel * sizeof(vType));
-	memcpy(m_nMaxData, src->m_nMaxData, m_nChannel * sizeof(vType));
-	memcpy(m_nAbsMinData, src->m_nAbsMinData, m_nChannel * sizeof(vType));
-	memcpy(m_nAbsMaxData, src->m_nAbsMaxData, m_nChannel * sizeof(vType));
+	memcpy(boxDataMin, src->boxDataMin, channel * sizeof(vType));
+	memcpy(boxDataMax, src->boxDataMax, channel * sizeof(vType));
+	memcpy(boxDataMinAbs, src->boxDataMinAbs, channel * sizeof(vType));
+	memcpy(boxDataMaxAbs, src->boxDataMaxAbs, channel * sizeof(vType));
 }
 
 template<typename vType>
 TypedPixelBox<vType>::~TypedPixelBox()
 {
-	delete[] m_pData;
-	delete[] m_nMinData;
-	delete[] m_nMaxData;
-	delete[] m_nAbsMinData;
-	delete[] m_nAbsMaxData;
+	delete[] boxData;
+	delete[] boxDataMin;
+	delete[] boxDataMax;
+	delete[] boxDataMinAbs;
+	delete[] boxDataMaxAbs;
 }
 
 template<typename vType>
 void TypedPixelBox<vType>::calcMinMax(QRect area)
 {
-	int x, y, c;
 	int left, right, top, bottom;
-	bool *pCoverage;
 
-	for (c = 0; c < m_nChannel; c++) {
-		m_nMinData[c] = sc_maxVal;
-		m_nMaxData[c] = sc_minVal;
-		m_nAbsMinData[c] = sc_maxVal;
-		m_nAbsMaxData[c] = (vType) 0;
+	for (int c = 0; c < channel; c++) {
+		boxDataMin[c] = maxVal;
+		boxDataMax[c] = minVal;
+		boxDataMinAbs[c] = maxVal;
+		boxDataMaxAbs[c] = (vType) 0;
 	}
 
-	if (m_pCoverage) {
-		pCoverage = m_pCoverage;
-	} else {
-		pCoverage = m_pDataMap;
-	}
-	//pCoverage = m_pDataMap;
-
+	bool *pCoverage = coverage ? coverage : boxDataMap;
 	if (area.isEmpty()) {
 		left = top = 0;
-		right = m_nWidth;
-		bottom = m_nHeight;
+		right = width;
+		bottom = height;
 	} else {
 		left = (area.left() < 0) ? 0 : area.left();
 		top = (area.top() < 0) ? 0 : area.top();
 		// Note: area.right() != area.left() + area.width(), bottom same.
-		right = (area.left() + area.width() > m_nWidth) ?
-				m_nWidth : area.left() + area.width();
+		right = (area.left() + area.width() > width) ?
+				width : area.left() + area.width();
 		bottom =
-				(area.top() + area.height() > m_nHeight) ?
-						m_nHeight : area.top() + area.height();
+				(area.top() + area.height() > height) ?
+						height : area.top() + area.height();
 	}
 	/*area.setCoords(0, 0, 2, 2);*/
 
-	for (y = top; y < bottom; y++) {
-		for (x = left; x < right; x++) {
-			for (c = 0; c < m_nChannel; c++) {
-				int idx = y * m_nWidth + x;
+	for (int y = top; y < bottom; y++) {
+		for (int x = left; x < right; x++) {
+			for (int c = 0; c < channel; c++) {
+				int idx = y * width + x;
 				if (pCoverage[idx]) {
 					idx += c;
-					if (m_pData[idx] < m_nMinData[c]) {
-						m_nMinData[c] = m_pData[idx];
-					}
-					if (m_nMaxData[c] < m_pData[idx]) {
-						m_nMaxData[c] = m_pData[idx];
-					}
-					if (fabs((double) m_pData[idx]) < m_nAbsMinData[c]) {
-						m_nAbsMinData[c] = fabs((double) m_pData[idx]);
-					}
-					if (m_nAbsMaxData[c] < fabs((double) m_pData[idx])) {
-						m_nAbsMaxData[c] = fabs((double) m_pData[idx]);
-					}
+					if (boxData[idx] < boxDataMin[c])
+						boxDataMin[c] = boxData[idx];
+					if (boxDataMax[c] < boxData[idx])
+						boxDataMax[c] = boxData[idx];
+					if (fabs((double) boxData[idx]) < boxDataMinAbs[c])
+						boxDataMinAbs[c] = fabs((double) boxData[idx]);
+					if (boxDataMaxAbs[c] < fabs((double) boxData[idx]))
+						boxDataMaxAbs[c] = fabs((double) boxData[idx]);
 				}
 			}
 		}
@@ -193,17 +176,15 @@ template<typename vType>
 double TypedPixelBox<vType>::getMin(int channel)
 {
 	if (channel == -1) {
-		int c;
-		vType min = sc_maxVal;
-		calcMinMax(this->m_minMaxArea); /* FIXME: is it necessary? We already calculate min/max when the data changes */
-		for (c = 0; c < m_nChannel; c++) {
-			if (m_nMinData[c] < min) {
-				min = m_nMinData[c];
-			}
+		vType min = maxVal;
+		calcMinMax(this->minMaxArea); /* FIXME: is it necessary? We already calculate min/max when the data changes */
+		for (int c = 0; c < channel; c++) {
+			if (boxDataMin[c] < min)
+				min = boxDataMin[c];
 		}
 		return (double) min;
-	} else if (channel >= 0 && channel < m_nChannel) {
-		return (double) m_nMinData[channel];
+	} else if (channel >= 0 && channel < channel) {
+		return (double) boxDataMin[channel];
 	} else {
 		// TODO: Should this be silent?
 		QString msg;
@@ -213,7 +194,7 @@ double TypedPixelBox<vType>::getMin(int channel)
 				"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
 				"glsldevil@vis.uni-stuttgart.de</A>.");
 		QMessageBox::critical(NULL, "Internal Error", msg, QMessageBox::Ok);
-		return (double) 0;
+		return 0.0;
 	}
 }
 
@@ -221,17 +202,15 @@ template<typename vType>
 double TypedPixelBox<vType>::getMax(int channel)
 {
 	if (channel == -1) {
-		int c;
-		vType max = sc_minVal;
-		calcMinMax(this->m_minMaxArea);
-		for (c = 0; c < m_nChannel; c++) {
-			if (m_nMaxData[c] > max) {
-				max = m_nMaxData[c];
-			}
+		vType max = minVal;
+		calcMinMax(this->minMaxArea);
+		for (int c = 0; c < channel; c++) {
+			if (boxDataMax[c] > max)
+				max = boxDataMax[c];
 		}
 		return (double) max;
-	} else if (channel >= 0 && channel < m_nChannel) {
-		return (double) m_nMaxData[channel];
+	} else if (channel >= 0 && channel < channel) {
+		return (double) boxDataMax[channel];
 	} else {
 		// TODO: Should this be silent?
 		QString msg;
@@ -241,7 +220,7 @@ double TypedPixelBox<vType>::getMax(int channel)
 				"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
 				"glsldevil@vis.uni-stuttgart.de</A>.");
 		QMessageBox::critical(NULL, "Internal Error", msg, QMessageBox::Ok);
-		return (double) 0;
+		return 0.0;
 	}
 }
 
@@ -249,17 +228,16 @@ template<typename vType>
 double TypedPixelBox<vType>::getAbsMin(int channel)
 {
 	if (channel == -1) {
-		int c;
-		vType min = sc_maxVal;
-		calcMinMax(this->m_minMaxArea);
-		for (c = 0; c < m_nChannel; c++) {
-			if (m_nAbsMinData[c] < min) {
-				min = m_nAbsMinData[c];
+		vType min = maxVal;
+		calcMinMax(this->minMaxArea);
+		for (int c = 0; c < channel; c++) {
+			if (boxDataMinAbs[c] < min) {
+				min = boxDataMinAbs[c];
 			}
 		}
 		return (double) min;
-	} else if (channel >= 0 && channel < m_nChannel) {
-		return (double) m_nAbsMinData[channel];
+	} else if (channel >= 0 && channel < channel) {
+		return (double) boxDataMinAbs[channel];
 	} else {
 		// TODO: Should this be silent?
 		QString msg;
@@ -277,17 +255,15 @@ template<typename vType>
 double TypedPixelBox<vType>::getAbsMax(int channel)
 {
 	if (channel == -1) {
-		int c;
 		vType max = 0.0f;
-		calcMinMax(this->m_minMaxArea);
-		for (c = 0; c < m_nChannel; c++) {
-			if (m_nAbsMaxData[c] > max) {
-				max = m_nAbsMaxData[c];
-			}
+		calcMinMax(this->minMaxArea);
+		for (int c = 0; c < channel; c++) {
+			if (boxDataMaxAbs[c] > max)
+				max = boxDataMaxAbs[c];
 		}
 		return (double) max;
-	} else if (channel >= 0 && channel < m_nChannel) {
-		return (double) m_nAbsMaxData[channel];
+	} else if (channel >= 0 && channel < channel) {
+		return (double) boxDataMaxAbs[channel];
 	} else {
 		// TODO: Should this be silent?
 		QString msg;
@@ -297,59 +273,54 @@ double TypedPixelBox<vType>::getAbsMax(int channel)
 				"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
 				"glsldevil@vis.uni-stuttgart.de</A>.");
 		QMessageBox::critical(NULL, "Internal Error", msg, QMessageBox::Ok);
-		return (double) 0;
+		return 0.0;
 	}
 }
 
 template<typename vType>
-void TypedPixelBox<vType>::setData(int i_nWidth, int i_nHeight, int i_nChannel,
-		vType *i_pData, bool *i_pCoverage)
+void TypedPixelBox<vType>::setData(int _width, int _height, int _channel,
+		vType *_data, bool *_coverage)
 {
-	int i;
+	delete[] boxData;
+	delete[] boxDataMap;
+	delete[] boxDataMin;
+	delete[] boxDataMax;
+	delete[] boxDataMinAbs;
+	delete[] boxDataMaxAbs;
 
-	delete[] m_pData;
-	delete[] m_pDataMap;
-	delete[] m_nMinData;
-	delete[] m_nMaxData;
-	delete[] m_nAbsMinData;
-	delete[] m_nAbsMaxData;
+	width = _width;
+	height = _height;
+	channel = _channel;
 
-	m_nWidth = i_nWidth;
-	m_nHeight = i_nHeight;
-	m_nChannel = i_nChannel;
-
-	m_pData = new vType[m_nWidth * m_nHeight * m_nChannel];
-	m_pDataMap = new bool[m_nWidth * m_nHeight];
+	boxData = new vType[width * height * channel];
+	boxDataMap = new bool[width * height];
 
 	/* Initially use all given data */
-	if (i_pData) {
-		memcpy(m_pData, i_pData,
-				m_nWidth * m_nHeight * m_nChannel * sizeof(vType));
-	} else {
-		memset(m_pData, 0, m_nWidth * m_nHeight * m_nChannel * sizeof(vType));
-	}
+	if (_data)
+		memcpy(boxData, _data, width * height * channel * sizeof(vType));
+	else
+		memset(boxData, 0, width * height * channel * sizeof(vType));
 
 	/* Initially use all given data */
-	if (i_pCoverage) {
-		memcpy(m_pDataMap, i_pCoverage, m_nWidth * m_nHeight * sizeof(bool));
+	if (_coverage) {
+		memcpy(boxDataMap, _coverage, width * height * sizeof(bool));
 	} else {
-		for (i = 0; i < m_nWidth * m_nHeight; i++) {
-			m_pDataMap[i] = true;
-		}
+		for (int i = 0; i < width * height; i++)
+			boxDataMap[i] = true;
 	}
-	m_pCoverage = i_pCoverage;
+	coverage = _coverage;
 
-	if (i_nChannel && i_pData) {
-		m_nMinData = new vType[m_nChannel];
-		m_nMaxData = new vType[m_nChannel];
-		m_nAbsMinData = new vType[m_nChannel];
-		m_nAbsMaxData = new vType[m_nChannel];
-		calcMinMax(this->m_minMaxArea);
+	if (_channel && _data) {
+		boxDataMin = new vType[channel];
+		boxDataMax = new vType[channel];
+		boxDataMinAbs = new vType[channel];
+		boxDataMaxAbs = new vType[channel];
+		calcMinMax(this->minMaxArea);
 	} else {
-		m_nMinData = NULL;
-		m_nMaxData = NULL;
-		m_nAbsMinData = NULL;
-		m_nAbsMaxData = NULL;
+		boxDataMin = NULL;
+		boxDataMax = NULL;
+		boxDataMinAbs = NULL;
+		boxDataMaxAbs = NULL;
 	}
 }
 
@@ -360,27 +331,27 @@ void TypedPixelBox<vType>::addPixelBox(TypedPixelBox<vType> *f)
 	vType *pDstData, *pSrcData;
 	bool *pDstDataMap, *pSrcDataMap;
 
-	if (m_nWidth != f->getWidth() || m_nHeight != f->getHeight()
-			|| m_nChannel != f->getChannel()) {
+	if (width != f->getWidth() || height != f->getHeight()
+			|| channel != f->getChannel()) {
 		return;
 	}
 
-	pDstData = m_pData;
-	pDstDataMap = m_pDataMap;
+	pDstData = boxData;
+	pDstDataMap = boxDataMap;
 
 	pSrcData = f->getDataPointer();
 	pSrcDataMap = f->getDataMapPointer();
 
-	for (i = 0; i < m_nWidth * m_nHeight; i++) {
+	for (i = 0; i < width * height; i++) {
 		if (*pSrcDataMap) {
 			*pDstDataMap = true;
-			for (j = 0; j < m_nChannel; j++) {
+			for (j = 0; j < channel; j++) {
 				*pDstData = *pSrcData;
 				pDstData++;
 				pSrcData++;
 			}
 		} else {
-			for (j = 0; j < m_nChannel; j++) {
+			for (j = 0; j < channel; j++) {
 				pDstData++;
 				pSrcData++;
 			}
@@ -389,38 +360,38 @@ void TypedPixelBox<vType>::addPixelBox(TypedPixelBox<vType> *f)
 		pSrcDataMap++;
 	}
 
-	calcMinMax(this->m_minMaxArea);
+	calcMinMax(this->minMaxArea);
 	emit dataChanged();
 }
 
 template<typename vType>
-bool* TypedPixelBox<vType>::getCoverageFromData(int *i_pActivePixels)
+bool* TypedPixelBox<vType>::getCoverageFromData(int *_activePixels)
 {
 	int i, j;
 	int nActivePixels;
 	vType *pData;
 	bool *pCoverage;
-	bool *coverage = new bool[m_nWidth * m_nHeight];
+	bool *coverage = new bool[width * height];
 
 	pCoverage = coverage;
-	pData = m_pData;
+	pData = boxData;
 	nActivePixels = 0;
 
-	for (i = 0; i < m_nWidth * m_nHeight; i++) {
+	for (i = 0; i < width * height; i++) {
 		if (*pData > 0.5f) {
 			*pCoverage = true;
 			nActivePixels++;
 		} else {
 			*pCoverage = false;
 		}
-		for (j = 0; j < m_nChannel; j++) {
+		for (j = 0; j < channel; j++) {
 			pData++;
 		}
 		pCoverage++;
 	}
 
-	if (i_pActivePixels) {
-		*i_pActivePixels = nActivePixels;
+	if (_activePixels) {
+		*_activePixels = nActivePixels;
 	}
 
 	return coverage;
@@ -432,8 +403,8 @@ int TypedPixelBox<vType>::mapFromValue(FBMapping i_eMapping, vType i_nF,
 {
 	switch (i_eMapping) {
 	case FBM_MIN_MAX:
-		return (int) (255 * (i_nF - m_nMinData[i_nC])
-				/ (double) (m_nMaxData[i_nC] - m_nMinData[i_nC]));
+		return (int) (255 * (i_nF - boxDataMin[i_nC])
+				/ (double) (boxDataMax[i_nC] - boxDataMin[i_nC]));
 	case FBM_CLAMP:
 	default:
 		return CLAMP((int)(i_nF * 255), 0, 255);
@@ -447,28 +418,28 @@ QImage TypedPixelBox<vType>::getByteImage(FBMapping i_eMapping)
 	vType *pData;
 	bool *pDataMap;
 
-	QImage image(m_nWidth, m_nHeight, QImage::Format_RGB32);
+	QImage image(width, height, QImage::Format_RGB32);
 
-	pData = m_pData;
-	pDataMap = m_pDataMap;
-	for (y = 0; y < m_nHeight; y++) {
-		for (x = 0; x < m_nWidth; x++) {
+	pData = boxData;
+	pDataMap = boxDataMap;
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
 			if (*pDataMap) {
 				/* data available */
 				QColor color;
-				if (0 < m_nChannel) {
+				if (0 < channel) {
 					color.setRed(mapFromValue(i_eMapping, *pData, 0));
 					pData++;
 				}
-				if (1 < m_nChannel) {
+				if (1 < channel) {
 					color.setGreen(mapFromValue(i_eMapping, *pData, 1));
 					pData++;
 				}
-				if (2 < m_nChannel) {
+				if (2 < channel) {
 					color.setBlue(mapFromValue(i_eMapping, *pData, 2));
 					pData++;
 				}
-				for (c = 3; c < m_nChannel; c++) {
+				for (c = 3; c < channel; c++) {
 					pData++;
 				}
 				image.setPixel(x, y, color.rgb());
@@ -479,7 +450,7 @@ QImage TypedPixelBox<vType>::getByteImage(FBMapping i_eMapping)
 				} else {
 					image.setPixel(x, y, QColor(204, 204, 204).rgb());
 				}
-				for (c = 0; c < m_nChannel; c++) {
+				for (c = 0; c < channel; c++) {
 					pData++;
 				}
 			}
@@ -496,25 +467,25 @@ void TypedPixelBox<vType>::setByteImageRedChannel(QImage *image,
 {
 	int x, y;
 
-	if (m_nChannel != 1) {
+	if (channel != 1) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageRedChannel(..)"
 		" too many channels!");
 		return;
 	}
 
-	if (!m_pCoverage || !m_pData) {
+	if (!coverage || !boxData) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageRedChannel(..)"
 		" no coverage or data!\n");
 		return;
 	}
 
-	for (y = 0; y < m_nHeight; y++) {
-		for (x = 0; x < m_nWidth; x++) {
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
 			QColor c(image->pixel(x, y));
-			unsigned long idx = y * m_nWidth + x;
-			if (m_pCoverage[idx] && m_pDataMap[idx]) {
+			unsigned long idx = y * width + x;
+			if (coverage[idx] && boxDataMap[idx]) {
 				c.setRed(
-						getMappedValueI(m_pData[idx], mapping, rangeMapping,
+						getMappedValueI(boxData[idx], mapping, rangeMapping,
 								minmax));
 			} else if (useAlpha) {
 				c.setRed(0);
@@ -534,25 +505,25 @@ void TypedPixelBox<vType>::setByteImageGreenChannel(QImage *image,
 {
 	int x, y;
 
-	if (m_nChannel != 1) {
+	if (channel != 1) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageGreenChannel(..)"
 		" too many channels!");
 		return;
 	}
 
-	if (!m_pCoverage || !m_pData) {
+	if (!coverage || !boxData) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageGreenChannel(..)"
 		" no coverage or data!\n");
 		return;
 	}
 
-	for (y = 0; y < m_nHeight; y++) {
-		for (x = 0; x < m_nWidth; x++) {
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
 			QColor c(image->pixel(x, y));
-			unsigned long idx = y * m_nWidth + x;
-			if (m_pCoverage[idx] && m_pDataMap[idx]) {
+			unsigned long idx = y * width + x;
+			if (coverage[idx] && boxDataMap[idx]) {
 				c.setGreen(
-						getMappedValueI(m_pData[idx], mapping, rangeMapping,
+						getMappedValueI(boxData[idx], mapping, rangeMapping,
 								minmax));
 			} else if (useAlpha) {
 				c.setGreen(0);
@@ -572,25 +543,25 @@ void TypedPixelBox<vType>::setByteImageBlueChannel(QImage *image,
 {
 	int x, y;
 
-	if (m_nChannel != 1) {
+	if (channel != 1) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageBlueChannel(..)"
 		" too many channels!");
 		return;
 	}
 
-	if (!m_pCoverage || !m_pData) {
+	if (!coverage || !boxData) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageBlueChannel(..)"
 		" no coverage or data!\n");
 		return;
 	}
 
-	for (y = 0; y < m_nHeight; y++) {
-		for (x = 0; x < m_nWidth; x++) {
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
 			QColor c(image->pixel(x, y));
-			unsigned long idx = y * m_nWidth + x;
-			if (m_pCoverage[idx] && m_pDataMap[idx]) {
+			unsigned long idx = y * width + x;
+			if (coverage[idx] && boxDataMap[idx]) {
 				c.setBlue(
-						getMappedValueI(m_pData[idx], mapping, rangeMapping,
+						getMappedValueI(boxData[idx], mapping, rangeMapping,
 								minmax));
 			} else if (useAlpha) {
 				c.setBlue(0);
@@ -609,21 +580,21 @@ void TypedPixelBox<vType>::invalidateData()
 	int x, y, c;
 	bool *pDataMap;
 
-	if (!m_pDataMap) {
+	if (!boxDataMap) {
 		return;
 	}
 
-	pDataMap = m_pDataMap;
-	for (y = 0; y < m_nHeight; y++) {
-		for (x = 0; x < m_nWidth; x++) {
+	pDataMap = boxDataMap;
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
 			*pDataMap++ = false;
 		}
 	}
-	for (c = 0; c < m_nChannel; c++) {
-		m_nMinData[c] = (vType) 0;
-		m_nMaxData[c] = (vType) 0;
-		m_nAbsMinData[c] = (vType) 0;
-		m_nAbsMaxData[c] = (vType) 0;
+	for (c = 0; c < channel; c++) {
+		boxDataMin[c] = (vType) 0;
+		boxDataMax[c] = (vType) 0;
+		boxDataMinAbs[c] = (vType) 0;
+		boxDataMaxAbs[c] = (vType) 0;
 	}
 	emit dataChanged();
 }
@@ -632,10 +603,10 @@ template<typename vType>
 bool TypedPixelBox<vType>::getDataValue(int x, int y, vType *v)
 {
 	int i;
-	if (m_pCoverage && m_pData && m_pCoverage[y * m_nWidth + x]
-			&& m_pDataMap[y * m_nWidth + x]) {
-		for (i = 0; i < m_nChannel; i++) {
-			v[i] = m_pData[m_nChannel * (y * m_nWidth + x) + i];
+	if (coverage && boxData && coverage[y * width + x]
+			&& boxDataMap[y * width + x]) {
+		for (i = 0; i < channel; i++) {
+			v[i] = boxData[channel * (y * width + x) + i];
 		}
 		return true;
 	} else {
@@ -646,9 +617,9 @@ bool TypedPixelBox<vType>::getDataValue(int x, int y, vType *v)
 template<typename vType>
 bool TypedPixelBox<vType>::getDataValue(int x, int y, QVariant *v)
 {
-	vType *value = new vType[m_nChannel];
+	vType *value = new vType[channel];
 	if (getDataValue(x, y, value)) {
-		for (int i = 0; i < m_nChannel; i++) {
+		for (int i = 0; i < channel; i++) {
 			v[i] = value[i];
 		}
 		delete[] value;

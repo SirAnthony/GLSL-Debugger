@@ -1,7 +1,9 @@
 #include "shvaritem.h"
+#include "data/vertexBox.h"
+#include "data/pixelBox.h"
 
-ShVarItem::ShVarItem(ShVariable* var, bool recursive, int index, QStandardItem *parent) :
-		QStandardItem(parent)
+ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
+		QStandardItem()
 {
 	this->id = var->uniqueId;
 	this->name = var->name;
@@ -18,9 +20,9 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive, int index, QStandardItem *
 	this->selectable = !(var->type == SH_SAMPLER);
 
 	this->watched = false;
-	this->vertex_box = QVariant::fromValue<void*>(NULL);
-	this->pixel_box = QVariant::fromValue<void*>(NULL);
-	this->current_box = QVariant::fromValue<void*>(NULL);
+	this->vertexBox = QVariant::fromValue<void*>(NULL);
+	this->geometryBox = QVariant::fromValue<void*>(NULL);
+	this->pixelBox = QVariant::fromValue<void*>(NULL);	
 	this->selected_value = QVariant();
 	this->uniform_value = QVariant();
 
@@ -59,7 +61,7 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive, int index, QStandardItem *
 				for (int j = 0; j < var->matrixColumns; ++j) {
 					ShVarItem *col = new ShVarItem(var, false);
 					col->setChangeable(SH_CGB_ARRAY, i, j);
-					row.appendRow(col);
+					row->appendRow(col);
 				}
 			}
 		} else if (var->size > 1) {
@@ -70,6 +72,25 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive, int index, QStandardItem *
 				this->appendRow(elem);
 			}
 		}
+	}
+}
+
+ShVarItem::~ShVarItem()
+{
+	VertexBox* vb = this->vertexBox.value<VertexBox*>();
+	VertexBox* gb = this->geometryBox.value<VertexBox*>();
+	PixelBox* pb = this->pixelBox.value<PixelBox*>();
+	if (vb) {
+		this->vertexBox.setValue(NULL);
+		delete vb;
+	}
+	if (gb) {
+		this->geometryBox.setValue(NULL);
+		delete gb;
+	}
+	if (pb) {
+		this->pixelBox.setValue(NULL);
+		delete pb;
 	}
 }
 
@@ -86,6 +107,8 @@ QVariant ShVarItem::data(int role) const
 		return QStandardItem::data(role);
 
 	switch (role) {
+	case DF_NAME:
+		return this->name;
 	case DF_TYPE:
 		return this->type;
 	case DF_ARRAYTYPE:
@@ -108,6 +131,12 @@ QVariant ShVarItem::data(int role) const
 		return this->watched;
 	case DF_CGBL_INDEX_B:
 		return this->changeableIndex[1];
+	case DF_DATA_PIXELBOX:
+		return this->pixelBox;
+	case DF_DATA_GEOMETRYBOX:
+		return this->geometryBox;
+	case DF_DATA_VERTEXBOX:
+		return this->vertexBox;
 	default:
 		break;
 	}
@@ -123,11 +152,102 @@ void ShVarItem::setData(const QVariant &value, int role)
 	switch (role) {
 	case DF_CHANGED:
 		this->changed = value.toBool();
-		break;		
+		break;
 	case DF_SCOPE:
-		this->scope = value.toInt();
+		this->scope = (ShVarItem::Scope)value.toInt();
 		break;
 	default:
 		break;
 	}
+}
+
+void ShVarItem::updateWatchData()
+{
+	ShChangeableList cl;
+	cl.numChangeables = 0;
+	cl.changeables = NULL;
+
+	ShChangeable *watchItemCgbl =  watchItem->getShChangeable();
+	addShChangeable(&cl, watchItemCgbl);
+
+	int rbFormat = watchItem->getReadbackFormat();
+
+	if (currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
+		PixelBox *fb = watchItem->getPixelBoxPointer();
+		if (fb) {
+			if (getDebugImage(DBG_CG_CHANGEABLE, &cl, rbFormat, m_pCoverage,
+							  &fb)) {
+				watchItem->setCurrentValue(m_selectedPixel[0],
+						m_selectedPixel[1]);
+			} else {
+				QMessageBox::warning(this, "Warning",
+									 "The requested data could "
+									 "not be retrieved.");
+			}
+		} else {
+			if (getDebugImage(DBG_CG_CHANGEABLE, &cl, rbFormat, m_pCoverage,
+							  &fb)) {
+				watchItem->setPixelBoxPointer(fb);
+				watchItem->setCurrentValue(m_selectedPixel[0],
+						m_selectedPixel[1]);
+			} else {
+				QMessageBox::warning(this, "Warning",
+									 "The requested data could "
+									 "not be retrieved.");
+			}
+		}
+	} else if (currentRunLevel == RL_DBG_VERTEX_SHADER) {
+		VertexBox *data = new VertexBox();
+		if (getDebugVertexData(DBG_CG_CHANGEABLE, &cl, m_pCoverage, data)) {
+			VertexBox *vb = watchItem->getVertexBoxPointer();
+			if (vb) {
+				vb->addVertexBox(data);
+				delete data;
+			} else {
+				watchItem->setVertexBoxPointer(data);
+			}
+			watchItem->setCurrentValue(m_selectedPixel[0]);
+		} else {
+			QMessageBox::warning(this, "Warning", "The requested data could "
+								 "not be retrieved.");
+		}
+	} else if (currentRunLevel == RL_DBG_GEOMETRY_SHADER) {
+		VertexBox *currentData = new VertexBox();
+
+		UT_NOTIFY(LV_TRACE, "Get CHANGEABLE:");
+		if (getDebugVertexData(DBG_CG_CHANGEABLE, &cl, m_pCoverage,
+							   currentData)) {
+			VertexBox *vb = watchItem->getCurrentPointer();
+			if (vb) {
+				vb->addVertexBox(currentData);
+				delete currentData;
+			} else {
+				watchItem->setCurrentPointer(currentData);
+			}
+
+			VertexBox *vertexData = new VertexBox();
+
+			UT_NOTIFY(LV_TRACE, "Get GEOMETRY_CHANGABLE:");
+			if (getDebugVertexData(DBG_CG_GEOMETRY_CHANGEABLE, &cl, NULL,
+								   vertexData)) {
+				VertexBox *vb = watchItem->getVertexBoxPointer();
+				if (vb) {
+					vb->addVertexBox(vertexData);
+					delete vertexData;
+				} else {
+					watchItem->setVertexBoxPointer(vertexData);
+				}
+			} else {
+				QMessageBox::warning(this, "Warning",
+									 "The requested data could "
+									 "not be retrieved.");
+			}
+			watchItem->setCurrentValue(m_selectedPixel[0]);
+		} else {
+			QMessageBox::warning(this, "Warning", "The requested data could "
+								 "not be retrieved.");
+			return;
+		}
+	}
+	freeShChangeable(&watchItemCgbl);
 }

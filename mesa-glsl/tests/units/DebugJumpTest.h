@@ -91,7 +91,7 @@ public:
 		}
 		dr << "\nChangeables:\n";
 		for (int i = 0; i < dbg_result.cgbls.numChangeables; ++i) {
-			ShChangeable* ch = dbg_result.cgbls.changeables[i];
+			const ShChangeable* ch = dbg_result.cgbls.changeables[i];
 			dr << " " << formatChangeable(ch);
 		}
 		if (dbg_result.cgbls.numChangeables)

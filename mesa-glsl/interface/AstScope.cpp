@@ -5,11 +5,8 @@
  */
 
 #include "AstScope.h"
+#include "Shader.h"
 #include "glsldb/utils/dbgprint.h"
-
-
-extern ShChangeable * copyShChangeableCtx(ShChangeable *c, void* mem_ctx);
-
 
 scope_item* scope_item::clone(void *mem_ctx)
 {

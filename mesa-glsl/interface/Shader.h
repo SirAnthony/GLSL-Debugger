@@ -18,11 +18,11 @@ class ir_variable;
 ShChangeable* createShChangeableCtx(int id, void* mem_ctx);
 ShChangeableIndex* createShChangeableIndexCtx(ShChangeableType type, long index, void* mem_ctx);
 void copyAstChangeableList(exec_list *clout, exec_list *clin, exec_list* only, void* mem_ctx);
-void addShChangeableCtx(ShChangeableList *cl, ShChangeable *c, void* mem_ctx);
-ShChangeable * copyShChangeableCtx(ShChangeable *c, void* mem_ctx);
-void addShIndexToChangeableCtx(ShChangeable *c, ShChangeableIndex *idx, void* mem_ctx);
-void copyShChangeableToListCtx(ShChangeableList *cl, ShChangeable *c, void* mem_ctx);
-void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin, void* mem_ctx);
+void addShChangeableCtx(ShChangeableList *cl, const ShChangeable *c);
+ShChangeable * copyShChangeableCtx(const ShChangeable *c, void* mem_ctx);
+void addShIndexToChangeableCtx(ShChangeable *c, const ShChangeableIndex *idx);
+void copyShChangeableToListCtx(ShChangeableList *cl, const ShChangeable *c);
+void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin);
 
 // Variables
 ShVariable* findShVariable(int id);

@@ -21,6 +21,10 @@ public:
 
 signals:
 	void addWatchItem(ShVarItem* item);
+
+public slots:
+	void valuesChanged();
+	void clear();
 	
 };
 

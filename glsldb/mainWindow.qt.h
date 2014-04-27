@@ -126,7 +126,7 @@ private slots:
 	/* watch */
 	void on_tbWatchWindow_clicked();
 	void on_tbWatchWindowAdd_clicked();
-	void on_tbWatchDelete_clicked();
+	/*void on_tbWatchDelete_clicked();*/
 	void watchWindowClosed();
 
 	/****************

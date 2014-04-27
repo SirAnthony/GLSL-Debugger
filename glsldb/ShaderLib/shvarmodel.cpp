@@ -1,5 +1,6 @@
 
 #include "shvarmodel.h"
+#include "shdatamanager.h"
 
 ShVarModel::ShVarModel(QObject *parent) :
 	QStandardItemModel(parent)
@@ -11,14 +12,17 @@ ShVarModel::ShVarModel(QObject *parent) :
 			<< "Data PixelBox" << "Data VertexBox" << "Data CurrentBox"
 			<< "Selection Value" << "Value";
 
-	this->setVerticalHeaderLabels(column_names);	
+	this->setVerticalHeaderLabels(column_names);
+
+	ShDataManager* manager = ShDataManager::get();
+	connect(manager, SIGNAL(cleanModel()), SLOT(clear()));
 }
 
 void ShVarModel::appendRow(const ShVariableList *items)
 {
 	QStandardItem *root = this->invisibleRootItem();
-	for (i = 0; i < i_pVL->numVariables; i++) {
-		ShVarItem* item = new ShVarItem(i_pVL->variables[i]);
+	for (int i = 0; i < items->numVariables; i++) {
+		ShVarItem* item = new ShVarItem(items->variables[i]);
 		root->appendRow(item);
 	}
 }
@@ -34,7 +38,7 @@ void ShVarModel::setRecursive(QVariant data, varDataFields field, ShVarItem *ite
 	}
 
 	for (int row = 0; row < item->rowCount(); ++row)
-		setRecursive(field, data, item->child(row));
+		setRecursive(data, field, dynamic_cast<ShVarItem*>(item->child(row)));
 }
 
 void ShVarModel::setWatched(ShVarItem *item)
@@ -51,7 +55,7 @@ void ShVarModel::setWatched(ShVarItem *item)
 			emit addWatchItem(item);
 		} else {
 			for (int i = 0; i < item->rowCount(); i++)
-				this->setWatched(item->child(i));
+				this->setWatched(dynamic_cast<ShVarItem*>(item->child(i)));
 		}
 	}
 }
@@ -62,7 +66,7 @@ void ShVarModel::unsetWatched(ShVarItem *item)
 		return;
 
 	for (int i = 0; i < item->rowCount(); ++i)
-		unsetWatched(item->child(i)->index());
+		unsetWatched(dynamic_cast<ShVarItem*>(item->child(i)));
 
 	/*
 	if (item->getPixelBoxPointer() != NULL) {
@@ -84,7 +88,12 @@ void ShVarModel::unsetWatched(ShVarItem *item)
 	item->setData(false, DF_WATCHED);
 	emit dataChanged(item->index(), item->index());
 	if (item->parent() != this->invisibleRootItem())
-		unsetWatched(item->parent()->index());
+		unsetWatched(dynamic_cast<ShVarItem*>(item->parent()));
+}
+
+void ShVarModel::clear()
+{
+	this->invisibleRootItem()->removeRows(0, this->rowCount());
 }
 
 void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, DbgRsScopeStack &stack)

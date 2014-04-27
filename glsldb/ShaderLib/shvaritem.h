@@ -30,8 +30,8 @@ typedef enum {
 	DF_SELECTABLE,
 	DF_WATCHED,
 	DF_DATA_PIXELBOX,
-	DF_DATA_VERTEXBOX,
-	DF_DATA_CURRENTBOX,
+	DF_DATA_GEOMETRYBOX,
+	DF_DATA_VERTEXBOX,	
 	DF_DEBUG_SELECTED_VALUE,
 	DF_DEBUG_UNIFORM_VALUE,
 	DF_LAST
@@ -43,26 +43,24 @@ class ShVarItem : public QStandardItem
 	Q_OBJECT
 public:
 	enum Scope {
-		NewInScope,
-		InScope,
-		InScopeStack,
-		LeftScope,
-		OutOfScope
+		NewInScope = 1,
+		InScope = 2,
+		InScopeStack = 4,
+		AtScope = 7,		// NewInScope, InScope or InScopeStack
+		LeftScope = 8,
+		OutOfScope = 16,
+		NotAtScope = 24		// LeftScope or OutOfScope
 	};
 
-	ShVarItem(ShVariable *var, bool recursive = true, int index = -1, int index = -1,
-			  QStandardItem *parent = 0);
+	ShVarItem(ShVariable *var, bool recursive = true);
+	~ShVarItem();
 	void setChangeable(ShChangeableType t, int idxc = -1, int idxr = -1);
 
 	QVariant data(int role = DF_FIRST) const;
 	void setData(const QVariant &value, int role = DF_FIRST);
 
-	inline ShVarItem *child(int row, int column = 0) const
-	{
-		return QStandardItem::child(row, column);
-	}
-
-
+	void updateWatchData();
+	void invalidateWatchData();
 
 signals:
 
@@ -84,9 +82,9 @@ protected:
 	int changeableIndex[2];
 	enum Scope scope;
 
-	QVariant vertex_box;
-	QVariant pixel_box;
-	QVariant current_box;
+	QVariant vertexBox;
+	QVariant geometryBox;
+	QVariant pixelBox;
 	QVariant selected_value;
 	QVariant uniform_value;
 };

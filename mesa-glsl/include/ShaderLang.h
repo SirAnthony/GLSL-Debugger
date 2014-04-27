@@ -134,27 +134,20 @@ typedef struct {
 typedef struct {
 	int id;
 	int numIndices;
-	ShChangeableIndex **indices;
+	const ShChangeableIndex **indices;
 } ShChangeable;
 
 typedef struct {
 	int numChangeables;
-	ShChangeable **changeables;
+	const ShChangeable **changeables;
 } ShChangeableList;
 
 //
 // Some helper Functions for changeable handling
 //
-SH_IMPORT_EXPORT ShChangeable* createShChangeable(int id);
-SH_IMPORT_EXPORT ShChangeableIndex* createShChangeableIndex(ShChangeableType type,
-		int index);
-SH_IMPORT_EXPORT void dumpShChangeable(ShChangeable *cbl);
+SH_IMPORT_EXPORT void dumpShChangeable(const ShChangeable *cbl);
 SH_IMPORT_EXPORT void dumpShChangeableList(ShChangeableList *cl);
-SH_IMPORT_EXPORT void addShChangeable(ShChangeableList *cl, ShChangeable *c);
-SH_IMPORT_EXPORT void copyShChangeableList(ShChangeableList *clout, ShChangeableList *clin);
-SH_IMPORT_EXPORT void addShIndexToChangeable(ShChangeable *c, ShChangeableIndex *idx);
-SH_IMPORT_EXPORT void addShIndexToChangeableList(ShChangeableList *cl, int s,
-		ShChangeableIndex *idx);
+SH_IMPORT_EXPORT void addShChangeable(ShChangeableList *cl, const ShChangeable *c);
 SH_IMPORT_EXPORT void freeShChangeable(ShChangeable **c);
 
 //

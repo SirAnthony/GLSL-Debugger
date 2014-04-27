@@ -19,13 +19,12 @@ bool ShScopeSortFilterProxyModel::filterAcceptsRow(int row, const QModelIndex &p
 {
 	QAbstractItemModel *sm = sourceModel();
 	QModelIndex index = sm->index(row, 0, parent);
-	ShVarItem::Scope scope = sm->data(index, DF_SCOPE).toInt();
+	ShVarItem::Scope scope = (ShVarItem::Scope)sm->data(index, DF_SCOPE).toInt();
 
 	/* no builtins, no uniforms, but everything else in scope */
 	return !sm->data(index, DF_BUILTIN).toBool()
 			&& sm->data(index, DF_QUALIFIER).toInt() != SH_UNIFORM
-			&& (scope == ShVarItem::InScope || scope = ShVarItem::NewInScope
-				|| scope == ShVarItem::InScopeStack);
+			&& (scope & ShVarItem::AtScope);
 }
 
 bool ShWatchedSortFilterProxyModel::filterAcceptsRow(int row, const QModelIndex &parent) const

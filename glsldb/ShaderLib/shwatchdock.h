@@ -8,6 +8,12 @@ namespace Ui {
 	class ShWatchDock;
 }
 
+enum CoverageMapStatus {
+	COVERAGEMAP_UNCHANGED,
+	COVERAGEMAP_GROWN,
+	COVERAGEMAP_SHRINKED
+};
+
 class ShWatchDock : public ShDockWidget
 {
 	Q_OBJECT
@@ -17,9 +23,14 @@ public:
 
 	void expand(ShVarItem* item);
 
+signals:
+	void updateWindows(bool force);
+
 public slots:
+	void updateData(CoverageMapStatus cmstatus, bool force);
 	void newItem(ShVarItem* item);
-	void removeItems();
+	void removeSelected();
+	void clearWatchList();
 
 private:
 	QSet<ShVarItem *> watchItems;

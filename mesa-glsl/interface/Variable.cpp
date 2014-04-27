@@ -458,6 +458,8 @@ static variableType typeFromGlsl(const struct glsl_type* type)
 		return SH_ARRAY;
 	case GLSL_TYPE_VOID:
 		return SH_VOID;
+	default:
+		break;
 	}
 	dbgPrint(DBGLVL_ERROR, "Type does not defined %x", type->base_type);
 	return SH_ERROR;

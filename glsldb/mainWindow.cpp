@@ -2956,6 +2956,7 @@ void MainWindow::updateWatchGui(int s)
 	}
 }
 
+/*
 void MainWindow::on_tbWatchDelete_clicked()
 {
 	int i;
@@ -2976,7 +2977,7 @@ void MainWindow::on_tbWatchDelete_clicked()
 	updateWatchGui(
 			cleanupSelectionList(tvWatchList->selectionModel()->selectedRows()).count());
 
-	/* Now update all windows to update themselves if necessary */
+	// Now update all windows to update themselves if necessary
 	QWidgetList windowList = workspace->windowList();
 
 	for (i = 0; i < windowList.count(); i++) {
@@ -2984,6 +2985,7 @@ void MainWindow::on_tbWatchDelete_clicked()
 		wv->updateView(false);
 	}
 }
+*/
 
 void MainWindow::watchSelectionChanged(const QItemSelection& selected,
 		const QItemSelection& deselected)

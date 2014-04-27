@@ -11,12 +11,12 @@
 #include <unordered_set>
 
 
-void dumpShChangeable(ShChangeable *cgb)
+void dumpShChangeable(const ShChangeable *cgb)
 {
 	if (cgb) {
 		dbgPrint(DBGLVL_INFO, "%i", cgb->id);
 		for (int j = 0; j < cgb->numIndices; j++) {
-			ShChangeableIndex *idx = cgb->indices[j];
+			const ShChangeableIndex *idx = cgb->indices[j];
 			if (idx) {
 				switch (idx->type) {
 				case SH_CGB_ARRAY:
@@ -49,14 +49,12 @@ void dumpShChangeableList(ShChangeableList *cl)
 		return;
 	}
 
-	for (i = 0; i < cl->numChangeables; i++) {
-		ShChangeable *cgb = cl->changeables[i];
-		dumpShChangeable(cgb);
-	}
+	for (i = 0; i < cl->numChangeables; i++)
+		dumpShChangeable(cl->changeables[i]);
 	dbgPrint(DBGLVL_INFO, "\n");
 }
 
-static bool isEqualShChangeable(ShChangeable *a, ShChangeable *b)
+static bool isEqualShChangeable(const ShChangeable *a, const ShChangeable *b)
 {
 	int i;
 
@@ -79,75 +77,9 @@ static bool isEqualShChangeable(ShChangeable *a, ShChangeable *b)
 // Old functions
 //
 
-ShChangeable* createShChangeable(int id)
-{
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Creation of changeable out of shader mem.\n");
-	return createShChangeableCtx(id, NULL);
-}
-
-ShChangeableIndex* createShChangeableIndex(ShChangeableType type, int index)
-{
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Creation of changeable index out of shader mem.\n");
-	return createShChangeableIndexCtx(type, index, NULL);
-}
-
 void addShChangeable(ShChangeableList *cl, ShChangeable *c)
 {
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Realloc of changeables out of shader mem.\n");
-	addShChangeableCtx(cl, c, NULL);
-}
-
-// FIXME: is this reasonable
-ShChangeable * copyShChangeable(ShChangeable *c)
-{
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Copy of changeable out of shader mem.\n");
-	return copyShChangeableCtx(c, NULL);
-}
-
-void copyShChangeableToList(ShChangeableList *cl, ShChangeable *c)
-{
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Copy changeable to list out of shader mem.\n");
-	copyShChangeableToListCtx(cl, c, NULL);
-}
-
-void copyShChangeableList(ShChangeableList *clout, ShChangeableList *clin)
-{
-	int i, j;
-
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Deprecated copyShChangeableList.\n");
-
-	if (!clout || !clin)
-		return;
-
-	for (i = 0; i < clin->numChangeables; i++) {
-		// copy only if not already in list
-		bool alreadyInList = false;
-		for (j = 0; j < clout->numChangeables; j++) {
-			if (isEqualShChangeable(clout->changeables[j],
-					clin->changeables[i])) {
-				alreadyInList = true;
-				break;
-			}
-		}
-		if (!alreadyInList)
-			copyShChangeableToList(clout, clin->changeables[i]);
-	}
-}
-
-void addShIndexToChangeable(ShChangeable *c, ShChangeableIndex *idx)
-{
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Adding of ChangeableIndex out of shader mem.\n");
-	addShIndexToChangeableCtx(c, idx, NULL);
-}
-
-void addShIndexToChangeableList(ShChangeableList *cl, int s,
-		ShChangeableIndex *idx)
-{
-	dbgPrint(DBGLVL_INTERNAL_WARNING, "Adding of ChangeableIndex to list out of shader mem.\n");
-	if (!cl)
-		return;
-	if (s < cl->numChangeables)
-		addShIndexToChangeable(cl->changeables[s], idx);
+	addShChangeableCtx(cl, c);
 }
 
 
@@ -170,18 +102,18 @@ ShChangeableIndex* createShChangeableIndexCtx(ShChangeableType type, long index,
 	return idx;
 }
 
-void addShChangeableCtx(ShChangeableList *cl, ShChangeable *c, void* mem_ctx)
+void addShChangeableCtx(ShChangeableList *cl, const ShChangeable *c)
 {
 	if (!cl || !c)
 		return;
 
 	cl->numChangeables++;
-	cl->changeables = (ShChangeable**) reralloc_array_size(mem_ctx, cl->changeables,
+	cl->changeables = (const ShChangeable**) reralloc_array_size(cl, cl->changeables,
 			sizeof(ShChangeable*), cl->numChangeables);
 	cl->changeables[cl->numChangeables - 1] = c;
 }
 
-ShChangeable * copyShChangeableCtx(ShChangeable *c, void* mem_ctx)
+ShChangeable * copyShChangeableCtx(const ShChangeable *c, void* mem_ctx)
 {
 	int i;
 	ShChangeable *copy;
@@ -194,27 +126,26 @@ ShChangeable * copyShChangeableCtx(ShChangeable *c, void* mem_ctx)
 	// add all indices
 	for (i = 0; i < c->numIndices; i++) {
 		copy->numIndices++;
-		copy->indices = (ShChangeableIndex**)reralloc_array_size(mem_ctx, copy->indices,
+		copy->indices = (const ShChangeableIndex**)reralloc_array_size(copy, copy->indices,
 				sizeof(ShChangeableIndex*), copy->numIndices);
 
 		copy->indices[copy->numIndices - 1] = createShChangeableIndexCtx(
-						c->indices[i]->type, c->indices[i]->index, mem_ctx);
+						c->indices[i]->type, c->indices[i]->index, copy);
 	}
 
 	return copy;
 }
 
-void copyShChangeableToListCtx(ShChangeableList *cl, ShChangeable *c, void* mem_ctx)
+void copyShChangeableToListCtx(ShChangeableList *cl, const ShChangeable *c)
 {
-	ShChangeable *copy;
 	if (!cl || !c)
 		return;
 
-	copy = copyShChangeableCtx(c, mem_ctx);
-	addShChangeableCtx(cl, copy, mem_ctx);
+	ShChangeable *copy = copyShChangeableCtx(c, cl);
+	addShChangeableCtx(cl, copy);
 }
 
-void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin, void* mem_ctx)
+void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin)
 {
 	if (!clout || !clin)
 		return;
@@ -229,7 +160,7 @@ void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin, void* mem
 			}
 		}
 		if (!alreadyInList)
-			copyShChangeableToListCtx(clout, ch_item->changeable, mem_ctx);
+			copyShChangeableToListCtx(clout, ch_item->changeable);
 	}
 }
 
@@ -262,13 +193,13 @@ void copyAstChangeableList(exec_list *clout, exec_list *clin, exec_list* only, v
 	}
 }
 
-void addShIndexToChangeableCtx(ShChangeable *c, ShChangeableIndex *idx, void* mem_ctx)
+void addShIndexToChangeableCtx(ShChangeable *c, const ShChangeableIndex *idx)
 {
 	if (!c)
 		return;
 
 	c->numIndices++;
-	c->indices = (ShChangeableIndex**) reralloc_array_size(mem_ctx, c->indices,
+	c->indices = (const ShChangeableIndex**) reralloc_array_size(c, c->indices,
 			sizeof(ShChangeableIndex*), c->numIndices);
 	c->indices[c->numIndices - 1] = idx;
 }
@@ -276,10 +207,6 @@ void addShIndexToChangeableCtx(ShChangeable *c, ShChangeableIndex *idx, void* me
 void freeShChangeable(ShChangeable **c)
 {
 	if (c && *c) {
-		int i;
-		for (i = 0; i < (*c)->numIndices; i++)
-			ralloc_free((*c)->indices[i]);
-		ralloc_free((*c)->indices);
 		ralloc_free(*c);
 		*c = NULL;
 	}
