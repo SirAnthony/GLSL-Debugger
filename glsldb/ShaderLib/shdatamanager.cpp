@@ -7,6 +7,11 @@
 #include "progControl.qt.h"
 #include "runLevel.h"
 
+#include <QTextDocument>
+#include <QTextCharFormat>
+#include <QTextEdit>
+
+
 ShDataManager* ShDataManager::instance = NULL;
 
 const char *dbg_cg_names[DBG_CG_LAST] = {
@@ -51,8 +56,8 @@ ShDataManager *ShDataManager::get()
 	return instance;
 }
 
-bool ShDataManager::getDebugData(DebugDataType type, DbgCgOptions option, ShChangeableList *cl,
-								 int format, bool *coverage, DataBox **data)
+bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
+								 int format, bool *coverage, DataBox *data)
 {
 	enum DBG_TARGETS target;
 	pcErrorCode error;
@@ -60,16 +65,16 @@ bool ShDataManager::getDebugData(DebugDataType type, DbgCgOptions option, ShChan
 	char *debugCode = ShDebugGetProg(compiler, cl, &shVariables, option);
 
 	switch (type) {
-	case ddtVertex:
+	case EShLangVertex:
 		shaders[0] = debugCode;
 		shaders[1] = NULL;
 		target = DBG_TARGET_VERTEX_SHADER;
 		break;
-	case ddtGeometry:
+	case EShLangGeometry:
 		shaders[1] = debugCode;
 		target = DBG_TARGET_GEOMETRY_SHADER;
 		break;
-	case ddtFragment:
+	case EShLangFragment:
 		shaders[2] = debugCode;
 		target = DBG_TARGET_FRAGMENT_SHADER;
 	default:
@@ -82,38 +87,23 @@ bool ShDataManager::getDebugData(DebugDataType type, DbgCgOptions option, ShChan
 
 	printDebugInfo(option, target, shaders);
 	if (type == ddtFragment)
-		error = retriveFragmentData(shaders, format, option, data);
+		error = retriveFragmentData(shaders, format, option, coverage, data);
 	else
-		error = retriveVertexData(shaders, target, option, data);
+		error = retriveVertexData(shaders, target, option, coverage, data);
 
 	free(debugCode);
-	if (error != PCE_NONE) {
-		setErrorStatus(error);
-		if (isErrorCritical(error)) {
-			cleanShader();
-			setRunLevel(RL_SETUP);
-			QMessageBox::critical(this, "Critical Error", "Could not debug "
-								  "shader. An error occured!", QMessageBox::Ok);
-			dbgPrint(DBGLVL_ERROR, "Critical Error in getDebugData: " << getErrorDescription(error));
-			killProgram(1);
-			return false;
-		}
+	if (!processError(error)) {
 		QMessageBox::critical(this, "Error", "Could not debug "
 							  "shader. An error occured!", QMessageBox::Ok);
-		dbgPrint(DBGLVL_WARNING, "Error in getDebugData: " << getErrorDescription(error));
 		return false;
 	}
 
-	free(data);
-	UT_NOTIFY(LV_TRACE, "getDebugVertexData done");
+	dbgPrint(DBGLVL_INFO, "getDebugVertexData done");
 	return true;
 }
 
 bool ShDataManager::cleanShader()
 {
-	QList<ShVarItem*> watchItems;
-	int i;
-
 	pcErrorCode error = PCE_NONE;
 
 	/* remove debug markers from code display */
@@ -153,9 +143,8 @@ bool ShDataManager::cleanShader()
 	case RL_DBG_VERTEX_SHADER:
 	case RL_DBG_FRAGMENT_SHADER:
 		emit cleanModel();
-		while (!m_qLoopData.isEmpty()) {
+		while (!m_qLoopData.isEmpty())
 			delete m_qLoopData.pop();
-		}
 
 		if (compiler) {
 			ShDestruct(compiler);
@@ -178,26 +167,33 @@ bool ShDataManager::cleanShader()
 			break;
 		default:
 			error = PCE_NONE;
-		}
-
-		setErrorStatus(error);
-		if (error != PCE_NONE) {
-			if (isErrorCritical(error)) {
-				setRunLevel(RL_SETUP);
-				dbgPrint(DBGLVL_ERROR, getErrorDescription(error));
-				killProgram(1);
-				return;
-			}
-			dbgPrint(DBGLVL_WARNING, getErrorDescription(error));
-			return;
-		}
+		}		
 		break;
 	default:
 		break;
 	}
+
+	return processError(error);
 }
 
-int ShDataManager::retriveVertexData(char *shaders[], int target, int option, VertexBox **data)
+bool ShDataManager::processError(int error)
+{
+	emit setErrorStatus(error);
+	if (error == PCE_NONE)
+		return true;
+
+	dbgPrint(DBGLVL_WARNING, "Error occured: " << getErrorDescription(error));
+	if (isErrorCritical(error)) {
+		dbgPrint(DBGLVL_ERROR, "Error is critical.");
+		cleanShader();
+		setRunLevel(RL_SETUP);
+		killProgram(1);
+	}
+	return false;
+}
+
+int ShDataManager::retriveVertexData(char *shaders[], int target, int option, bool *coverage,
+									 VertexBox *box)
 {
 	int elementsPerVertex = 3;
 	int forcePointPrimitiveMode = 0;
@@ -228,6 +224,7 @@ int ShDataManager::retriveVertexData(char *shaders[], int target, int option, Ve
 	}
 
 	int numVertices, numPrimitives;
+	float *data;
 	error = pc->shaderStepVertex(shaders, target, primitiveMode,
 								 forcePointPrimitiveMode, elementsPerVertex, &numPrimitives,
 								 &numVertices, &data);
@@ -235,27 +232,17 @@ int ShDataManager::retriveVertexData(char *shaders[], int target, int option, Ve
 			 numPrimitives, numVertices);
 
 	if (error == PCE_NONE)
-		data->setData(data, elementsPerVertex, numVertices, numPrimitives,
-				   coverage);
+		box->setData(data, elementsPerVertex, numVertices, numPrimitives, coverage);
+
+	if (data)
+		free(data);
+
 	dbgPrint(DBGLVL_DEBUG, "retriveVertexData done");
 	return error;
 }
 
-template<typename T>
-static void add_pixelbox(int width, int height, int channels, T* imageData,
-						 bool *coverage, PixelBox **data)
-{
-	T *pb = new TypedPixelBox<T>(width, height, channels, imageData, coverage);
-	if (*data){
-		TypedPixelBox<T> *pbData = dynamic_cast< TypedPixelBox<T> >(*data);
-		pbData->addPixelBox(pb);
-		delete pb;
-	} else {
-		*data = pb;
-	}
-}
-
-int ShDataManager::retriveFragmentData(char *shaders[], int format, int option, PixelBox **data)
+int ShDataManager::retriveFragmentData(char *shaders[], int format, int option, bool *coverage,
+									   PixelBox *box)
 {
 	int channels;
 	pcErrorCode error;
@@ -307,13 +294,13 @@ int ShDataManager::retriveFragmentData(char *shaders[], int format, int option, 
 
 	switch (format) {
 	case GL_FLOAT:
-		add_pixelbox<float>(width, height, channels, imageData, coverage, data);
+		box->setData<float>(width, height, channels, imageData, coverage);
 		break;
 	case GL_INT:
-		add_pixelbox<int>(width, height, channels, imageData, coverage, data);
+		box->setData<int>(width, height, channels, imageData, coverage);
 		break;
 	case GL_UNSIGNED_INT:
-		add_pixelbox<unsigned int>(width, height, channels, imageData, coverage, data);
+		box->setData<unsigned int>(width, height, channels, imageData, coverage);
 		break;
 	default:
 		dbgPrint(DBGLVL_ERROR, "Invalid image data format");

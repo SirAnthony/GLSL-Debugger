@@ -1,6 +1,11 @@
+
 #include "shvaritem.h"
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
+#include "shdatamanager.h"
+#include "dbgprint.h"
+#include "QMessageBox"
+
 
 ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
 		QStandardItem()
@@ -20,10 +25,10 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
 	this->selectable = !(var->type == SH_SAMPLER);
 
 	this->watched = false;
-	this->vertexBox = QVariant::fromValue<void*>(NULL);
-	this->geometryBox = QVariant::fromValue<void*>(NULL);
-	this->pixelBox = QVariant::fromValue<void*>(NULL);	
-	this->selected_value = QVariant();
+	this->vertexBox.setValue(new VertexBox);
+	this->geometryBox.setValue(new VertexBox);
+	this->pixelBox.setValue(new PixelBox);
+	this->selected = QVariant();
 	this->uniform_value = QVariant();
 
 	if (var->structSize) {
@@ -161,7 +166,7 @@ void ShVarItem::setData(const QVariant &value, int role)
 	}
 }
 
-void ShVarItem::updateWatchData()
+void ShVarItem::updateWatchData(EShLanguage type)
 {
 	ShChangeableList cl;
 	cl.numChangeables = 0;
@@ -171,81 +176,35 @@ void ShVarItem::updateWatchData()
 	addShChangeable(&cl, watchItemCgbl);
 
 	int rbFormat = watchItem->getReadbackFormat();
+	ShDataManager* manager = ShDataManager::get();
 
-	if (currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
-		PixelBox *fb = watchItem->getPixelBoxPointer();
-		if (fb) {
-			if (getDebugImage(DBG_CG_CHANGEABLE, &cl, rbFormat, m_pCoverage,
-							  &fb)) {
-				watchItem->setCurrentValue(m_selectedPixel[0],
-						m_selectedPixel[1]);
-			} else {
-				QMessageBox::warning(this, "Warning",
-									 "The requested data could "
-									 "not be retrieved.");
-			}
-		} else {
-			if (getDebugImage(DBG_CG_CHANGEABLE, &cl, rbFormat, m_pCoverage,
-							  &fb)) {
-				watchItem->setPixelBoxPointer(fb);
-				watchItem->setCurrentValue(m_selectedPixel[0],
-						m_selectedPixel[1]);
-			} else {
-				QMessageBox::warning(this, "Warning",
-									 "The requested data could "
-									 "not be retrieved.");
-			}
-		}
-	} else if (currentRunLevel == RL_DBG_VERTEX_SHADER) {
-		VertexBox *data = new VertexBox();
-		if (getDebugVertexData(DBG_CG_CHANGEABLE, &cl, m_pCoverage, data)) {
-			VertexBox *vb = watchItem->getVertexBoxPointer();
-			if (vb) {
-				vb->addVertexBox(data);
-				delete data;
-			} else {
-				watchItem->setVertexBoxPointer(data);
-			}
-			watchItem->setCurrentValue(m_selectedPixel[0]);
-		} else {
+	if (type == EShLangFragment) {
+		PixelBox *data = this->pixelBox.value<PixelBox*>();
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, data))
+			this->setCurrentValue(m_selectedPixel[0], m_selectedPixel[1]);
+		else
+			QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
+	} else if (type == EShLangVertex) {
+		VertexBox *data = this->vertexBox.value<VertexBox*>();
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, data))
+			this->setCurrentValue(m_selectedPixel[0]);
+		else
 			QMessageBox::warning(this, "Warning", "The requested data could "
 								 "not be retrieved.");
-		}
-	} else if (currentRunLevel == RL_DBG_GEOMETRY_SHADER) {
-		VertexBox *currentData = new VertexBox();
-
-		UT_NOTIFY(LV_TRACE, "Get CHANGEABLE:");
-		if (getDebugVertexData(DBG_CG_CHANGEABLE, &cl, m_pCoverage,
-							   currentData)) {
-			VertexBox *vb = watchItem->getCurrentPointer();
-			if (vb) {
-				vb->addVertexBox(currentData);
-				delete currentData;
-			} else {
-				watchItem->setCurrentPointer(currentData);
-			}
-
-			VertexBox *vertexData = new VertexBox();
-
-			UT_NOTIFY(LV_TRACE, "Get GEOMETRY_CHANGABLE:");
-			if (getDebugVertexData(DBG_CG_GEOMETRY_CHANGEABLE, &cl, NULL,
-								   vertexData)) {
-				VertexBox *vb = watchItem->getVertexBoxPointer();
-				if (vb) {
-					vb->addVertexBox(vertexData);
-					delete vertexData;
-				} else {
-					watchItem->setVertexBoxPointer(vertexData);
-				}
-			} else {
-				QMessageBox::warning(this, "Warning",
-									 "The requested data could "
-									 "not be retrieved.");
-			}
-			watchItem->setCurrentValue(m_selectedPixel[0]);
+	} else if (type == EShLangGeometry) {
+		VertexBox *data = this->geometryBox.value<VertexBox*>();
+		dbgPrint(DBGLVL_INFO, "Get CHANGEABLE:");
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, data)) {
+			dbgPrint(DBGLVL_INFO, "Get GEOMETRY_CHANGABLE:");
+			VertexBox *geomData = new VertexBox;
+			if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, geomData))
+				data->addVertexBox(geomData);
+			else
+				QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
+			delete geomData;
+			this->setCurrentValue(m_selectedPixel[0]);
 		} else {
-			QMessageBox::warning(this, "Warning", "The requested data could "
-								 "not be retrieved.");
+			QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
 			return;
 		}
 	}

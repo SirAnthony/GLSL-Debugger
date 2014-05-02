@@ -11,8 +11,6 @@ Q_OBJECT
 
 public:
 	VertexBox(QObject *i_qParent = 0);
-	VertexBox(float *i_pData, int numElementsPerVertex, int numVertices,
-			int numPrimitives, bool *i_pCoverage, QObject *i_qParent = 0);
 	~VertexBox();
 
 	void copyFrom(VertexBox* src);

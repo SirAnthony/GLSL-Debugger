@@ -20,14 +20,6 @@ VertexBox::VertexBox(QObject *parent) :
 	boxDataMaxAbs = NULL;
 }
 
-VertexBox::VertexBox(float *i_pData, int i_numElementsPerVertex,
-		int i_numVertices, int i_numPrimitives, bool *i_pCoverage,
-		QObject *parent) : DataBox(parent)
-{
-	setData(i_pData, i_numElementsPerVertex, i_numVertices, i_numPrimitives,
-			i_pCoverage);
-}
-
 VertexBox::~VertexBox()
 {
 	emit dataDeleted();

@@ -5,47 +5,64 @@
 #include "ShaderLang.h"
 #include "dataBox.h"
 #include "mappings.h"
-#include <QtGui/QImage>
+#include <QImage>
+#include <QRect>
 
 
 class PixelBox: public DataBox {
 Q_OBJECT
 
 public:
-	PixelBox(QObject *parent = 0);
-	virtual ~PixelBox();
-
-	virtual bool* getCoverageFromData(int *activePixels = NULL) = 0;
-
-	int getWidth(void)
-	{
-		return width;
-	}
-	int getHeight(void)
-	{
-		return height;
-	}
-	int getChannel(void)
-	{
-		return channel;
-	}
-
+	enum Channels {
+		pbcRed = 0,
+		pbcGreen,
+		pbcBlue
+	};
 	enum FBMapping {
 		FBM_CLAMP,
 		FBM_MIN_MAX
 	};
-	virtual QImage getByteImage(FBMapping i_eMapping) = 0;
-	virtual void setByteImageRedChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha) = 0;
-	virtual void setByteImageGreenChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha) = 0;
-	virtual void setByteImageBlueChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha) = 0;
 
-	virtual bool getDataValue(int x, int y, QVariant *v) = 0;
+	PixelBox(QObject *parent = 0);
+	PixelBox(PixelBox *src);
+	virtual ~PixelBox();
+	int getWidth(void) { return width; }
+	int getHeight(void) { return height; }
+	int getChannel(void) { return channel; }
+
+	template<typename vType>
+	void setData(int width, int height, int channel, vType *data, bool *coverage = 0);
+	bool* getCoverageFromData(int *activePixels = NULL);
+	void* getDataPointer(void) { return boxData; }
+	bool getDataValue(int x, int y, double *v);
+	bool getDataValue(int x, int y, QVariant *v);
+
+	/* get min/max data values per channel, channel == -1 means all channels */
+	virtual double getMin(int _channel = -1);
+	virtual double getMax(int _channel = -1);
+	virtual double getAbsMin(int _channel = -1);
+	virtual double getAbsMax(int _channel = -1);
+
+	void setByteImageChannel(enum Channels, QImage *image, Mapping *mapping,
+			RangeMapping *rangeMapping, float minmax[2], bool useAlpha);
+	inline void setByteImageRedChannel(QImage *image, Mapping *mapping,
+			RangeMapping *rangeMapping, float minmax[2], bool useAlpha)
+	{
+		setByteImageChannel(pbcRed, image, mapping, rangeMapping, minmax, useAlpha);
+	}
+	inline void setByteImageGreenChannel(QImage *image, Mapping *mapping,
+			RangeMapping *rangeMapping, float minmax[2], bool useAlpha)
+	{
+		setByteImageChannel(pbcGreen, image, mapping, rangeMapping, minmax, useAlpha);
+	}
+	inline void setByteImageBlueChannel(QImage *image, Mapping *mapping,
+			RangeMapping *rangeMapping, float minmax[2], bool useAlpha)
+	{
+		setByteImageChannel(pbcBlue, image, mapping, rangeMapping, minmax, useAlpha);
+	}
 
 	bool isAllDataAvailable();
-	virtual void invalidateData() = 0;
+	void invalidateData();
 
 signals:
 	void minMaxAreaChanged();
@@ -54,62 +71,26 @@ public slots:
 	void setMinMaxArea(const QRect& minMaxArea);
 
 protected:
+	void clear();
+	double getBoundary(int _channel, int val, void *data, bool max = false);
+	int mapFromValue(FBMapping mapping, double f, int c);
+
+	template<typename vType>
+	void calcMinMax(QRect area);
+	double minVal;
+	double maxVal;
+
+	size_t typeSize;
+	void *boxData;
+	void *boxDataMin;
+	void *boxDataMax;
+	void *boxDataMinAbs;
+	void *boxDataMaxAbs;
+
 	int width;
 	int height;
 	int channel;
 	QRect minMaxArea;
-};
-
-
-template<typename vType> class TypedPixelBox: public PixelBox {
-public:
-	TypedPixelBox(int i_nWidth, int i_nHeight, int i_nChannel, vType *i_pData,
-			bool *i_pCoverage = 0, QObject *i_qParent = 0);
-	TypedPixelBox(TypedPixelBox *src);
-	virtual ~TypedPixelBox();
-
-	void setData(int i_nWidth, int i_nHeight, int i_nChannel, vType *i_pData,
-			bool *i_pCoverage = 0);
-	void addPixelBox(TypedPixelBox *f);
-
-	virtual bool* getCoverageFromData(int *i_pActivePixels = NULL);
-	vType* getDataPointer(void)
-	{
-		return boxData;
-	}
-	bool getDataValue(int x, int y, vType *v);
-	virtual bool getDataValue(int x, int y, QVariant *v);
-
-	/* get min/max data values per channel, channel == -1 means all channels */
-	virtual double getMin(int channel = -1);
-	virtual double getMax(int channel = -1);
-	virtual double getAbsMin(int channel = -1);
-	virtual double getAbsMax(int channel = -1);
-
-	virtual QImage getByteImage(FBMapping i_eMapping);
-
-	virtual void setByteImageRedChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha);
-	virtual void setByteImageGreenChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha);
-	virtual void setByteImageBlueChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha);
-
-	virtual void invalidateData();
-
-protected:
-
-	static const vType minVal;
-	static const vType maxVal;
-
-	void calcMinMax(QRect area);
-	int mapFromValue(FBMapping mapping, vType f, int c);
-
-	vType *boxData;
-	vType *boxDataMin;
-	vType *boxDataMax;
-	vType *boxDataMinAbs;
-	vType *boxDataMaxAbs;
 };
 
 // include template definitions

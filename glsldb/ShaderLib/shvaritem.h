@@ -59,7 +59,7 @@ public:
 	QVariant data(int role = DF_FIRST) const;
 	void setData(const QVariant &value, int role = DF_FIRST);
 
-	void updateWatchData();
+	void updateWatchData(EShLanguage type);
 	void invalidateWatchData();
 
 signals:
@@ -85,7 +85,7 @@ protected:
 	QVariant vertexBox;
 	QVariant geometryBox;
 	QVariant pixelBox;
-	QVariant selected_value;
+	QVariant selected;
 	QVariant uniform_value;
 };
 

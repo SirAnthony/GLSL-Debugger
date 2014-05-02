@@ -9,13 +9,6 @@ class VertexBox;
 class PixelBox;
 class ProgramControl;
 
-enum DebugDataType {
-	ddtError = 0,
-	ddtVertex,
-	ddtGeometry,
-	ddtFragment
-};
-
 class ShDataManager : public QObject
 {
 	Q_OBJECT
@@ -30,8 +23,8 @@ public:
 	static ShDataManager* create(ProgramControl *pc, QObject *parent = 0);
 	static ShDataManager* get();
 
-	bool getDebugData(enum DebugDataType type, DbgCgOptions option, ShChangeableList *cl,
-					  int format, bool *coverage, DataBox **data);
+	bool getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
+					  int format, bool *coverage, DataBox *data);
 	bool cleanShader();
 
 signals:
@@ -41,8 +34,9 @@ signals:
 	void killProgram(int);
 	
 protected:
-	int retriveVertexData(char *shaders[3], int target, int option, VertexBox **data);
-	int retriveFragmentData(char *shaders[3], int format, int option, PixelBox **data);
+	bool processError(int);
+	int retriveVertexData(char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
+	int retriveFragmentData(char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
 	
 private:
 	ShDataManager(ProgramControl *_pc, QObject *parent = 0);
