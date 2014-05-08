@@ -31,12 +31,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
-#include "glslSyntaxHighlighter.qt.h"
+#include "glslSyntaxHighlighter.h"
+#include "utils/dbgprint.h"
 
 GlslSyntaxHighlighter::GlslSyntaxHighlighter(QTextDocument *parent) :
 		QSyntaxHighlighter(parent)
 {
 	HighlightingRule rule;
+	// TODO: make it loads from some syntax file
 
 	/*******************************************
 	 * FORMATS
@@ -58,7 +60,7 @@ GlslSyntaxHighlighter::GlslSyntaxHighlighter(QTextDocument *parent) :
 
 	/*******************************************
 	 * RULES
-	 *******************************************/
+	 *******************************************/	
 
 	QStringList glslConditional;
 	glslConditional.append("if");
@@ -325,12 +327,9 @@ void GlslSyntaxHighlighter::highlightBlock(const QString &text)
 		int index = rule.pattern.indexIn(text);
 		while (index >= 0) {
 			int length = expression.matchedLength();
-			if (length <= 0) {
-				fprintf(stderr,
-						"length==0 for " "%s" " mathcing in " "%s" " at %d\n",
-						expression.pattern().toAscii().data(),
-						text.toAscii().data(), index);
-			}
+			if (length <= 0)
+				dbgPrint(DBGLVL_ERROR, "length==0 for %s mathcing in %s at %d\n",
+						 expression.pattern().toAscii().data(), text.toAscii().data(), index);
 			setFormat(index, length, rule.format);
 			index = expression.indexIn(text, index + length);
 		}
@@ -338,9 +337,8 @@ void GlslSyntaxHighlighter::highlightBlock(const QString &text)
 	setCurrentBlockState(0);
 
 	int startIndex = 0;
-	if (previousBlockState() != 1) {
+	if (previousBlockState() != 1)
 		startIndex = commentStartExpression.indexIn(text);
-	}
 
 	while (startIndex >= 0) {
 		int endIndex = commentEndExpression.indexIn(text, startIndex);
@@ -349,12 +347,10 @@ void GlslSyntaxHighlighter::highlightBlock(const QString &text)
 			setCurrentBlockState(1);
 			commentLength = text.length() - startIndex;
 		} else {
-			commentLength = endIndex - startIndex
-					+ commentEndExpression.matchedLength();
+			commentLength = endIndex - startIndex + commentEndExpression.matchedLength();
 		}
 		setFormat(startIndex, commentLength, commentFormat);
-		startIndex = commentStartExpression.indexIn(text,
-				startIndex + commentLength);
+		startIndex = commentStartExpression.indexIn(text, startIndex + commentLength);
 	}
 }
 

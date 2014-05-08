@@ -549,6 +549,8 @@ static void addVariableCode(char** prog, const ShChangeable *cgb, ShVariableList
 			// FIXME: Leak ahead
 			ralloc_asprintf_append(prog, ".%s", itoMultiSwizzle(idx->index));
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -637,6 +639,8 @@ static int getShChangeableSize(const ShChangeable *cgb, ShVariableList *vl)
 			break;
 		case SH_CGB_SWIZZLE:
 			size = (int) ceil(log10((float) idx->index));
+			break;
+		default:
 			break;
 		}
 	}

@@ -14,6 +14,9 @@ public:
 class ShBuiltInSortFilterProxyModel : public ShSortFilterProxyModel
 {
 	Q_OBJECT
+public:
+	ShBuiltInSortFilterProxyModel(ShVarModel *base, QObject *parent = 0) :
+		ShSortFilterProxyModel(base, parent) {}
 protected:
 	virtual bool filterAcceptsRow(int row, const QModelIndex &parent) const;
 };
@@ -22,6 +25,9 @@ protected:
 class ShScopeSortFilterProxyModel : public ShSortFilterProxyModel
 {
 	Q_OBJECT
+public:
+	ShScopeSortFilterProxyModel(ShVarModel *base, QObject *parent = 0) :
+		ShSortFilterProxyModel(base, parent) {}
 protected:
 	virtual bool filterAcceptsRow(int row, const QModelIndex &parent) const;
 };
@@ -29,6 +35,9 @@ protected:
 class ShWatchedSortFilterProxyModel : public ShSortFilterProxyModel
 {
 	Q_OBJECT
+public:
+	ShWatchedSortFilterProxyModel(ShVarModel *base, QObject *parent = 0) :
+		ShSortFilterProxyModel(base, parent) {}
 protected:
 	virtual bool filterAcceptsRow(int row, const QModelIndex &parent) const;
 };
@@ -36,6 +45,9 @@ protected:
 class ShUniformSortFilterProxyModel: public ShSortFilterProxyModel
 {
 Q_OBJECT
+public:
+	ShUniformSortFilterProxyModel(ShVarModel *base, QObject *parent = 0) :
+		ShSortFilterProxyModel(base, parent) {}
 protected:
 	virtual bool filterAcceptsRow(int row, const QModelIndex &parent) const;
 };

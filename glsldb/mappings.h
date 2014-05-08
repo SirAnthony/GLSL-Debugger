@@ -34,15 +34,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAPPINGS_H
 #define MAPPINGS_H
 
-#ifndef UNUSED_ARG
-#define UNUSED_ARG(x) (void) x;
-#endif
-
 enum MapType {
 	MAP_TYPE_BLACK = 0,
-	MAP_TYPE_WHITE = 1,
-	MAP_TYPE_VAR = 2,
-	MAP_TYPE_OFF = 3
+	MAP_TYPE_WHITE,
+	MAP_TYPE_VAR,
+	MAP_TYPE_OFF
 };
 
 struct Mapping {
@@ -55,9 +51,10 @@ Mapping getMappingFromInt(int i);
 
 enum RangeMap {
 	RANGE_MAP_DEFAULT = 0,
-	RANGE_MAP_POSITIVE = 1,
-	RANGE_MAP_NEGATIVE = 2,
-	RANGE_MAP_ABSOLUTE = 3
+	RANGE_MAP_POSITIVE,
+	RANGE_MAP_NEGATIVE,
+	RANGE_MAP_ABSOLUTE,
+	RANGE_MAP_COUNT
 };
 
 struct RangeMapping {
@@ -67,10 +64,8 @@ struct RangeMapping {
 
 int getIntFromRangeMapping(RangeMapping m);
 RangeMapping getRangeMappingFromInt(int i);
-float getMappedValueF(float v, Mapping *mapping, RangeMapping *rangeMapping,
-		float minmax[2]);
-int getMappedValueI(float v, Mapping *mapping, RangeMapping *rangeMapping,
-		float minmax[2]);
+float getMappedValueF(float v, enum RangeMap range,	float min, float max);
+int getMappedValueI(float v, enum RangeMap range, float min, float max);
 
 #endif
 

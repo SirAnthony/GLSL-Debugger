@@ -1,5 +1,6 @@
 #include "shsourcedock.h"
 #include "ui_shsourcedock.h"
+#include "glslSyntaxHighlighter.h"
 
 ShSourceDock::ShSourceDock(QWidget *parent) :
 	QDockWidget(parent)
@@ -19,14 +20,14 @@ void ShSourceDock::setShaders(const char *shaders[])
 	};
 
 	for (int s = 0; s < 3; ++s) {
-		shaderText[s] = QString(shaders && shaders[i] ? shaders[i] : "");
-		QTextDocument *doc = new QTextDocument(shaderText[s], edits[i]);
-		edits[i]->setDocument(doc);
-		if (shaderText[s]) {
+		shaderText[s] = QString(shaders && shaders[s] ? shaders[s] : "");
+		QTextDocument *doc = new QTextDocument(shaderText[s], edits[s]);
+		edits[s]->setDocument(doc);
+		if (!shaderText[s].isEmpty()) {
 			/* the document becomes owner of the highlighter, so it get's freed */
-			GlslSyntaxHighlighter *highlighter = new GlslSyntaxHighlighter(doc);
-			edits[i]->setDocument(doc);
-			edits[i]->setTabStopWidth(30);
+			new GlslSyntaxHighlighter(doc);
+			edits[s]->setDocument(doc);
+			edits[s]->setTabStopWidth(30);
 		}
 	}
 }

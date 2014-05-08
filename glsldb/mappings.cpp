@@ -77,71 +77,51 @@ RangeMapping getRangeMappingFromInt(int i)
 	return m;
 }
 
-static float mapValueF(float v, float min, float max)
+static float map_float(float v, float min, float max)
 {
 	return CLAMP((v - min)/(max - min), 0.0f, 1.0f);
 }
 
-static int mapValueI(float v, float min, float max)
+static int map_int(float v, float min, float max)
 {
 	return CLAMP((int)((v - min)/(max - min)*255), 0, 255);
 }
 
-float getMappedValueF(float v, Mapping *mapping, RangeMapping *rangeMapping,
-		float minmax[2])
+float getMappedValueF(float v, RangeMap range, float min, float max)
 {
-	UNUSED_ARG(mapping)
 	float value = 0.0f;
-	switch (rangeMapping->range) {
+	switch (range) {
 	case RANGE_MAP_DEFAULT:
-		value = mapValueF(v, minmax[0], minmax[1]);
+		value = map_float(v, min, max);
 		break;
 	case RANGE_MAP_POSITIVE:
-		if (v < 0.0f) {
-			value = 0.0f;
-		} else {
-			value = mapValueF(v, minmax[0], minmax[1]);
-		}
+		value = v < 0.0f ? 0.0f : map_float(v, min, max);
 		break;
 	case RANGE_MAP_NEGATIVE:
-		if (v > 0.0f) {
-			value = 0.0f;
-		} else {
-			value = mapValueF(v, minmax[0], minmax[1]);
-		}
+		value = v > 0.0f ? 0.0f : map_float(v, min, max);
 		break;
 	case RANGE_MAP_ABSOLUTE:
-		value = mapValueF(fabs(v), minmax[0], minmax[1]);
+		value = map_float(fabs(v), min, max);
 		break;
 	}
 	return value;
 }
 
-int getMappedValueI(float v, Mapping *mapping, RangeMapping *rangeMapping,
-		float minmax[2])
+int getMappedValueI(float v, RangeMap range, float min, float max)
 {
-	UNUSED_ARG(mapping)
 	int value = 0;
-	switch (rangeMapping->range) {
+	switch (range->range) {
 	case RANGE_MAP_DEFAULT:
-		value = mapValueI(v, minmax[0], minmax[1]);
+		value = map_int(v, min, max);
 		break;
 	case RANGE_MAP_POSITIVE:
-		if (v < 0.0f) {
-			value = 0;
-		} else {
-			value = mapValueI(v, minmax[0], minmax[1]);
-		}
+		value = v < 0.0f ? 0 : map_int(v, min, max);
 		break;
 	case RANGE_MAP_NEGATIVE:
-		if (v > 0.0f) {
-			value = 0;
-		} else {
-			value = mapValueI(v, minmax[0], minmax[1]);
-		}
+		value = v > 0.0f ? 0 : map_int(v, min, max);
 		break;
 	case RANGE_MAP_ABSOLUTE:
-		value = mapValueI(fabs(v), minmax[0], minmax[1]);
+		value = map_int(fabs(v), min, max);
 		break;
 	}
 	return value;

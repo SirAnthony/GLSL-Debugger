@@ -7,15 +7,27 @@ template<typename vType> double get_min();
 template<typename vType> double get_max();
 
 template<typename vType>
-void PixelBox::calcMinMax(QRect area)
+inline double PixelBox::getDataTyped(void *data, int index)
 {
+	vType *pData = (vType *)data;
+	return pData[index];
+}
+
+template<typename vType>
+void PixelBox::calcMinMax(QRect area)
+{	
+	vType *pBoxDataMin = boxDataMin;
+	vType *pBoxDataMax = boxDataMax;
+	vType *pBoxDataMinAbs = boxDataMinAbs;
+	vType *pBoxDataMaxAbs = boxDataMaxAbs;
+	vType *pBoxData = boxData;
+
 	int left, right, top, bottom;
 	for (int c = 0; c < channel; c++) {
-		int offset = c * typeSize;
-		boxDataMin[offset] = (vType) maxVal;
-		boxDataMax[offset] = (vType) minVal;
-		boxDataMinAbs[offset] = (vType) maxVal;
-		boxDataMaxAbs[offset] = (vType) 0;
+		pBoxDataMin[c] = maxVal;
+		pBoxDataMax[c] = minVal;
+		pBoxDataMinAbs[c] = maxVal;
+		pBoxDataMaxAbs[c] = 0;
 	}
 
 	bool *pCoverage = coverage ? coverage : boxDataMap;
@@ -39,17 +51,16 @@ void PixelBox::calcMinMax(QRect area)
 			if (!pCoverage[pos])
 				continue;
 			for (int c = 0; c < channel; c++) {				
-				int offset = c * typeSize;
-				int idx = pos * typeSize + offset;
-				double fabsval = fabs((double) boxData[idx]);
-				if (boxData[idx] < boxDataMin[offset])
-					boxDataMin[offset] = boxData[idx];
-				if (boxDataMax[offset] < boxData[idx])
-					boxDataMax[offset] = boxData[idx];
-				if (fabsval < boxDataMinAbs[offset])
-					boxDataMinAbs[offset] = fabsval;
-				if (boxDataMaxAbs[offset] < fabsval)
-					boxDataMaxAbs[offset] = fabsval;
+				int idx = pos + c;
+				double fabsval = fabs((double) pBoxData[idx]);
+				if (pBoxData[idx] < pBoxDataMin[c])
+					pBoxDataMin[c] = pBoxData[idx];
+				if (pBoxDataMax[c] < pBoxData[idx])
+					pBoxDataMax[c] = pBoxData[idx];
+				if (fabsval < pBoxDataMinAbs[c])
+					pBoxDataMinAbs[c] = fabsval;
+				if (pBoxDataMaxAbs[c] < fabsval)
+					pBoxDataMaxAbs[c] = fabsval;
 			}
 		}
 	}
@@ -64,19 +75,19 @@ void PixelBox::setData(int _width, int _height, int _channel,
 	width = _width;
 	height = _height;
 	channel = _channel;
-	typeSize = sizeof(vType);
 	minVal = get_min<vType>();
 	maxVal = get_max<vType>();
+	setType<vType>();
 
-	size_t depth = channel * typeSize;
-	boxData = malloc(width * height * depth);
+	channelLen = channel * sizeof(vType);
+	boxData = malloc(width * height * channelLen);
 	boxDataMap = malloc(width * height * sizeof(bool));
 
 	/* Initially use all given data */
 	if (_data)
-		memcpy(boxData, _data, width * height * depth);
+		memcpy(boxData, _data, width * height * channelLen);
 	else
-		memset(boxData, 0, width * height * depth);
+		memset(boxData, 0, width * height * channelLen);
 
 	/* Initially use all given data */
 	if (_coverage) {
@@ -88,11 +99,11 @@ void PixelBox::setData(int _width, int _height, int _channel,
 	coverage = _coverage;
 
 	if (_channel && _data) {
-		boxDataMin = malloc(depth);
-		boxDataMax = malloc(depth);
-		boxDataMinAbs = malloc(depth);
-		boxDataMaxAbs = malloc(depth);
-		calcMinMax(this->minMaxArea);
+		boxDataMin = malloc(channelLen);
+		boxDataMax = malloc(channelLen);
+		boxDataMinAbs = malloc(channelLen);
+		boxDataMaxAbs = malloc(channelLen);
+		calcMinMax<vType>(this->minMaxArea);
 	}
 
 	emit dataChanged();

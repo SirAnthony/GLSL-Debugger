@@ -27,7 +27,7 @@ void ShVarModel::appendRow(const ShVariableList *items)
 	}
 }
 
-void ShVarModel::setRecursive(QVariant data, varDataFields field, ShVarItem *item)
+void ShVarModel::setRecursive(QVariant data, varDataFields field, QStandardItem *item)
 {
 	if (!item)
 		return;
@@ -68,23 +68,6 @@ void ShVarModel::unsetWatched(ShVarItem *item)
 	for (int i = 0; i < item->rowCount(); ++i)
 		unsetWatched(dynamic_cast<ShVarItem*>(item->child(i)));
 
-	/*
-	if (item->getPixelBoxPointer() != NULL) {
-		PixelBox *fb = item->getPixelBoxPointer();
-		item->setPixelBoxPointer(NULL);
-		delete fb;
-	}
-	if (item->getCurrentPointer() != NULL) {
-		VertexBox *vb = item->getCurrentPointer();
-		item->setCurrentPointer(NULL);
-		delete vb;
-	}
-	if (item->getVertexBoxPointer() != NULL) {
-		VertexBox *vb = item->getVertexBoxPointer();
-		item->setVertexBoxPointer(NULL);
-		delete vb;
-	} */
-
 	item->setData(false, DF_WATCHED);
 	emit dataChanged(item->index(), item->index());
 	if (item->parent() != this->invisibleRootItem())
@@ -100,23 +83,23 @@ void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, Dbg
 {
 	QStandardItem *root = this->invisibleRootItem();
 
-	setChanged(false, root);
+	setRecursive(false, DF_CHANGED, root);
 	dumpShChangeableList(&cl);
 
 
 	/* Changed? */
 	for (int i = 0; i < cl.numChangeables; i++) {
-		ShChangeable *c = cl.changeables[i];
+		const ShChangeable *c = cl.changeables[i];
 
 		for (int j = 0; j < root->rowCount(); j++) {
-			ShVarItem *item = root->child(j);
+			ShVarItem *item = dynamic_cast<ShVarItem*>(root->child(j));
 			int id = item->data(DF_UNIQUE_ID).toInt();
 			if (id != c->id)
 				continue;
 
 			item->setData(true, DF_CHANGED);
 			for (int l = 0; l < c->numIndices; l++) {
-				ShChangeableIndex *idx = c->indices[l];
+				const ShChangeableIndex *idx = c->indices[l];
 				if (idx->type == SH_CGB_SWIZZLE) {
 					// FIXME: only 4?
 					for (int m = 0; m < 4; m++) {
@@ -130,15 +113,16 @@ void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, Dbg
 						item->setData(true, DF_CHANGED);
 						break;
 					} else {
+						QStandardItem* sitem;
 						if (item->data(DF_ARRAYTYPE).toInt() == SHV_MATRIX) {
 							Q_ASSERT_X((c->numIndices - l) >= 2, "Changeable indices", "wrong");
-							ShChangeableIndex *subidx = c->indices[++l];
-							item = item->child(idx->index)->child(subidx->index);
-							item->setData(true, DF_CHANGED);
+							const ShChangeableIndex *subidx = c->indices[++l];
+							sitem = item->child(idx->index)->child(subidx->index);
 						} else {
-							item = item->child(idx->index);
-							item->setData(true, DF_CHANGED);
+							sitem = item->child(idx->index);
 						}
+						item = dynamic_cast<ShVarItem*>(sitem);
+						item->setData(true, DF_CHANGED);
 					}
 
 				}
@@ -149,7 +133,7 @@ void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, Dbg
 
 	/* check scope */
 	for (int j = 0; j < root->rowCount(); j++) {
-		ShVarItem *item = root->child(j);
+		ShVarItem *item = dynamic_cast<ShVarItem*>(root->child(j));
 		if (item->data(DF_BUILTIN).toBool())
 			continue;
 
@@ -189,10 +173,9 @@ void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, Dbg
 			setRecursive(ShVarItem::LeftScope, DF_SCOPE, item);
 	}
 
-	ShVarItem *item;
-	item = root->child(0);
+	ShVarItem *item = dynamic_cast<ShVarItem*>(root->child(0));
 	QModelIndex indexBegin = index(item->row(), 0);
-	item = root->child(root->rowCount() - 1);
+	item = dynamic_cast<ShVarItem*>(root->child(root->rowCount() - 1));
 	QModelIndex indexEnd = index(item->row(), 0);
 	emit dataChanged(indexBegin, indexEnd);
 }

@@ -43,22 +43,23 @@ public:
 	virtual double getAbsMin(int _channel = -1);
 	virtual double getAbsMax(int _channel = -1);
 
-	void setByteImageChannel(enum Channels, QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha);
-	inline void setByteImageRedChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha)
+	QImage getByteImage(enum FBMapping mapping);
+	void setByteImageChannel(enum Channels, QImage *image, RangeMap range,
+							 float minmax[2], bool useAlpha);
+	inline void setByteImageRedChannel(QImage *image, RangeMap range,
+									   float minmax[2], bool useAlpha)
 	{
-		setByteImageChannel(pbcRed, image, mapping, rangeMapping, minmax, useAlpha);
+		setByteImageChannel(pbcRed, image, range, minmax, useAlpha);
 	}
-	inline void setByteImageGreenChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha)
+	inline void setByteImageGreenChannel(QImage *image, RangeMap range,
+										 float minmax[2], bool useAlpha)
 	{
-		setByteImageChannel(pbcGreen, image, mapping, rangeMapping, minmax, useAlpha);
+		setByteImageChannel(pbcGreen, image, range, minmax, useAlpha);
 	}
-	inline void setByteImageBlueChannel(QImage *image, Mapping *mapping,
-			RangeMapping *rangeMapping, float minmax[2], bool useAlpha)
+	inline void setByteImageBlueChannel(QImage *image, RangeMap range,
+										float minmax[2], bool useAlpha)
 	{
-		setByteImageChannel(pbcBlue, image, mapping, rangeMapping, minmax, useAlpha);
+		setByteImageChannel(pbcBlue, image, range, minmax, useAlpha);
 	}
 
 	bool isAllDataAvailable();
@@ -74,13 +75,25 @@ protected:
 	void clear();
 	double getBoundary(int _channel, int val, void *data, bool max = false);
 	int mapFromValue(FBMapping mapping, double f, int c);
+	double getData(void *data, int offset);
 
+	template<typename vType>
+	inline double getDataTyped(void *data, int index);
+
+	template<typename vType>
+	void setType();
 	template<typename vType>
 	void calcMinMax(QRect area);
 	double minVal;
 	double maxVal;
 
-	size_t typeSize;
+	enum DataType {
+		dtError,
+		dtUnsigned,
+		dtInt,
+		dtFloat,
+		dtCount
+	} dataType;
 	void *boxData;
 	void *boxDataMin;
 	void *boxDataMax;
@@ -90,11 +103,12 @@ protected:
 	int width;
 	int height;
 	int channel;
+	int channelLen;
 	QRect minMaxArea;
 };
 
 // include template definitions
-#include "pixelBox.inc.h"
+#include "pixelBox.inc"
 
 #endif /* PIXEL_BOX_H */
 

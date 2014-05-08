@@ -3,7 +3,7 @@
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
 #include "shdatamanager.h"
-#include "dbgprint.h"
+#include "utils/dbgprint.h"
 #include "QMessageBox"
 
 
@@ -20,6 +20,7 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
 	this->builtin = var->builtin;
 	this->changed = false;
 	this->scope = var->builtin ? InScope : OutOfScope;
+	this->changeable = SH_CGB_UNSET;
 
 	// Note: Allow selecting all but samplers and batch insert into watch list.
 	this->selectable = !(var->type == SH_SAMPLER);
@@ -99,6 +100,24 @@ ShVarItem::~ShVarItem()
 	}
 }
 
+ShChangeable ShVarItem::getChangeable()
+{
+	ShChangeable cgbl;
+	cgbl.id = this->id;
+	cgbl.numIndices = 0;
+	cgbl.indices = NULL;
+	for (int i = 0; i < 2; ++i) {
+		if (this->changeableIndex[i] < 0)
+			continue;
+		ShChangeableIndex *index = new ShChangeableIndex;
+		index->index = this->changeableIndex[i];
+		index->type = this->changeable;
+		cgbl.indices = (ShChangeableIndex **)realloc(cgbl.indices, cgbl.numIndices + 1);
+		cgbl.indices[cgbl.numIndices++] = index;
+	}
+	return cgbl;
+}
+
 void ShVarItem::setChangeable(ShChangeableType t, int idxc, int idxr)
 {
 	this->changeable = t;
@@ -168,25 +187,24 @@ void ShVarItem::setData(const QVariant &value, int role)
 
 void ShVarItem::updateWatchData(EShLanguage type)
 {
+	int format = this->readbackFormat();
+	ShDataManager* manager = ShDataManager::get();
 	ShChangeableList cl;
+	ShChangeable cgbl = this->getChangeable();
+
 	cl.numChangeables = 0;
 	cl.changeables = NULL;
-
-	ShChangeable *watchItemCgbl =  watchItem->getShChangeable();
-	addShChangeable(&cl, watchItemCgbl);
-
-	int rbFormat = watchItem->getReadbackFormat();
-	ShDataManager* manager = ShDataManager::get();
+	addShChangeable(&cl, &cgbl);
 
 	if (type == EShLangFragment) {
 		PixelBox *data = this->pixelBox.value<PixelBox*>();
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, data))
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, data))
 			this->setCurrentValue(m_selectedPixel[0], m_selectedPixel[1]);
 		else
 			QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
 	} else if (type == EShLangVertex) {
 		VertexBox *data = this->vertexBox.value<VertexBox*>();
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, data))
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, data))
 			this->setCurrentValue(m_selectedPixel[0]);
 		else
 			QMessageBox::warning(this, "Warning", "The requested data could "
@@ -194,10 +212,10 @@ void ShVarItem::updateWatchData(EShLanguage type)
 	} else if (type == EShLangGeometry) {
 		VertexBox *data = this->geometryBox.value<VertexBox*>();
 		dbgPrint(DBGLVL_INFO, "Get CHANGEABLE:");
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, data)) {
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, data)) {
 			dbgPrint(DBGLVL_INFO, "Get GEOMETRY_CHANGABLE:");
 			VertexBox *geomData = new VertexBox;
-			if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, rbFormat, coverage, geomData))
+			if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, geomData))
 				data->addVertexBox(geomData);
 			else
 				QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
@@ -208,5 +226,26 @@ void ShVarItem::updateWatchData(EShLanguage type)
 			return;
 		}
 	}
-	freeShChangeable(&watchItemCgbl);
+
+	for (int i = 0; i < cgbl.numIndices; ++i)
+		free(cgbl.indices[i]);
+}
+
+int ShVarItem::readbackFormat()
+{
+	switch (this->type) {
+	case SH_FLOAT:
+		return GL_FLOAT;
+	case SH_INT:
+		return GL_INT;
+	case SH_UINT:
+	case SH_BOOL:
+	case SH_SAMPLER:
+		return GL_UNSIGNED_INT;
+	case SH_STRUCT:
+	default:
+		dbgPrint(DBGLVL_ERROR,
+				 "Could not get readback type for ShVarItem of type %d\n", this->type);
+		return GL_NONE;
+	}
 }

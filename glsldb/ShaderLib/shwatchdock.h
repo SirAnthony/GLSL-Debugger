@@ -1,3 +1,4 @@
+
 #ifndef SHWATCHDOCK_H
 #define SHWATCHDOCK_H
 

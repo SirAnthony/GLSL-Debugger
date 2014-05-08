@@ -3,24 +3,29 @@
 #include <limits.h>
 #include <math.h>
 #include "pixelBox.h"
-#include "dbgprint.h"
+#include "utils/dbgprint.h"
 #include <QColor>
 #include <QVariant>
 
 
-template<float> double get_min() { return -FLT_MAX; }
-template<float> double get_max() { return FLT_MAX; }
-template<int> double get_min() { return INT_MIN; }
-template<int> double get_max() { return INT_MAX; }
-template<unsigned int> double get_min() { return 0; }
-template<unsigned int> double get_max() { return UINT_MAX; }
+template<> double get_min<float>() { return -FLT_MAX; }
+template<> double get_max<float>() { return FLT_MAX; }
+template<> double get_min<int>() { return INT_MIN; }
+template<> double get_max<int>() { return INT_MAX; }
+template<> double get_min<unsigned int>() { return 0; }
+template<> double get_max<unsigned int>() { return UINT_MAX; }
+
+template<> void PixelBox::setType<int>() { dataType = dtInt; }
+template<> void PixelBox::setType<unsigned int>() { dataType = dtUnsigned; }
+template<> void PixelBox::setType<float>() { dataType = dtFloat; }
+
 
 PixelBox::PixelBox(QObject *parent) :
 		DataBox(parent)
 {
 	width = 0;
 	height = 0;
-	channel = 0;	
+	channel = 0;
 	coverage = NULL;
 	boxData = NULL;
 	boxDataMap = NULL;
@@ -37,24 +42,24 @@ PixelBox::PixelBox(PixelBox *src) :
 	height = src->height;
 	channel = src->channel;
 	coverage = src->coverage;
-	typeSize = src->typeSize;
 	minVal = src->minVal;
 	maxVal = src->maxVal;
+	dataType = src->dataType;
+	channelLen = src->channelLen;
 
-	size_t depth = typeSize * channel;
-	boxData = malloc(width * height * depth);
-	boxDataMap = malloc(width * height * sizeof(bool));
-	memcpy(boxData, src->boxData, width * height * depth);
+	boxData = malloc(width * height * channelLen);
+	boxDataMap = (bool*)malloc(width * height * sizeof(bool));
+	memcpy(boxData, src->boxData, width * height * channelLen);
 	memcpy(boxDataMap, src->boxDataMap, width * height * sizeof(bool));
 
-	boxDataMin = malloc(depth);
-	boxDataMax = malloc(depth);
-	boxDataMinAbs = malloc(depth);
-	boxDataMaxAbs = malloc(depth);
-	memcpy(boxDataMin, src->boxDataMin, depth);
-	memcpy(boxDataMax, src->boxDataMax, depth);
-	memcpy(boxDataMinAbs, src->boxDataMinAbs, depth);
-	memcpy(boxDataMaxAbs, src->boxDataMaxAbs, depth);
+	boxDataMin = malloc(channelLen);
+	boxDataMax = malloc(channelLen);
+	boxDataMinAbs = malloc(channelLen);
+	boxDataMaxAbs = malloc(channelLen);
+	memcpy(boxDataMin, src->boxDataMin, channelLen);
+	memcpy(boxDataMax, src->boxDataMax, channelLen);
+	memcpy(boxDataMinAbs, src->boxDataMinAbs, channelLen);
+	memcpy(boxDataMaxAbs, src->boxDataMaxAbs, channelLen);
 }
 
 PixelBox::~PixelBox()
@@ -74,8 +79,7 @@ bool* PixelBox::getCoverageFromData(int *_activePixels)
 	int active = 0;
 
 	for (int i = 0; i < width * height; i++) {
-		int offset = i * typeSize + channel * typeSize;
-		if (boxData[offset] > 0.5f) {
+		if (getData(boxData, i + channel) > 0.5f) {
 			cov[i] = true;
 			active++;
 		} else {
@@ -91,9 +95,9 @@ bool PixelBox::getDataValue(int x, int y, double *v)
 {
 	int pos = y * width + x;
 	if (coverage && boxData && coverage[pos] && boxDataMap[pos]) {
-		int offset = pos * channel * typeSize;
+		int offset = pos * channel;
 		for (int i = 0; i < channel; i++)
-			v[i] = boxData[offset + i * typeSize];
+			v[i] = getData(boxData, offset + i);
 		return true;
 	}
 	return false;
@@ -130,20 +134,19 @@ double PixelBox::getAbsMax(int _channel)
 	return getBoundary(_channel, 0.0, boxDataMaxAbs, true);
 }
 
-QImage PixelBox::getByteImage(FBMapping mapping)
+QImage PixelBox::getByteImage(enum FBMapping mapping)
 {
 	QImage image(width, height, QImage::Format_RGB32);
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
 			int pos = x * y;
-			int offset = pos * typeSize;
 			if (boxDataMap[pos]) {
 				/* data available */
 				QColor color;
 				for (int i = 0; i < 3; ++i) {
 					if (channel < i)
 						break;
-					color.setRed(mapFromValue(mapping, boxData[offset + typeSize * i], i));
+					color.setRed(mapFromValue(mapping, getData(boxData, pos + i), i));
 				}
 				image.setPixel(x, y, color.rgb());
 			} else {
@@ -158,22 +161,22 @@ QImage PixelBox::getByteImage(FBMapping mapping)
 	return image;
 }
 
-void PixelBox::setByteImageChannel(Channels _channel, QImage *image, Mapping *mapping,
-										RangeMapping *rangeMapping, float minmax[], bool useAlpha)
+void PixelBox::setByteImageChannel(Channels _channel, QImage *image, RangeMap range,
+								   float minmax[], bool useAlpha)
 {
 	if (!coverage || !boxData) {
 		dbgPrint(DBGLVL_ERROR, "TypedPixelBox::setByteImageChannel: no coverage or data!\n");
 		return;
 	}
 
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
 			QColor c(image->pixel(x, y));
 			unsigned long idx = y * width + x;
-			int offset = idx * typeSize + _channel * typeSize;
+			int offset = idx + _channel;
 			int val = 0;
 			if (coverage[idx] && boxDataMap[idx])
-				val = getMappedValueI(boxData[offset], mapping, rangeMapping, minmax);
+				val = getMappedValueI(getData(boxData, offset), range, minmax[0], minmax[1]);
 			else if (useAlpha)
 				c.setAlpha(0);
 			else
@@ -218,12 +221,11 @@ void PixelBox::invalidateData()
 {
 	if (!boxDataMap)
 		return;
-	size_t depth = typeSize * channel;
 	memset(boxDataMap, 0, width * height * sizeof(bool));
-	memset(boxDataMin, 0, depth);
-	memset(boxDataMax, 0, depth);
-	memset(boxDataMinAbs, 0, depth);
-	memset(boxDataMaxAbs, 0, depth);
+	memset(boxDataMin, 0, channelLen);
+	memset(boxDataMax, 0, channelLen);
+	memset(boxDataMinAbs, 0, channelLen);
+	memset(boxDataMaxAbs, 0, channelLen);
 	emit dataChanged();
 }
 
@@ -256,13 +258,13 @@ double PixelBox::getBoundary(int current_channel, int bval, void *data, bool max
 	if (current_channel < 0) {
 		double result = bval;
 		for (int c = 0; c < channel; c++) {
-			double val = data[c * typeSize];
+			double val = getData(data, c);
 			if (max ? (val > result) : (val < result))
 				result = val;
 		}
-		return (double) min;
+		return result;
 	} else if (current_channel < channel) {
-		return (double) data[current_channel * typeSize];
+		return getData(data, current_channel);
 	} else {
 		// TODO: Should this be silent?
 		dbgPrint(DBGLVL_INTERNAL_WARNING, "%s is not valid channel in getBoundary.",
@@ -274,9 +276,25 @@ double PixelBox::getBoundary(int current_channel, int bval, void *data, bool max
 int PixelBox::mapFromValue(FBMapping mapping, double f, int c)
 {
 	if (mapping == FBM_MIN_MAX) {
-		int offset = c * typeSize;
-		return (int) (255 * (f - boxDataMin[offset])
-				/ (double) (boxDataMax[offset] - boxDataMin[offset]));
+		double min = getData(boxDataMin, c);
+		double max = getData(boxDataMax, c);
+		return (int) (255 * (f - min) / (double) (max - min));
 	}
 	return CLAMP((int)(f * 255), 0, 255);
+}
+
+double PixelBox::getData(void *data, int offset)
+{
+	switch (dataType) {
+	case dtInt:
+		return getDataTyped<int>(data, offset);
+	case dtUnsigned:
+		return getDataTyped<unsigned int>(data, offset);
+	case dtFloat:
+		return getDataTyped<float>(data, offset);
+	default:
+		dbgPrint(DBGLVL_ERROR, "Wrong data type");
+		break;
+	}
+	return 0.0;
 }

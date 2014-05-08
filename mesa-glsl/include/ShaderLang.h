@@ -121,6 +121,7 @@ typedef enum {
 // Typedefs for changeables
 //
 typedef enum {
+	SH_CGB_UNSET,
 	SH_CGB_STRUCT,
 	SH_CGB_ARRAY,
 	SH_CGB_SWIZZLE

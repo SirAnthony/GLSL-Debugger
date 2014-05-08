@@ -12,7 +12,7 @@ public:
 	ShVarModel(QObject *parent = 0);
 	void appendRow(const ShVariableList *items);
 
-	void setRecursive(QVariant data, varDataFields field, ShVarItem *item);	
+	void setRecursive(QVariant data, varDataFields field, QStandardItem *item);
 	void setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope,
 			DbgRsScopeStack &stack);
 

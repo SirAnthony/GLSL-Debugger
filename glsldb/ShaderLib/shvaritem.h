@@ -54,6 +54,7 @@ public:
 
 	ShVarItem(ShVariable *var, bool recursive = true);
 	~ShVarItem();
+	ShChangeable getChangeable();
 	void setChangeable(ShChangeableType t, int idxc = -1, int idxr = -1);
 
 	QVariant data(int role = DF_FIRST) const;
@@ -61,6 +62,8 @@ public:
 
 	void updateWatchData(EShLanguage type);
 	void invalidateWatchData();
+
+	int readbackFormat();
 
 signals:
 

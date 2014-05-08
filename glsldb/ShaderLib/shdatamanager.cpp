@@ -26,9 +26,9 @@ static void printDebugInfo(int option, int target, char *shaders[3])
 	/////// DEBUG
 	dbgPrint(DBGLVL_DEBUG, ">>>>> DEBUG CG: ");
 	dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "%s\n", dbg_cg_names[option]);
-	if (target == ddtVertex)
+	if (target == DBG_TARGET_VERTEX_SHADER)
 		dbgPrint(DBGLVL_COMPILERINFO, ">>>>> DEBUG VERTEX SHADER:\n %s\n", shaders[0]);
-	else if (target == ddtGeometry)
+	else if (target == DBG_TARGET_GEOMETRY_SHADER)
 		dbgPrint(DBGLVL_COMPILERINFO, ">>>>> DEBUG GEOMETRY SHADER:\n %s\n", shaders[1]);
 	else
 		dbgPrint(DBGLVL_COMPILERINFO, ">>>>> DEBUG FRAGMENT SHADER:\n %s\n", shaders[2]);
@@ -86,7 +86,7 @@ bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChange
 	}
 
 	printDebugInfo(option, target, shaders);
-	if (type == ddtFragment)
+	if (type == DBG_TARGET_FRAGMENT_SHADER)
 		error = retriveFragmentData(shaders, format, option, coverage, data);
 	else
 		error = retriveVertexData(shaders, target, option, coverage, data);
@@ -167,7 +167,7 @@ bool ShDataManager::cleanShader()
 			break;
 		default:
 			error = PCE_NONE;
-		}		
+		}
 		break;
 	default:
 		break;
