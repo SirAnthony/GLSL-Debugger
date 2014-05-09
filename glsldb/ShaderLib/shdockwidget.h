@@ -2,7 +2,7 @@
 #define SHDOCKWIDGET_H
 
 #include <QDockWidget>
-#include "shvarmodel.h"
+#include "models/shvarmodel.h"
 
 
 class ShDockWidget : public QDockWidget

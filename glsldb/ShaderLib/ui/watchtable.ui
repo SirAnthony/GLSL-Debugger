@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wWatchTable</class>
- <widget class="QWidget" name="wWatchTable">
+ <class>ShWatchTable</class>
+ <widget class="QWidget" name="ShWatchTable">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -1149,7 +1149,7 @@
   <connection>
    <sender>slPointSize</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updatePointSize(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1165,7 +1165,7 @@
   <connection>
    <sender>MappingX</sender>
    <signal>clearData()</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>clearData()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1181,7 +1181,7 @@
   <connection>
    <sender>MappingY</sender>
    <signal>clearData()</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>clearData()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1197,7 +1197,7 @@
   <connection>
    <sender>MappingZ</sender>
    <signal>clearData()</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>clearData()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1213,7 +1213,7 @@
   <connection>
    <sender>MappingRed</sender>
    <signal>clearData()</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>clearData()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1229,7 +1229,7 @@
   <connection>
    <sender>MappingGreen</sender>
    <signal>clearData()</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>clearData()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1245,7 +1245,7 @@
   <connection>
    <sender>MappingBlue</sender>
    <signal>clearData()</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>clearData()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1261,7 +1261,7 @@
   <connection>
    <sender>MappingX</sender>
    <signal>updateData(int,int,float,float)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updateData(int,int,float,float)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1277,7 +1277,7 @@
   <connection>
    <sender>MappingY</sender>
    <signal>updateData(int,int,float,float)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updateData(int,int,float,float)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1293,7 +1293,7 @@
   <connection>
    <sender>MappingZ</sender>
    <signal>updateData(int,int,float,float)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updateData(int,int,float,float)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1309,7 +1309,7 @@
   <connection>
    <sender>MappingRed</sender>
    <signal>updateData(int,int,float,float)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updateData(int,int,float,float)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1325,7 +1325,7 @@
   <connection>
    <sender>MappingGreen</sender>
    <signal>updateData(int,int,float,float)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updateData(int,int,float,float)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1341,7 +1341,7 @@
   <connection>
    <sender>MappingBlue</sender>
    <signal>updateData(int,int,float,float)</signal>
-   <receiver>wWatchTable</receiver>
+   <receiver>ShWatchTable</receiver>
    <slot>updateData(int,int,float,float)</slot>
    <hints>
     <hint type="sourcelabel">

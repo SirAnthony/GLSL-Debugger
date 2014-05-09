@@ -19,11 +19,21 @@ public:
 		coverage = _coverage;
 	}
 
-	bool* getCoveragePointer(void)
+	bool getCoverageValue(int index)
+	{
+		return coverage ? coverage[index] : false;
+	}
+
+	bool getDataMapValue(int index)
+	{
+		return boxDataMap ? boxDataMap[index] : false;
+	}
+
+	const bool* getCoveragePointer(void)
 	{
 		return coverage;
 	}
-	bool* getDataMapPointer(void)
+	const bool* getDataMapPointer(void)
 	{
 		return boxDataMap;
 	}

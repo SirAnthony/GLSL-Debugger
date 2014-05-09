@@ -44,6 +44,7 @@ private:
 	ShVariableList* shVariables;
 	ShHandle compiler;
 	ProgramControl *pc;
+	bool *coverage;
 	static ShDataManager* instance;
 };
 

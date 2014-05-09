@@ -26,7 +26,7 @@ void ShWatchDock::expand(ShVarItem *item)
 		return;
 
 	if (item->parent() != item->model()->invisibleRootItem())
-		expand(item->parent());
+		expand(static_cast<ShVarItem*>(item->parent()));
 
 	ui->tvWatchList->expand(item->index());
 	emit dataChanged(item->index(), item->index());

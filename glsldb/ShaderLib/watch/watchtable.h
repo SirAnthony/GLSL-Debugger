@@ -2,6 +2,7 @@
 #ifndef WATCHTABLE_H
 #define WATCHTABLE_H
 
+#include <QModelIndex>
 #include "data/vertexBox.h"
 #include "watchview.h"
 #include "mappings.h"
@@ -60,7 +61,7 @@ private:
 
 	float *scatterData[WT_WIDGETS_COUNT];
 	int scatterDataCount[WT_WIDGETS_COUNT];
-	static const int scatterDataStride[WT_WIDGETS_COUNT] = {
+	const int scatterDataStride[WT_WIDGETS_COUNT] = {
 		3, 3, 3, 3, 3, 3
 	};
 };

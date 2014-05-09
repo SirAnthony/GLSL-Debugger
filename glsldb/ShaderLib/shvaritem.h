@@ -40,7 +40,6 @@ typedef enum {
 
 class ShVarItem : public QStandardItem
 {
-	Q_OBJECT
 public:
 	enum Scope {
 		NewInScope = 1,
@@ -64,10 +63,6 @@ public:
 	void invalidateWatchData();
 
 	int readbackFormat();
-
-signals:
-
-public slots:
 
 protected:
 	int id;

@@ -151,8 +151,8 @@ void VertexBox::addVertexBox(VertexBox *f)
 
 	float *pDstData = boxData;
 	bool *pDstDataMap = boxDataMap;
-	float *pSrcData = f->getDataPointer();
-	bool *pSrcDataMap = f->getDataMapPointer();
+	const float *pSrcData = f->getDataPointer();
+	const bool *pSrcDataMap = f->getDataMapPointer();
 
 	for (int i = 0; i < verticesCount; i++) {
 		for (int j = 0; j < numElementsPerVertex; j++) {

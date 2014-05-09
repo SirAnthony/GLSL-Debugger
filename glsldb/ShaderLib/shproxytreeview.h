@@ -2,9 +2,9 @@
 #define SHPROXYTREEVIEW_H
 
 #include <QSortFilterProxyModel>
-#include "shvarmodel.h"
+#include "models/shvarmodel.h"
+#include "models/shproxymodel.h"
 #include "shtreeview.h"
-#include "shproxymodel.h"
 
 template <class T>
 class ShTemplateTreeView : public ShTreeView

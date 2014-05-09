@@ -2,12 +2,15 @@
 #include "mappings.h"
 #include "watchtable.h"
 #include "ui_watchtable.h"
-#include "vertexTableModel.qt.h"
+#include "models/vertextablemodel.h"
 #include "glscatter.h"
 #include "shmappingwidget.h"
-#include "dbgprint.h"
+#include "utils/dbgprint.h"
+#include <cfloat>
 
-static void clearData(float *data, int count, int dataStride, float clearValue)
+#define ELEMENTS_PER_VERTEX 3
+
+static void clearDataArray(float *data, int count, int dataStride, float clearValue)
 {
 	for (int i = 0; i < count; i++) {
 		*data = clearValue;
@@ -16,39 +19,38 @@ static void clearData(float *data, int count, int dataStride, float clearValue)
 }
 
 WatchTable::WatchTable(QWidget *parent) :
-		WatchView(parent)
+	WatchView(parent),
+	widgets {
+		ui->MappingX, ui->MappingY, ui->MappingZ,
+		ui->MappingRed, ui->MappingGreen, ui->MappingBlue
+	}
 {
 	ui->setupUi(this);
 	ui->fMapping->setVisible(false);
-	m_vertexTable = new VertexTableModel(this);
-	m_filterProxy = new VertexTableSortFilterProxyModel(this);	
-	m_filterProxy->setSourceModel(m_vertexTable);
-	m_filterProxy->setDynamicSortFilter(true);	
-	connect(tbHideInactive, SIGNAL(toggled(bool)), m_filterProxy, SLOT(setHideInactive(bool)));
-	connect(m_vertexTable, SIGNAL(dataDeleted(int)), this, SLOT(detachData(int)));
-	connect(m_vertexTable, SIGNAL(empty()), this, SLOT(closeView()));
-	tvVertices->setModel(m_filterProxy);
+	model = new VertexTableModel(this);
+	modelFilter = new VertexTableSortFilterProxyModel(this);
+	modelFilter->setSourceModel(model);
+	modelFilter->setDynamicSortFilter(true);
+	connect(ui->tbHideInactive, SIGNAL(toggled(bool)), modelFilter, SLOT(setHideInactive(bool)));
+	connect(model, SIGNAL(dataDeleted(int)), this, SLOT(detachData(int)));
+	connect(model, SIGNAL(empty()), this, SLOT(closeView()));
+	ui->tvVertices->setModel(model);
 
-	connect(tvVertices, SIGNAL(doubleClicked(const QModelIndex &)), this,
+	connect(ui->tvVertices, SIGNAL(doubleClicked(const QModelIndex &)), this,
 			SLOT(newSelection(const QModelIndex &)));
 
 	scatterPositions = NULL;
 	scatterColorsAndSizes = NULL;
 	maxScatterDataElements = 0;
 	scatterDataElements = 0;
-	widgets = {
-		ui->MappingX, ui->MappingY, ui->MappingZ,
-		ui->MappingRed, ui->MappingGreen, ui->MappingBlue
-	};
-
-	ui->glScatter->setData(NULL, NULL, 0);
+	ui->glScatter->setData(NULL, NULL, 0, 0);
 	updatePointSize(ui->slPointSize->value());
 	updateGUI();
 }
 
 WatchTable::~WatchTable()
 {
-	ui->glScatter->setData(NULL, NULL, 0);
+	ui->glScatter->setData(NULL, NULL, 0, 0);
 	delete[] scatterPositions;
 	delete[] scatterColorsAndSizes;
 }
@@ -64,36 +66,32 @@ bool WatchTable::countsAllZero()
 void WatchTable::updateDataCurrent(float *data, int *count, int dataStride,
 		VertexBox *srcData, RangeMap range, float min, float max)
 {	
-	float *dd = data;
-	float *ds = srcData->getDataPointer();
-	bool *dc = srcData->getCoveragePointer();
-	bool *dm = srcData->getDataMapPointer();
+	float *pData = data;
+	const float *pSourceData = srcData->getDataPointer();
+	const bool *pSourceCov = srcData->getCoveragePointer();
+	const bool *pSourceMap = srcData->getDataMapPointer();
+	int verticles = srcData->getNumVertices();
 
 	max = fabs(max - min) > FLT_EPSILON ? max : 1.0f + min;
-	clearData(data, srcData->getNumVertices(), dataStride, 0.0f);
+	clearDataArray(data, srcData->getNumVertices(), dataStride, 0.0f);
 
-	*count = 0;
-	for (int i = 0; i < srcData->getNumVertices(); i++) {
-		if ((dc && !*dc) || (dm && !*dm)) {
-		} else {
-			*dd = getMappedValueF(*ds, range, min, max);
-			dd += dataStride;
-			(*count)++;
-		}
-		ds++;
-		if (dm)
-			dm++;
-		if (dc)
-			dc++;
+	int total = 0;
+	for (int i = 0; i < verticles; i++) {
+		if ((pSourceCov && !pSourceCov[i]) || (pSourceMap && !pSourceMap[i]))
+			continue;
+		*pData = getMappedValueF(pSourceData[i], range, min, max);
+		pData += dataStride;
+		total++;
 	}
-	if (*count > 0) {
-		scatterDataElements = *count;
-	} else if (countsAllZero()) {
+
+	*count = total;
+	if (total > 0)
+		scatterDataElements = total;
+	else if (countsAllZero())
 		scatterDataElements = 0;
-	}
 
 	ui->glScatter->setData(scatterPositions, scatterColorsAndSizes,
-			scatterDataElements);
+						   scatterDataElements, ELEMENTS_PER_VERTEX);
 }
 
 void WatchTable::attachVpData(VertexBox *vb, QString name)
@@ -105,12 +103,12 @@ void WatchTable::attachVpData(VertexBox *vb, QString name)
 		if (!scatterPositions) {
 			maxScatterDataElements = vb->getNumVertices();
 			scatterDataElements = 0;
-			scatterPositions = new float[3 * maxScatterDataElements];
-			scatterColorsAndSizes = new float[3 * maxScatterDataElements];
+			scatterPositions = new float[ELEMENTS_PER_VERTEX * maxScatterDataElements];
+			scatterColorsAndSizes = new float[ELEMENTS_PER_VERTEX * maxScatterDataElements];
 			for (int i = 0; i < WT_WIDGETS_COUNT; ++i) {
-				scatterData[i] = scatterPositions + (i % 3);
-				clearData(scatterData[i], maxScatterDataElements,
-						  scatterDataStride[i], 0.0f);
+				scatterData[i] = scatterPositions + (i % ELEMENTS_PER_VERTEX);
+				clearDataArray(scatterData[i], maxScatterDataElements,
+							   scatterDataStride[i], 0.0f);
 				scatterDataCount[i] = 0;
 			}
 		}
@@ -128,7 +126,7 @@ void WatchTable::updateData(int index, int range, float min, float max)
 	ShMappingWidget *sndr = static_cast<ShMappingWidget*>(sender());
 	int idx = WT_WIDGETS_COUNT;
 	while (--idx > 0)
-		if (sndr = widgets[idx])
+		if (sndr == widgets[idx])
 			break;
 
 	if (idx < 0)
@@ -136,7 +134,7 @@ void WatchTable::updateData(int index, int range, float min, float max)
 
 	updateDataCurrent(scatterData[idx], &scatterDataCount[idx],
 					  scatterDataStride[idx], model->getDataColumn(index),
-					  range, min, max);
+					  static_cast<RangeMap>(range), min, max);
 }
 
 void WatchTable::detachData(int idx)
@@ -151,14 +149,14 @@ void WatchTable::clearData()
 	ShMappingWidget *sndr = static_cast<ShMappingWidget*>(sender());
 	int idx = WT_WIDGETS_COUNT;
 	while (--idx > 0)
-		if (sndr = widgets[idx])
+		if (sndr == widgets[idx])
 			break;
 
 	if (idx < 0)
 		return;
 
-	clearData(scatterData[idx], maxScatterDataElements,
-			  scatterDataStride[idx], 0.0f);
+	clearDataArray(scatterData[idx], maxScatterDataElements,
+				   scatterDataStride[idx], 0.0f);
 }
 
 void WatchTable::newSelection(const QModelIndex & index)

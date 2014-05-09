@@ -2,7 +2,7 @@
 #define SHMAPPINGWIDGET_H
 
 #include <QWidget>
-#include "vertexTableModel.qt.h"
+#include "models/vertextablemodel.h"
 #include "mappings.h"
 
 namespace Ui {

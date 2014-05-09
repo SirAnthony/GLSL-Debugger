@@ -37,7 +37,7 @@ static void printDebugInfo(int option, int target, char *shaders[3])
 
 ShDataManager::ShDataManager(ProgramControl *_pc, QObject *parent) :
 	QObject(parent), primitiveMode(0), shVariables(NULL),
-	compiler(NULL), pc(_pc)
+	compiler(NULL), pc(_pc), coverage(NULL)
 {
 
 }
@@ -131,6 +131,11 @@ bool ShDataManager::cleanShader()
 		cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor, 1);
 		highlight.setBackground(Qt::white);
 		cursor.mergeCharFormat(highlight);
+	}
+
+	if (coverage) {
+		delete[] coverage;
+		coverage = NULL;
 	}
 
 	lWatchSelectionPos->setText("No Selection");

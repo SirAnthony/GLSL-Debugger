@@ -21,10 +21,16 @@ public:
 	void addVertexBox(VertexBox *f);
 
 	bool* getCoverageFromData(bool *oldCoverage, bool *coverageChanged);
-	float* getDataPointer(void)
+
+	float getDataValue(int index)
+	{
+		return boxData ? boxData[index] : 0.0;
+	}
+	const float* getDataPointer(void)
 	{
 		return boxData;
 	}
+
 	bool getDataValue(int numVertex, float *v);
 	bool getDataValue(int numVertex, QVariant *v);
 	int getNumElementsPerVertex(void)
