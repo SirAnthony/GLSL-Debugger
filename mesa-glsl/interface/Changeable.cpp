@@ -10,6 +10,35 @@
 #include <string.h>
 #include <unordered_set>
 
+void createShChangeableList(ShChangeableList **list)
+{
+	*list = rzalloc(NULL, ShChangeableList);
+}
+
+void freeShChangeableList(ShChangeableList **list)
+{
+	if (list && *list) {
+		ralloc_free(*list);
+		list = NULL;
+	}
+}
+
+void dumpShChangeableList(ShChangeableList *cl)
+{
+	int i;
+
+	if (!cl)
+		return;
+	dbgPrint(DBGLVL_INFO, "===> ");
+	if (cl->numChangeables == 0) {
+		dbgPrint(DBGLVL_INFO, "empty\n");
+		return;
+	}
+
+	for (i = 0; i < cl->numChangeables; i++)
+		dumpShChangeable(cl->changeables[i]);
+	dbgPrint(DBGLVL_INFO, "\n");
+}
 
 void dumpShChangeable(const ShChangeable *cgb)
 {
@@ -35,23 +64,6 @@ void dumpShChangeable(const ShChangeable *cgb)
 		}
 		dbgPrint(DBGLVL_INFO, " ");
 	}
-}
-
-void dumpShChangeableList(ShChangeableList *cl)
-{
-	int i;
-
-	if (!cl)
-		return;
-	dbgPrint(DBGLVL_INFO, "===> ");
-	if (cl->numChangeables == 0) {
-		dbgPrint(DBGLVL_INFO, "empty\n");
-		return;
-	}
-
-	for (i = 0; i < cl->numChangeables; i++)
-		dumpShChangeable(cl->changeables[i]);
-	dbgPrint(DBGLVL_INFO, "\n");
 }
 
 static bool isEqualShChangeable(const ShChangeable *a, const ShChangeable *b)
@@ -204,6 +216,11 @@ void addShIndexToChangeableCtx(ShChangeable *c, const ShChangeableIndex *idx)
 	c->indices[c->numIndices - 1] = idx;
 }
 
+void createShChangeable(ShChangeable **c)
+{
+	*c = rzalloc(NULL, ShChangeable);
+}
+
 void freeShChangeable(ShChangeable **c)
 {
 	if (c && *c) {
@@ -212,3 +229,8 @@ void freeShChangeable(ShChangeable **c)
 	}
 }
 
+void createShChangeableIndex(ShChangeable *c, ShChangeableIndex **idx)
+{
+	*idx = rzalloc(c, ShChangeableIndex);
+	addShIndexToChangeableCtx(c, *idx);
+}

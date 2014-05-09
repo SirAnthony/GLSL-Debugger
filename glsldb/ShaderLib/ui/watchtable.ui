@@ -1108,7 +1108,7 @@
   <customwidget>
    <class>GLScatter</class>
    <extends>QWidget</extends>
-   <header>glscatter.h</header>
+   <header>watch/glscatter.h</header>
    <container>1</container>
    <slots>
     <slot>updateGL()</slot>
@@ -1117,7 +1117,7 @@
   <customwidget>
    <class>ShMappingWidget</class>
    <extends>QWidget</extends>
-   <header>shmappingwidget.h</header>
+   <header>watch/shmappingwidget.h</header>
    <container>1</container>
    <slots>
     <signal>updateScatter()</signal>
@@ -1143,102 +1143,6 @@
     <hint type="destinationlabel">
      <x>9</x>
      <y>106</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MappingX</sender>
-   <signal>updateScatter()</signal>
-   <receiver>glScatter</receiver>
-   <slot>updateGL()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>159</x>
-     <y>77</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>233</x>
-     <y>340</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MappingY</sender>
-   <signal>updateScatter()</signal>
-   <receiver>glScatter</receiver>
-   <slot>updateGL()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>182</x>
-     <y>93</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>122</x>
-     <y>387</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MappingZ</sender>
-   <signal>updateScatter()</signal>
-   <receiver>glScatter</receiver>
-   <slot>updateGL()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>200</x>
-     <y>109</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>168</x>
-     <y>298</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MappingRed</sender>
-   <signal>updateScatter()</signal>
-   <receiver>glScatter</receiver>
-   <slot>updateGL()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>238</x>
-     <y>125</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>198</x>
-     <y>267</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MappingGreen</sender>
-   <signal>updateScatter()</signal>
-   <receiver>glScatter</receiver>
-   <slot>updateGL()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>277</x>
-     <y>141</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>263</x>
-     <y>256</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MappingBlue</sender>
-   <signal>updateScatter()</signal>
-   <receiver>glScatter</receiver>
-   <slot>updateGL()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>399</x>
-     <y>157</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>298</x>
-     <y>259</y>
     </hint>
    </hints>
   </connection>

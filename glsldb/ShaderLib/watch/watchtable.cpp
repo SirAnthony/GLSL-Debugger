@@ -3,12 +3,9 @@
 #include "watchtable.h"
 #include "ui_watchtable.h"
 #include "vertexTableModel.qt.h"
-#include "glScatter.qt.h"
+#include "glscatter.h"
 #include "shmappingwidget.h"
 #include "dbgprint.h"
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
 
 static void clearData(float *data, int count, int dataStride, float clearValue)
 {

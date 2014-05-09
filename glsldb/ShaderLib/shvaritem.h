@@ -31,7 +31,7 @@ typedef enum {
 	DF_WATCHED,
 	DF_DATA_PIXELBOX,
 	DF_DATA_GEOMETRYBOX,
-	DF_DATA_VERTEXBOX,	
+	DF_DATA_VERTEXBOX,
 	DF_DEBUG_SELECTED_VALUE,
 	DF_DEBUG_UNIFORM_VALUE,
 	DF_LAST
@@ -54,7 +54,7 @@ public:
 
 	ShVarItem(ShVariable *var, bool recursive = true);
 	~ShVarItem();
-	ShChangeable getChangeable();
+	ShChangeable* getChangeable();
 	void setChangeable(ShChangeableType t, int idxc = -1, int idxr = -1);
 
 	QVariant data(int role = DF_FIRST) const;

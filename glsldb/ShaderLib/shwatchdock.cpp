@@ -4,14 +4,15 @@
 #include "utils/dbgprint.h"
 
 ShWatchDock::ShWatchDock(QWidget *parent) :
-	QDockWidget(parent)
+	ShDockWidget(parent)
 {
 	ui->setupUi(this);
+	ui->tvWatchList->setModel(model);
 
 	/* Track watch items */
 	connect(this->model, SIGNAL(newWatchItem(ShVarItem*)), SLOT(newItem(ShVarItem*)));
-	connect(ShDataManager::get(), SIGNAL(cleanModel()), watchItems, SLOT(clear()));
-	connect(ui->WatchDelete, SIGNAL(clicked()), SLOT(removeSelected());
+	connect(ShDataManager::get(), SIGNAL(cleanModel()), this, SLOT(clearWatchList()));
+	connect(ui->WatchDelete, SIGNAL(clicked()), SLOT(removeSelected()));
 }
 
 ShWatchDock::~ShWatchDock()

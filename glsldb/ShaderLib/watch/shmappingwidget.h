@@ -2,6 +2,7 @@
 #define SHMAPPINGWIDGET_H
 
 #include <QWidget>
+#include "vertexTableModel.qt.h"
 #include "mappings.h"
 
 namespace Ui {
@@ -15,6 +16,10 @@ public:
 	explicit ShMappingWidget(QWidget *parent = 0);
 	void addOption(int, QString);
 	void delOption(int);
+	inline void setModel(VertexTableModel *m)
+	{
+		model = m;
+	}
 	
 signals:
 	void updateScatter();
@@ -31,7 +36,9 @@ public slots:
 	void switchBoundaries();
 
 protected:
-	void updateRangeMapping(int);
+	void updateRangeMapping(int, int);
+
+	VertexTableModel *model;
 
 private:
 	Ui::ShMappingWidget *ui;

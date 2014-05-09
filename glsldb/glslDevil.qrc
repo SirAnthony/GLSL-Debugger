@@ -1,12 +1,12 @@
 <RCC>
-    <qresource prefix="/cursors" >
+    <qresource prefix="/cursors">
         <file>cursors/min-max.png</file>
         <file>cursors/pick.png</file>
         <file>cursors/zoom-in.png</file>
         <file>cursors/zoom-out.png</file>
         <file>cursors/zoom-reset.png</file>
     </qresource>
-    <qresource prefix="/icons" >
+    <qresource prefix="/icons">
         <file>icons/application-x-executable_32.png</file>
         <file>icons/applications-system_32.png</file>
         <file>icons/buffer-view-auto-capture_32.png</file>
@@ -91,11 +91,15 @@
         <file>icons/watch-red-solid_32.png</file>
         <file>icons/watch-vector-mapping_32.png</file>
     </qresource>
-    <qresource prefix="/shaders" >
-        <file>shaders/pointbased_spheres.fp</file>
-        <file>shaders/pointbased_spheres.vp</file>
+    <qresource prefix="/shaders">
+        <file>ShaderLib/shaders/spheres.frag</file>
+        <file>ShaderLib/shaders/spheres.vert</file>
+        <file>ShaderLib/shaders/axes_box.frag</file>
+        <file>ShaderLib/shaders/axes_box.vert</file>
+        <file>ShaderLib/shaders/axes.frag</file>
+        <file>ShaderLib/shaders/axes.vert</file>
     </qresource>
-    <qresource prefix="/doc" >
+    <qresource prefix="/doc">
         <file>../doc/license.txt</file>
         <file>../doc/credits.txt</file>
     </qresource>

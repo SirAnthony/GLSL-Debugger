@@ -4,47 +4,69 @@
 #include <QSortFilterProxyModel>
 #include "shvarmodel.h"
 #include "shtreeview.h"
+#include "shproxymodel.h"
 
-class ShProxyTreeView : public ShTreeView
+template <class T>
+class ShTemplateTreeView : public ShTreeView
 {
-	Q_OBJECT
 public:
-	explicit ShProxyTreeView(ShVarModel *model, QWidget *parent = 0);
-
+	ShTemplateTreeView(QWidget *parent = 0) :
+		ShTreeView(parent)
+	{
+		baseModel = NULL;
+	}
+	ShTemplateTreeView(ShVarModel *model, QWidget *parent = 0) :
+		ShTreeView(parent)
+	{
+		baseModel = NULL;
+		setModel(model);
+	}
+	virtual void setModel(ShVarModel *model)
+	{
+		if (!model)
+			return;
+		baseModel = new T(model);
+	}
 protected:
-	QSortFilterProxyModel* baseModel;
+	T* baseModel;
 };
 
 
-class ShBuiltInTreeView : public ShProxyTreeView
+class ShProxyTreeView : public ShTemplateTreeView<ShSortFilterProxyModel>
 {
-	Q_OBJECT
 public:
-	ShBuiltInTreeView(ShVarModel *model, QWidget *parent = 0);
+	ShProxyTreeView(ShVarModel *model, QWidget *parent = 0) :
+		ShTemplateTreeView(model, parent) {}
 };
 
-
-class ShScopeTreeView : public ShProxyTreeView
+class ShBuiltInTreeView : public ShTemplateTreeView<ShBuiltInSortFilterProxyModel>
 {
-	Q_OBJECT
 public:
-	ShScopeTreeView(ShVarModel *model, QWidget *parent = 0);
+	ShBuiltInTreeView(ShVarModel *model, QWidget *parent = 0) :
+		ShTemplateTreeView(model, parent) {}
 };
 
-
-class ShWatchedTreeView : public ShProxyTreeView
+class ShScopeTreeView : public ShTemplateTreeView<ShScopeSortFilterProxyModel>
 {
-	Q_OBJECT
 public:
-	ShWatchedTreeView(ShVarModel *model, QWidget *parent = 0);
+	ShScopeTreeView(ShVarModel *model, QWidget *parent = 0) :
+		ShTemplateTreeView(model, parent) {}
 };
 
-
-class ShUniformTreeView: public ShProxyTreeView
+class ShWatchedTreeView : public ShTemplateTreeView<ShWatchedSortFilterProxyModel>
 {
-	Q_OBJECT
 public:
-	ShUniformTreeView(ShVarModel *model, QWidget *parent = 0);
+	ShWatchedTreeView(QWidget *parent = 0) :
+		ShTemplateTreeView(parent) {}
+	ShWatchedTreeView(ShVarModel *model, QWidget *parent = 0) :
+		ShTemplateTreeView(model, parent) {}
+};
+
+class ShUniformTreeView: public ShTemplateTreeView<ShUniformSortFilterProxyModel>
+{
+public:
+	ShUniformTreeView(ShVarModel *model, QWidget *parent = 0) :
+		ShTemplateTreeView(model, parent) {}
 };
 
 #endif // SHPROXYTREEVIEW_H

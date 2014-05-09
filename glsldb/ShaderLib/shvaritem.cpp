@@ -100,20 +100,18 @@ ShVarItem::~ShVarItem()
 	}
 }
 
-ShChangeable ShVarItem::getChangeable()
+ShChangeable* ShVarItem::getChangeable()
 {
-	ShChangeable cgbl;
-	cgbl.id = this->id;
-	cgbl.numIndices = 0;
-	cgbl.indices = NULL;
+	ShChangeable* cgbl = NULL;
+	createShChangeable(&cgbl);
+	cgbl->id = this->id;
 	for (int i = 0; i < 2; ++i) {
 		if (this->changeableIndex[i] < 0)
 			continue;
-		ShChangeableIndex *index = new ShChangeableIndex;
+		ShChangeableIndex *index = NULL;
+		createShChangeableIndex(cgbl, &index);
 		index->index = this->changeableIndex[i];
 		index->type = this->changeable;
-		cgbl.indices = (ShChangeableIndex **)realloc(cgbl.indices, cgbl.numIndices + 1);
-		cgbl.indices[cgbl.numIndices++] = index;
 	}
 	return cgbl;
 }
@@ -189,12 +187,10 @@ void ShVarItem::updateWatchData(EShLanguage type)
 {
 	int format = this->readbackFormat();
 	ShDataManager* manager = ShDataManager::get();
-	ShChangeableList cl;
-	ShChangeable cgbl = this->getChangeable();
-
-	cl.numChangeables = 0;
-	cl.changeables = NULL;
-	addShChangeable(&cl, &cgbl);
+	ShChangeable* cgbl = this->getChangeable();
+	ShChangeableList* cl = NULL;
+	createShChangeableList(&cl);
+	addShChangeable(cl, cgbl);
 
 	if (type == EShLangFragment) {
 		PixelBox *data = this->pixelBox.value<PixelBox*>();
@@ -227,8 +223,8 @@ void ShVarItem::updateWatchData(EShLanguage type)
 		}
 	}
 
-	for (int i = 0; i < cgbl.numIndices; ++i)
-		free(cgbl.indices[i]);
+	freeShChangeable(&cgbl);
+	freeShChangeableList(&cl);
 }
 
 int ShVarItem::readbackFormat()

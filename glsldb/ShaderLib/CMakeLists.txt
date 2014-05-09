@@ -1,5 +1,5 @@
 
-find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
+find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 
 file(GLOB SRC_CPP *.cpp data/*.cpp watch/*.cpp)
 file(GLOB MOC_HEADERS *.h data/*.h watch/*.h)

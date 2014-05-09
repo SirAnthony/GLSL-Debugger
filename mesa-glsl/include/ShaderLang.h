@@ -146,10 +146,14 @@ typedef struct {
 //
 // Some helper Functions for changeable handling
 //
-SH_IMPORT_EXPORT void dumpShChangeable(const ShChangeable *cbl);
+SH_IMPORT_EXPORT void createShChangeableList(ShChangeableList **list);
+SH_IMPORT_EXPORT void freeShChangeableList(ShChangeableList **list);
 SH_IMPORT_EXPORT void dumpShChangeableList(ShChangeableList *cl);
+SH_IMPORT_EXPORT void dumpShChangeable(const ShChangeable *cbl);
 SH_IMPORT_EXPORT void addShChangeable(ShChangeableList *cl, const ShChangeable *c);
+SH_IMPORT_EXPORT void createShChangeable(ShChangeable **c);
 SH_IMPORT_EXPORT void freeShChangeable(ShChangeable **c);
+SH_IMPORT_EXPORT void createShChangeableIndex(ShChangeable *c, ShChangeableIndex **idx);
 
 //
 // Types for specifiing the behaviour of code generation
