@@ -1,8 +1,8 @@
 
 find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 
-file(GLOB SRC_CPP *.cpp data/*.cpp models/*.cpp watch/*.cpp)
-file(GLOB MOC_HEADERS *.h data/*.h models/*.h watch/*.h)
+file(GLOB SRC_CPP *.cpp data/*.cpp models/*.cpp docks/*.cpp watch/*.cpp)
+file(GLOB MOC_HEADERS *.h data/*.h models/*.h docks/*.h watch/*.h)
 file(GLOB UI_FILES ui/*.ui)
 qt4_wrap_cpp(MOC_OUTFILES ${MOC_HEADERS})
 qt4_wrap_ui(UI_OUTFILES ${UI_FILES})

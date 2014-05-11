@@ -735,53 +735,55 @@ void MainWindow::clearGlTraceItemList(void)
 	}
 }
 
-void MainWindow::setShaderCodeText(char *shaders[3])
+/*
+ * void MainWindow::setShaderCodeText(char *shaders[3])
 {
 	if (shaders && shaders[0]) {
-		/* make a new document, the old one get's deleted by qt */
+		 make a new document, the old one get's deleted by qt
 		QTextDocument *newDoc = new QTextDocument(QString(shaders[0]),
 				teVertexShader);
-		/* the document becomes owner of the highlighter, so it get's freed */
+		 the document becomes owner of the highlighter, so it get's freed
 		GlslSyntaxHighlighter *highlighter;
 		highlighter = new GlslSyntaxHighlighter(newDoc);
 		teVertexShader->setDocument(newDoc);
 		teVertexShader->setTabStopWidth(30);
 	} else {
-		/* make a new empty document, the old one get's deleted by qt */
+		 make a new empty document, the old one get's deleted by qt
 		QTextDocument *newDoc = new QTextDocument(QString(""), teVertexShader);
 		teVertexShader->setDocument(newDoc);
 	}
 	if (shaders && shaders[1]) {
-		/* make a new document, the old one get's deleted by qt */
+		 make a new document, the old one get's deleted by qt
 		QTextDocument *newDoc = new QTextDocument(QString(shaders[1]),
 				teGeometryShader);
-		/* the document becomes owner of the highlighter, so it get's freed */
+		 the document becomes owner of the highlighter, so it get's freed
 		GlslSyntaxHighlighter *highlighter;
 		highlighter = new GlslSyntaxHighlighter(newDoc);
 		teGeometryShader->setDocument(newDoc);
 		teGeometryShader->setTabStopWidth(30);
 	} else {
-		/* make a new empty document, the old one get's deleted by qt */
+		 make a new empty document, the old one get's deleted by qt
 		QTextDocument *newDoc = new QTextDocument(QString(""),
 				teGeometryShader);
 		teGeometryShader->setDocument(newDoc);
 	}
 	if (shaders && shaders[2]) {
-		/* make a new document, the old one get's deleted by qt */
+		 make a new document, the old one get's deleted by qt
 		QTextDocument *newDoc = new QTextDocument(QString(shaders[2]),
 				teFragmentShader);
-		/* the document becomes owner of the highlighter, so it get's freed */
+		 the document becomes owner of the highlighter, so it get's freed
 		GlslSyntaxHighlighter *highlighter;
 		highlighter = new GlslSyntaxHighlighter(newDoc);
 		teFragmentShader->setDocument(newDoc);
 		teFragmentShader->setTabStopWidth(30);
 	} else {
-		/* make a new empty document, the old one get's deleted by qt */
+		 make a new empty document, the old one get's deleted by qt
 		QTextDocument *newDoc = new QTextDocument(QString(""),
 				teFragmentShader);
 		teFragmentShader->setDocument(newDoc);
 	}
 }
+*/
 
 pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 {
@@ -1718,6 +1720,7 @@ void MainWindow::updateWatchItemData(OldShVarItem *watchItem)
 	freeShChangeable(&watchItemCgbl);
 }
 
+/*
 static void invalidateWatchItemData(OldShVarItem *item)
 {
 	if (item->getPixelBoxPointer()) {
@@ -1731,7 +1734,8 @@ static void invalidateWatchItemData(OldShVarItem *item)
 		item->getVertexBoxPointer()->invalidateData();
 	}
 }
-
+*/
+/*
 void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 		bool forceUpdate)
 {
@@ -1761,7 +1765,7 @@ void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 		} else if (item->hasLeftScope()) {
 			invalidateWatchItemData(item);
 		} else {
-			/* If covermap grows larger, more readbacks could become possible */
+			 If covermap grows larger, more readbacks could become possible
 			if (cmstatus == COVERAGEMAP_GROWN) {
 				if (item->isInScope() || item->isBuildIn()
 						|| item->isInScopeStack()) {
@@ -1778,26 +1782,28 @@ void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 				}
 			}
 		}
-		/* HACK: when an error occurs in shader debugging the runlevel
+		 HACK: when an error occurs in shader debugging the runlevel
 		 * might change to RL_SETUP and all shader debugging data will
 		 * be invalid; so we have to check it here
-		 */
+
 		if (currentRunLevel == RL_SETUP) {
 			return;
 		}
 	}
 
-	/* Now update all windows to update themselves if necessary */
+	 Now update all windows to update themselves if necessary
 	QWidgetList windowList = workspace->windowList();
 
 	for (i = 0; i < windowList.count(); i++) {
 		WatchView *wv = static_cast<WatchView*>(windowList[i]);
 		wv->updateView(cmstatus != COVERAGEMAP_UNCHANGED);
 	}
-	/* update view */
+	 update view
 	m_pShVarModel->currentValuesChanged();
 }
+*/
 
+/*
 void MainWindow::updateWatchItemsCoverage(bool *coverage)
 {
 	QList<OldShVarItem*> watchItems;
@@ -1823,10 +1829,12 @@ void MainWindow::updateWatchItemsCoverage(bool *coverage)
 			item->setCurrentValue(m_selectedPixel[0]);
 		}
 	}
-	/* update view */
+	 update view
 	m_pShVarModel->currentValuesChanged();
 }
+*/
 
+/*
 void MainWindow::resetWatchListData(void)
 {
 	QList<OldShVarItem*> watchItems;
@@ -1838,10 +1846,10 @@ void MainWindow::resetWatchListData(void)
 			OldShVarItem *item = watchItems[i];
 			if (item->isInScope() || item->isBuildIn()) {
 				updateWatchItemData(item);
-				/* HACK: when an error occurs in shader debugging the runlevel
+				 HACK: when an error occurs in shader debugging the runlevel
 				 * might change to RL_SETUP and all shader debugging data will
 				 * be invalid; so we have to check it here
-				 */
+
 				if (currentRunLevel == RL_SETUP) {
 					return;
 				}
@@ -1849,16 +1857,17 @@ void MainWindow::resetWatchListData(void)
 				invalidateWatchItemData(item);
 			}
 		}
-		/* Now notify all windows to update themselves if necessary */
+		 Now notify all windows to update themselves if necessary
 		QWidgetList windowList = workspace->windowList();
 		for (i = 0; i < windowList.count(); i++) {
 			WatchView *wv = static_cast<WatchView*>(windowList[i]);
 			wv->updateView(true);
 		}
-		/* update view */
+		 update view
 		m_pShVarModel->currentValuesChanged();
 	}
 }
+*/
 
 void MainWindow::ShaderStep(int action, bool updateWatchData,
 		bool updateCovermap)
@@ -2679,7 +2688,7 @@ void MainWindow::on_twShader_currentChanged(int selection)
 		tbShaderExecute->setEnabled(false);
 	}
 }
-
+/*
 QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 {
 	QModelIndexList output;         // Resulting filtered list.
@@ -2697,11 +2706,11 @@ QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 	//    }
 	//}
 
-	/*
+
 	 * Add directly selected items in reverse order such that getting them
 	 * from the stack restores the original order. This is also required
 	 * for all following push operations.
-	 */
+
 	for (int i = input.count() - 1; i >= 0; i--) {
 		stack.push(input[i]);
 	}
@@ -2726,6 +2735,7 @@ QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 
 	return output;
 }
+*/
 
 WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
 {
@@ -2931,6 +2941,7 @@ void MainWindow::watchWindowClosed()
 	}
 }
 
+/*
 void MainWindow::updateWatchGui(int s)
 {
 	if (s == 0) {
@@ -2955,6 +2966,7 @@ void MainWindow::updateWatchGui(int s)
 		tbWatchDelete->setEnabled(true);
 	}
 }
+*/
 
 /*
 void MainWindow::on_tbWatchDelete_clicked()
@@ -2987,6 +2999,7 @@ void MainWindow::on_tbWatchDelete_clicked()
 }
 */
 
+/*
 void MainWindow::watchSelectionChanged(const QItemSelection& selected,
 		const QItemSelection& deselected)
 {
@@ -2995,7 +3008,9 @@ void MainWindow::watchSelectionChanged(const QItemSelection& selected,
 	updateWatchGui(
 			cleanupSelectionList(tvWatchList->selectionModel()->selectedRows()).count());
 }
+*/
 
+/*
 void MainWindow::changedActiveWindow(QWidget *w)
 {
 	QWidgetList list = workspace->windowList();
@@ -3009,6 +3024,7 @@ void MainWindow::changedActiveWindow(QWidget *w)
 		}
 	}
 }
+*/
 
 void MainWindow::leaveDBGState()
 {
@@ -3693,6 +3709,9 @@ void MainWindow::setRunLevel(int rl)
 void MainWindow::setErrorStatus(pcErrorCode error)
 {
 	QPalette palette;
+	int color = Qt::blue;
+	QString icon = QString::fromUtf8(":/icons/icons/dialog-error-blue_32.png");
+	bool added = false;
 
 	switch (error) {
 	/* no error */
@@ -3710,33 +3729,24 @@ void MainWindow::setErrorStatus(pcErrorCode error)
 	case PCE_GL_OUT_OF_MEMORY:
 	case PCE_GL_TABLE_TOO_LARGE:
 	case PCE_DBG_READBACK_NOT_ALLOWED:
-		lSBErrorIcon->setVisible(true);
-		lSBErrorIcon->setPixmap(
-				QPixmap(
-						QString::fromUtf8(
-								":/icons/icons/dialog-error-green.png")));
-		lSBErrorText->setVisible(true);
-		palette = lSBErrorText->palette();
-		palette.setColor(QPalette::WindowText, Qt::green);
-		lSBErrorText->setPalette(palette);
-		lSBErrorText->setText(getErrorInfo(error));
-		statusbar->showMessage(getErrorDescription(error));
-		addGlTraceWarningItem(getErrorDescription(error));
-		break;
+		icon = QString::fromUtf8(":/icons/icons/dialog-error-green.png");
+		color = Qt::green;
 		/* all other errors are considered critical errors */
+		addGlTraceWarningItem(getErrorDescription(error));
+		added = true;
+		/* no break */
 	default:
 		lSBErrorIcon->setVisible(true);
-		lSBErrorIcon->setPixmap(
-				QPixmap(
-						QString::fromUtf8(
-								":/icons/icons/dialog-error-blue_32.png")));
+		lSBErrorIcon->setPixmap(QPixmap(icon));
 		lSBErrorText->setVisible(true);
 		palette = lSBErrorText->palette();
-		palette.setColor(QPalette::WindowText, Qt::blue);
+		palette.setColor(QPalette::WindowText, color);
 		lSBErrorText->setPalette(palette);
 		lSBErrorText->setText(getErrorInfo(error));
 		statusbar->showMessage(getErrorDescription(error));
-		addGlTraceErrorItem(getErrorDescription(error));
+		// TODO: This shit needs refactoring. I do not want to do it right now.
+		if (!added)
+			addGlTraceErrorItem(getErrorDescription(error));
 		break;
 	}
 }

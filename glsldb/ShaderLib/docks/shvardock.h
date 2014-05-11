@@ -14,6 +14,9 @@ public:
 	explicit ShVarDock(QWidget *parent = 0);
 	~ShVarDock();
 
+public slots:
+	virtual void cleanDock(EShLanguage) {}
+
 private:
 	template<class T>
 	inline QWidget* newTab() { return new T(this->model); }

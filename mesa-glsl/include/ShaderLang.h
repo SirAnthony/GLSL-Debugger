@@ -76,8 +76,6 @@ typedef enum {
 	EShLangVertex,
 	EShLangGeometry,
 	EShLangFragment,
-	EShLangPack,
-	EShLangUnpack,
 	EShLangCount,
 } EShLanguage;
 

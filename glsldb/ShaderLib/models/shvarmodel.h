@@ -24,6 +24,7 @@ signals:
 
 public slots:
 	void valuesChanged();
+	void valuesChanged(QModelIndex, QModelIndex);
 	void clear();
 	
 };

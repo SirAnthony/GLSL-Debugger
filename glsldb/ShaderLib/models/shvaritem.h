@@ -44,6 +44,7 @@ public:
 	enum Scope {
 		NewInScope = 1,
 		InScope = 2,
+		IsInScope = 3,		// NewInScope or InScope
 		InScopeStack = 4,
 		AtScope = 7,		// NewInScope, InScope or InScopeStack
 		LeftScope = 8,
@@ -59,10 +60,12 @@ public:
 	QVariant data(int role = DF_FIRST) const;
 	void setData(const QVariant &value, int role = DF_FIRST);
 
-	void updateWatchData(EShLanguage type);
+	bool updateWatchData(EShLanguage type);
 	void invalidateWatchData();
+	void resetValue();
 
 	int readbackFormat();
+	bool pixelDataAvaliable();
 
 protected:
 	int id;

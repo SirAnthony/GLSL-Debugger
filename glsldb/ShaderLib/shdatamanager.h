@@ -2,12 +2,15 @@
 #define SHDATAMANAGER_H
 
 #include <QObject>
+#include "docks/shdockwidget.h"
 #include "data/dataBox.h"
 #include "ShaderLang.h"
 
 class VertexBox;
 class PixelBox;
 class ProgramControl;
+class ShWindowManager;
+
 
 class ShDataManager : public QObject
 {
@@ -20,29 +23,44 @@ public:
 	 * other things like ShVarItem which have no direct connection
 	 * with MainWindow.
 	 */
-	static ShDataManager* create(ProgramControl *pc, QObject *parent = 0);
+	static ShDataManager* create(QMainWindow *window, ProgramControl *pc, QObject *parent = 0);
 	static ShDataManager* get();
+
+	enum DockType {
+		dmDTVar,
+		dmDTWatch,
+		dmDTSource,
+		dmDTCount
+	};
+
+	void registerDock(ShDockWidget*, DockType);
 
 	bool getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
 					  int format, bool *coverage, DataBox *data);
-	bool cleanShader();
+	bool cleanShader(EShLanguage type);
+	void getPixels(const int **);
+
 
 signals:
+	void cleanDocks(EShLanguage);
 	void cleanModel();
 	void setErrorStatus(int);
 	void setRunLevel(int);
 	void killProgram(int);
 	
 protected:
-	bool processError(int);
-	int retriveVertexData(char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
-	int retriveFragmentData(char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
+	bool processError(int, EShLanguage type);
+	int retriveVertexData(const char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
+	int retriveFragmentData(const char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
 	
 private:
 	ShDataManager(ProgramControl *_pc, QObject *parent = 0);
+	ShWindowManager* windows;
 	int primitiveMode;
+	int selectedPixel[2];
 	ShVariableList* shVariables;
 	ShHandle compiler;
+	ShDockWidget* docks[dmDTCount];
 	ProgramControl *pc;
 	bool *coverage;
 	static ShDataManager* instance;

@@ -124,7 +124,7 @@ private slots:
 	void on_tbShaderFragmentOptions_clicked();
 
 	/* watch */
-	void on_tbWatchWindow_clicked();
+	//void on_tbWatchWindow_clicked();
 	void on_tbWatchWindowAdd_clicked();
 	/*void on_tbWatchDelete_clicked();*/
 	void watchWindowClosed();
@@ -135,13 +135,13 @@ private slots:
 
 	void setRunLevel(int);
 	void updateWatchItemData(OldShVarItem*);
-	void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
+	// void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
 	void setMouseOverValues(int x, int y, const bool *active,
 			const QVariant *values);
 	void newSelectedPixel(int x, int y);
 	void newSelectedVertex(int n);
 	void newSelectedPrimitive(int dataIdx);
-	void changedActiveWindow(QWidget *w);
+	// void changedActiveWindow(QWidget *w);
 	void ShaderStep(int action, bool updateData = true, bool updateCovermap =
 			true);
 
@@ -154,7 +154,7 @@ private:
 
 	void setErrorStatus(pcErrorCode);
 	void setStatusBarText(QString);
-	void setShaderCodeText(char *shaders[3]);
+	//void setShaderCodeText(char *shaders[3]);
 	void leaveDBGState();
 	void cleanupDBGShader();
 	bool getDebugImage(DbgCgOptions option, ShChangeableList *cl, int rbFormat,
@@ -164,7 +164,7 @@ private:
 
 	/* Gui update handling */
 	void setGuiUpdates(bool);
-	void updateWatchGui(int s);
+	/*void updateWatchGui(int s);*/
 
 	void addGlTraceItem();
 	void addGlTraceErrorItem(const char *text);
@@ -253,15 +253,15 @@ private:
 		COVERAGEMAP_GROWN,
 		COVERAGEMAP_SHRINKED
 	};
-	void updateWatchListData(CoverageMapStatus cmstatus, bool forceUpdate);
-	void updateWatchItemsCoverage(bool *coverage);
-	void resetWatchListData(void);
+	// void updateWatchListData(CoverageMapStatus cmstatus, bool forceUpdate);
+	// void updateWatchItemsCoverage(bool *coverage);
+	// void resetWatchListData(void);
 	void updateSelectedPixelValues(void);
-	QModelIndexList cleanupSelectionList(QModelIndexList input);
+	// QModelIndexList cleanupSelectionList(QModelIndexList input);
 
-	WatchView* newWatchWindowGeoDataTree(QModelIndexList &list);
-	WatchView* newWatchWindowVertexTable(QModelIndexList &list);
-	WatchView* newWatchWindowFragment(QModelIndexList &list);
+	//WatchView* newWatchWindowGeoDataTree(QModelIndexList &list);
+	//WatchView* newWatchWindowVertexTable(QModelIndexList &list);
+	//WatchView* newWatchWindowFragment(QModelIndexList &list);
 	void addToWatchWindowGeoDataTree(WatchView *watchView,
 			QModelIndexList &list);
 	void addToWatchWindowVertexTable(WatchView *watchView,

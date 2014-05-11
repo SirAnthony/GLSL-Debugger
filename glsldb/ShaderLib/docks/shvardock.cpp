@@ -2,10 +2,11 @@
 #include "shvardock.h"
 #include "ui_shvardock.h"
 #include "shproxytreeview.h"
+#include "shdatamanager.h"
 
 ShVarDock::ShVarDock(QWidget *parent) :
 	ShDockWidget(parent), ui(new Ui::ShVarDock)
-{
+{	
 	ui->setupUi(this);
 
 	ui->tTabWidget->addTab(newTab<ShProxyTreeView>(), "All");
@@ -15,6 +16,8 @@ ShVarDock::ShVarDock(QWidget *parent) :
 
 	// In another dock
 	//ui->tTabWidget->addTab(newTab<ShWatchedTreeView>(), "Watch list");
+
+	ShDataManager::get()->registerDock(this, ShDataManager::dmDTVar);
 }
 
 ShVarDock::~ShVarDock()

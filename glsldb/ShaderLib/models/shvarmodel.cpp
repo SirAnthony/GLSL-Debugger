@@ -74,6 +74,18 @@ void ShVarModel::unsetWatched(ShVarItem *item)
 		unsetWatched(dynamic_cast<ShVarItem*>(item->parent()));
 }
 
+void ShVarModel::valuesChanged()
+{
+	QStandardItem* root = this->invisibleRootItem();
+	valuesChanged(root->child(0)->index(),
+				  root->child(root->rowCount() - 1)->index());
+}
+
+void ShVarModel::valuesChanged(QModelIndex start, QModelIndex end)
+{
+	emit dataChanged(start, end);
+}
+
 void ShVarModel::clear()
 {
 	this->invisibleRootItem()->removeRows(0, this->rowCount());

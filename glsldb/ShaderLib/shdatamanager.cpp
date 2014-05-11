@@ -1,4 +1,6 @@
 #include "shdatamanager.h"
+#include "docks/shsourcedock.h"
+#include "watch/shwindowmanager.h"
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
 #include "debuglib.h"
@@ -7,9 +9,9 @@
 #include "progControl.qt.h"
 #include "runLevel.h"
 
-#include <QTextDocument>
-#include <QTextCharFormat>
-#include <QTextEdit>
+
+#include <QMessageBox>
+#include <QMainWindow>
 
 
 ShDataManager* ShDataManager::instance = NULL;
@@ -21,7 +23,7 @@ const char *dbg_cg_names[DBG_CG_LAST] = {
 	"DBG_CG_LOOP_CONDITIONAL", "DBG_CG_CHANGEABLE"
 };
 
-static void printDebugInfo(int option, int target, char *shaders[3])
+static void printDebugInfo(int option, int target, const char *shaders[3])
 {
 	/////// DEBUG
 	dbgPrint(DBGLVL_DEBUG, ">>>>> DEBUG CG: ");
@@ -36,17 +38,18 @@ static void printDebugInfo(int option, int target, char *shaders[3])
 
 
 ShDataManager::ShDataManager(ProgramControl *_pc, QObject *parent) :
-	QObject(parent), primitiveMode(0), shVariables(NULL),
-	compiler(NULL), pc(_pc), coverage(NULL)
+	QObject(parent), primitiveMode(0), selectedPixel {-1, -1},
+	shVariables(NULL), compiler(NULL), pc(_pc), coverage(NULL)
 {
-
+	windows = new ShWindowManager(this);
 }
 
-ShDataManager *ShDataManager::create(ProgramControl *pc, QObject *parent)
+ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc, QObject *parent)
 {
 	if (instance)
 		delete instance;
 	instance = new ShDataManager(pc, parent);
+	window->setCentralWidget(windows);
 	return instance;
 }
 
@@ -56,13 +59,22 @@ ShDataManager *ShDataManager::get()
 	return instance;
 }
 
+
+void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
+{
+	docks[type] = dock;
+	connect(this, SIGNAL(cleanDocks(EShLanguage)), dock, SLOT(cleanDock(EShLanguage)));
+	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));
+}
+
 bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
 								 int format, bool *coverage, DataBox *data)
 {
 	enum DBG_TARGETS target;
 	pcErrorCode error;
-	char *shaders[] = getSource();
-	char *debugCode = ShDebugGetProg(compiler, cl, &shVariables, option);
+	const char *shaders[3];
+	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, option);
+	static_cast<ShSourceDock*>(docks[dmDTSource])->getSource(shaders);
 
 	switch (type) {
 	case EShLangVertex:
@@ -78,75 +90,43 @@ bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChange
 		shaders[2] = debugCode;
 		target = DBG_TARGET_FRAGMENT_SHADER;
 	default:
-		QMessageBox::critical(this, "Internal Error",
-							  "ShDataManager::getDebugData called with error type.",
-							  QMessageBox::Ok);
+		dbgPrint(DBGLVL_ERROR, "ShDataManager::getDebugData called with error type.");
 		free(debugCode);
 		return false;
 	}
 
 	printDebugInfo(option, target, shaders);
-	if (type == DBG_TARGET_FRAGMENT_SHADER)
-		error = retriveFragmentData(shaders, format, option, coverage, data);
+	if (type == EShLangFragment)
+		error = static_cast<pcErrorCode>(retriveFragmentData(shaders, format,
+						option, coverage, dynamic_cast<PixelBox*>(data)));
 	else
-		error = retriveVertexData(shaders, target, option, coverage, data);
+		error = static_cast<pcErrorCode>(retriveVertexData(shaders, target,
+						option, coverage, dynamic_cast<VertexBox*>(data)));
 
 	free(debugCode);
-	if (!processError(error)) {
-		QMessageBox::critical(this, "Error", "Could not debug "
-							  "shader. An error occured!", QMessageBox::Ok);
+	if (!processError(error, type))
 		return false;
-	}
 
 	dbgPrint(DBGLVL_INFO, "getDebugVertexData done");
 	return true;
 }
 
-bool ShDataManager::cleanShader()
+bool ShDataManager::cleanShader(EShLanguage type)
 {
-	pcErrorCode error = PCE_NONE;
+	pcErrorCode error = PCE_NONE;	
+	emit cleanDocks(type);
 
-	/* remove debug markers from code display */
-	QTextDocument *document = NULL;
-	QTextEdit *edit = NULL;
-	switch (currentRunLevel) {
-	case RL_DBG_VERTEX_SHADER:
-		document = teVertexShader->document();
-		edit = teVertexShader;
-		break;
-	case RL_DBG_GEOMETRY_SHADER:
-		document = teGeometryShader->document();
-		edit = teGeometryShader;
-		break;
-	case RL_DBG_FRAGMENT_SHADER:
-		document = teFragmentShader->document();
-		edit = teFragmentShader;
-		break;
-	}
-	if (document && edit) {
-		QTextCharFormat highlight;
-		QTextCursor cursor(document);
-
-		cursor.setPosition(0, QTextCursor::MoveAnchor);
-		cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor, 1);
-		highlight.setBackground(Qt::white);
-		cursor.mergeCharFormat(highlight);
-	}
-
+	selectedPixel[0] = selectedPixel[1] = -1;
 	if (coverage) {
 		delete[] coverage;
 		coverage = NULL;
 	}
 
-	lWatchSelectionPos->setText("No Selection");
-	m_selectedPixel[0] = -1;
-	m_selectedPixel[1] = -1;
-
-	switch (currentRunLevel) {
-	case RL_DBG_GEOMETRY_SHADER:
+	switch (type) {
+	case EShLangGeometry:
 		//delete m_pGeoDataModel;
-	case RL_DBG_VERTEX_SHADER:
-	case RL_DBG_FRAGMENT_SHADER:
+	case EShLangVertex:
+	case EShLangFragment:
 		emit cleanModel();
 		while (!m_qLoopData.isEmpty())
 			delete m_qLoopData.pop();
@@ -160,14 +140,14 @@ bool ShDataManager::cleanShader()
 
 		dbgPrint(DBGLVL_INFO, "Restoring render target");
 		/* restore render target */
-		switch (currentRunLevel) {
-		case RL_DBG_VERTEX_SHADER:
+		switch (type) {
+		case EShLangVertex:
 			error = pc->restoreRenderTarget(DBG_TARGET_VERTEX_SHADER);
 			break;
-		case RL_DBG_GEOMETRY_SHADER:
+		case EShLangGeometry:
 			error = pc->restoreRenderTarget(DBG_TARGET_GEOMETRY_SHADER);
 			break;
-		case RL_DBG_FRAGMENT_SHADER:
+		case EShLangFragment:
 			error = pc->restoreRenderTarget(DBG_TARGET_FRAGMENT_SHADER);
 			break;
 		default:
@@ -178,10 +158,15 @@ bool ShDataManager::cleanShader()
 		break;
 	}
 
-	return processError(error);
+	return processError(error, type);
 }
 
-bool ShDataManager::processError(int error)
+void ShDataManager::getPixels(const int **p)
+{
+	*p = selectedPixel;
+}
+
+bool ShDataManager::processError(int error, EShLanguage type)
 {
 	emit setErrorStatus(error);
 	if (error == PCE_NONE)
@@ -190,15 +175,15 @@ bool ShDataManager::processError(int error)
 	dbgPrint(DBGLVL_WARNING, "Error occured: " << getErrorDescription(error));
 	if (isErrorCritical(error)) {
 		dbgPrint(DBGLVL_ERROR, "Error is critical.");
-		cleanShader();
+		cleanShader(type);
 		setRunLevel(RL_SETUP);
 		killProgram(1);
 	}
 	return false;
 }
 
-int ShDataManager::retriveVertexData(char *shaders[], int target, int option, bool *coverage,
-									 VertexBox *box)
+int ShDataManager::retriveVertexData(const char *shaders[], int target, int option,
+									 bool *coverage, VertexBox *box)
 {
 	int elementsPerVertex = 3;
 	int forcePointPrimitiveMode = 0;
@@ -246,8 +231,8 @@ int ShDataManager::retriveVertexData(char *shaders[], int target, int option, bo
 	return error;
 }
 
-int ShDataManager::retriveFragmentData(char *shaders[], int format, int option, bool *coverage,
-									   PixelBox *box)
+int ShDataManager::retriveFragmentData(const char *shaders[], int format, int option,
+									   bool *coverage, PixelBox *box)
 {
 	int channels;
 	pcErrorCode error;

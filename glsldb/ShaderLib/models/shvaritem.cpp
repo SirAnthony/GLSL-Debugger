@@ -159,6 +159,8 @@ QVariant ShVarItem::data(int role) const
 		return this->geometryBox;
 	case DF_DATA_VERTEXBOX:
 		return this->vertexBox;
+	case DF_DEBUG_SELECTED_VALUE:
+		return this->selected;
 	default:
 		break;
 	}
@@ -183,7 +185,7 @@ void ShVarItem::setData(const QVariant &value, int role)
 	}
 }
 
-void ShVarItem::updateWatchData(EShLanguage type)
+bool ShVarItem::updateWatchData(EShLanguage type)
 {
 	int format = this->readbackFormat();
 	ShDataManager* manager = ShDataManager::get();
@@ -191,40 +193,61 @@ void ShVarItem::updateWatchData(EShLanguage type)
 	ShChangeableList* cl = NULL;
 	createShChangeableList(&cl);
 	addShChangeable(cl, cgbl);
+	DataBox* data = NULL;
+	VertexBox* geomData = NULL;
+	bool status = false;
 
 	if (type == EShLangFragment) {
-		PixelBox *data = this->pixelBox.value<PixelBox*>();
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, data))
-			this->setCurrentValue(m_selectedPixel[0], m_selectedPixel[1]);
-		else
-			QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
+		data = this->pixelBox.value<PixelBox*>();
 	} else if (type == EShLangVertex) {
-		VertexBox *data = this->vertexBox.value<VertexBox*>();
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, data))
-			this->setCurrentValue(m_selectedPixel[0]);
-		else
-			QMessageBox::warning(this, "Warning", "The requested data could "
-								 "not be retrieved.");
+		data = this->vertexBox.value<VertexBox*>();
 	} else if (type == EShLangGeometry) {
-		VertexBox *data = this->geometryBox.value<VertexBox*>();
+		geomData = this->geometryBox.value<VertexBox*>();
 		dbgPrint(DBGLVL_INFO, "Get CHANGEABLE:");
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, data)) {
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, geomData)) {
 			dbgPrint(DBGLVL_INFO, "Get GEOMETRY_CHANGABLE:");
-			VertexBox *geomData = new VertexBox;
-			if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, geomData))
-				data->addVertexBox(geomData);
-			else
-				QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
-			delete geomData;
-			this->setCurrentValue(m_selectedPixel[0]);
-		} else {
-			QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
-			return;
+			data = new VertexBox;
 		}
+	}
+
+	if (data && manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl,
+									  format, coverage, data)) {
+		status = true;
+		this->setCurrentValue(manager->pixels(), type);
+		if (geomData) {
+			geomData->addVertexBox(data);
+			delete data;
+		}
+	} else {
+		QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
 	}
 
 	freeShChangeable(&cgbl);
 	freeShChangeableList(&cl);
+	return status;
+}
+
+void ShVarItem::invalidateWatchData()
+{
+	VertexBox *vb = this->vertexBox.value<VertexBox*>();
+	VertexBox *gb = this->geometryBox.value<VertexBox*>();
+	PixelBox *pb = this->pixelBox.value<PixelBox*>();
+	if (vb)
+		vb->invalidateData();
+	if (gb)
+		gb->invalidateData();
+	if (pb) {
+		pb->invalidateData();
+		resetValue();
+	}
+}
+
+void ShVarItem::resetValue()
+{
+	if (watched)
+		this->selected.setValue("?");
+	else
+		this->selected.setValue(QVariant());
 }
 
 int ShVarItem::readbackFormat()
@@ -244,4 +267,9 @@ int ShVarItem::readbackFormat()
 				 "Could not get readback type for ShVarItem of type %d\n", this->type);
 		return GL_NONE;
 	}
+}
+
+bool ShVarItem::pixelDataAvaliable()
+{
+	return dynamic_cast<PixelBox*>(pixelBox)->isAllDataAvailable();
 }

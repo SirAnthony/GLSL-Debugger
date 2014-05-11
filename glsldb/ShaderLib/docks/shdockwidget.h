@@ -20,6 +20,12 @@ public:
 		trLast
 	} tabRole;
 
+signals:
+	virtual void updateWindows(bool force);
+
+public slots:
+	virtual void cleanDock(EShLanguage) = 0;
+
 protected:
 	static ShVarModel* model;
 };
