@@ -5,6 +5,7 @@
 
 class QAbstractItemModel;
 class ShMappingWidget;
+class DataBox;
 
 
 class WatchView : public QWidget
@@ -21,10 +22,14 @@ public:
 public slots:
 	virtual void connectDataBox(int) = 0;
 	virtual void updateData(int, int, float, float) = 0;
+	virtual void clearData() = 0;
+	virtual void setBoundaries(int, double *, double *, bool) = 0;
+	virtual void setDataBox(int, DataBox **);
 
 protected:
 	virtual void updateGUI();
 	virtual void connectWidget(ShMappingWidget *widget);
+	static void clearDataArray(float *, int, int, float);
 
 	bool active;
 };

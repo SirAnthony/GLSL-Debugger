@@ -1,9 +1,9 @@
+
 #ifndef SHMAPPINGWIDGET_H
 #define SHMAPPINGWIDGET_H
 
 #include <QWidget>
-#include "models/vertextablemodel.h"
-#include "mappings.h"
+class DataBox;
 
 namespace Ui {
 	class ShMappingWidget;
@@ -16,10 +16,6 @@ public:
 	explicit ShMappingWidget(QWidget *parent = 0);
 	void addOption(int, QString);
 	void delOption(int);
-	inline void setModel(VertexTableModel *m)
-	{
-		model = m;
-	}
 	
 signals:
 	void connectDataBox(int);
@@ -28,7 +24,7 @@ signals:
 	void clearData();
 	void updateData(int, int, float, float);
 	void getBoundaries(int, double *, double *, bool);
-	void getDataBox(DataBox **);
+	void getDataBox(int, DataBox **);
 	
 public slots:
 	void cbValActivated(int);
@@ -40,8 +36,6 @@ public slots:
 
 protected:
 	void updateRangeMapping(int, int);
-
-	VertexTableModel *model;
 
 private:
 	Ui::ShMappingWidget *ui;

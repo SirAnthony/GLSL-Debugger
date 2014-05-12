@@ -37,8 +37,10 @@ public:
 
 public slots:
 	virtual void connectDataBox(int);
-	void updateData(int, int, float, float);
-	void setBoundaries(int, double *, double *, bool);
+	virtual void updateData(int, int, float, float);
+	virtual void clearData();
+	virtual void setBoundaries(int, double *, double *, bool);
+	virtual void setDataBox(int, DataBox **);
 	void closeView();
 
 signals:
@@ -46,23 +48,12 @@ signals:
 
 private slots:
 	void newSelection(const QModelIndex & index);
-
-	void mappingDataChangedRed();
-	void mappingDataChangedGreen();
-	void mappingDataChangedBlue();
-	void mappingDataChangedX();
-	void mappingDataChangedY();
-	void mappingDataChangedZ();
-
 	void detachData(int idx);
 	void on_tbDataSelection_clicked();
 	void updatePointSize(int value);
 
 private:
 	Ui::ShWatchGeometry *ui;
-
-	void addMappingOptions(int idx);
-	void delMappingOptions(int idx);
 
 	float getDataMin(int column);
 	float getDataMax(int column);

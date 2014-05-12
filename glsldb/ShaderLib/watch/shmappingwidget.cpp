@@ -2,7 +2,7 @@
 #include "shmappingwidget.h"
 #include "ui_shmappingwidget.h"
 #include "mappings.h"
-#include "data/vertexBox.h"
+#include "data/dataBox.h"
 #include <algorithm>
 
 
@@ -142,24 +142,6 @@ void ShMappingWidget::mappingDataChanged()
 		}
 	}
 	updateData();
-
-	VertexBox *sendingVB = static_cast<VertexBox*>(sender()); \
-	Mapping m = getMappingFromInt(cb##VAL->itemData(cb##VAL->currentIndex()).toInt()); \
-	if (sendingVB) { \
-		VertexBox *activeVB = NULL; \
-		switch (m_dataSelection) { \
-			case DATA_CURRENT: \
-				activeVB = m_dataModel->getDataColumnCurrentData(m.index); \
-				break; \
-			case DATA_VERTEX: \
-				activeVB = m_dataModel->getDataColumnVertexData(m.index); \
-				break; \
-		} \
-		if (activeVB != sendingVB) { \
-			disconnect(sendingVB, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged##VAL())); \
-			return; \
-		} \
-	} \
 }
 
 void ShMappingWidget::buttonClicked()

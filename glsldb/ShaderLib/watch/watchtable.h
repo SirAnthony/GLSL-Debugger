@@ -38,13 +38,13 @@ signals:
 
 private slots:	
 	virtual void connectDataBox(int);
-	void updateData(int, int, float, float);
-	void setBoundaries(int, double *, double *, bool);
-	void detachData(int idx);	
-	void clearData();
+	virtual void updateData(int, int, float, float);
+	virtual void clearData();
+	virtual void setBoundaries(int, double *, double *, bool);
+	virtual void setDataBox(int, DataBox **);
+	void detachData(int idx);
 	void newSelection(const QModelIndex & index);
 	void updatePointSize(int value);
-
 
 private:
 	Ui::ShWatchTable *ui;

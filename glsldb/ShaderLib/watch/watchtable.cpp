@@ -10,13 +10,6 @@
 
 #define ELEMENTS_PER_VERTEX 3
 
-static void clearDataArray(float *data, int count, int dataStride, float clearValue)
-{
-	for (int i = 0; i < count; i++) {
-		*data = clearValue;
-		data += dataStride;
-	}
-}
 
 WatchTable::WatchTable(QWidget *parent) :
 	WatchView(parent),
@@ -159,25 +152,6 @@ void WatchTable::updateData(int index, int range, float min, float max)
 					  static_cast<RangeMap>(range), min, max);
 }
 
-void WatchTable::setBoundaries(int index, double *min, double *max, bool absolute)
-{
-	VertexBox *vb = _model->getDataColumn(index);
-	if (absolute) {
-		*min = vb->getAbsMin();
-		*max = vb->getAbsMax();
-	} else {
-		*min = vb->getMin();
-		*max = vb->getMax();
-	}
-}
-
-void WatchTable::detachData(int idx)
-{
-	dbgPrint(DBGLVL_DEBUG, "WatchTable::detachData: idx=%i\n", idx);
-	for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
-		widgets[i]->delOption(idx);
-}
-
 void WatchTable::clearData()
 {
 	ShMappingWidget *sndr = static_cast<ShMappingWidget*>(sender());
@@ -193,6 +167,30 @@ void WatchTable::clearData()
 				   scatterDataStride[idx], 0.0f);
 }
 
+void WatchTable::setBoundaries(int index, double *min, double *max, bool absolute)
+{
+	VertexBox *vb = _model->getDataColumn(index);
+	if (absolute) {
+		*min = vb->getAbsMin();
+		*max = vb->getAbsMax();
+	} else {
+		*min = vb->getMin();
+		*max = vb->getMax();
+	}
+}
+
+void WatchTable::setDataBox(int index, DataBox **box)
+{
+	*box = _model->getDataColumn(index);
+}
+
+void WatchTable::detachData(int idx)
+{
+	dbgPrint(DBGLVL_DEBUG, "WatchTable::detachData: idx=%i\n", idx);
+	for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
+		widgets[i]->delOption(idx);
+}
+
 void WatchTable::newSelection(const QModelIndex & index)
 {
 	emit selectionChanged(index.row());
@@ -205,8 +203,6 @@ void WatchTable::updatePointSize(int value)
 	ui->glScatter->setPointSize(newValue);
 	ui->glScatter->updateGL();
 }
-
-
 
 void WatchTable::closeView()
 {
