@@ -38,7 +38,7 @@ void ShWindowManager::createWindow(const QList<ShVarItem*>& list, enum WindowTyp
 			if (type == wtVertex)
 				window = new WatchTable(this);
 			else if (type == wtGeometry)
-				window = new WatchGeoDataTree(m_primitiveMode,
+				window = new WatchGeoTree(m_primitiveMode,
 										  m_dShResources.geoOutputType, m_pGeometryMap,
 										  m_pVertexCount, this);
 			else if (type == wtFragment)

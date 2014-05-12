@@ -51,6 +51,7 @@ public:
 	/* get min/max data values per element list, element == -1 means all
 	 * elements of all vertices
 	 */
+	double getBoundary(int element, double bval, float *data, bool max = false);
 	virtual double getMin(int element = -1);
 	virtual double getMax(int element = -1);
 	virtual double getAbsMin(int element = -1);

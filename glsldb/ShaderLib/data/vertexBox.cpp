@@ -199,72 +199,6 @@ void VertexBox::calcMinMax()
 	}
 }
 
-double VertexBox::getMin(int element)
-{
-	if (element == -1) {
-		float min = FLT_MAX;
-		for (int c = 0; c < numElementsPerVertex; c++) {
-			if (boxDataMin[c] < min)
-				min = boxDataMin[c];
-		}
-		return min;
-	} else if (element >= 0 && element < numElementsPerVertex) {
-		return boxDataMin[element];
-	}
-	dbgPrint(DBGLVL_WARNING, "VertexBox::getMin: invalid element param %i\n", element);
-	return 0.0f;
-}
-
-double VertexBox::getMax(int element)
-{
-	if (element == -1) {
-		float max = -FLT_MAX;
-		for (int c = 0; c < numElementsPerVertex; c++) {
-			if (boxDataMax[c] > max)
-				max = boxDataMax[c];
-		}
-		return max;
-	} else if (element >= 0 && element < numElementsPerVertex) {
-		return boxDataMax[element];
-	}
-	dbgPrint(DBGLVL_WARNING, "VertexBox::getMax: invalid element param %i\n", element);
-	return 0.0f;
-}
-
-double VertexBox::getAbsMin(int element)
-{
-	if (element == -1) {
-		float min = FLT_MAX;
-		for (int c = 0; c < numElementsPerVertex; c++) {
-			if (boxDataMinAbs[c] < min) {
-				min = boxDataMinAbs[c];
-			}
-		}
-		return min;
-	} else if (element >= 0 && element < numElementsPerVertex) {
-		return boxDataMinAbs[element];
-	}
-	dbgPrint(DBGLVL_WARNING, "VertexBox::getAbsMin: invalid element param %i\n", element);
-	return 0.0f;
-}
-
-double VertexBox::getAbsMax(int element)
-{
-	if (element == -1) {
-		float max = 0.0f;
-		for (int c = 0; c < numElementsPerVertex; c++) {
-			if (boxDataMaxAbs[c] > max) {
-				max = boxDataMaxAbs[c];
-			}
-		}
-		return max;
-	} else if (element >= 0 && element < numElementsPerVertex) {
-		return boxDataMaxAbs[element];
-	}
-	dbgPrint(DBGLVL_WARNING, "VertexBox::getAbsMax: invalid element param %i\n", element);
-	return 0.0f;
-}
-
 void VertexBox::invalidateData()
 {
 	if (!boxDataMap)
@@ -283,6 +217,43 @@ void VertexBox::invalidateData()
 		boxDataMaxAbs[c] = 0.f;
 	}
 	emit dataChanged();
+}
+
+double VertexBox::getBoundary(int element, double bval, float *data, bool max)
+{
+	if (element < 0) {
+		double result = bval;
+		for (int c = 0; c < numElementsPerVertex; c++) {
+			double val = data[c];
+			if (max ? (val > result) : (val < result))
+				result = val;
+		}
+		return result;
+	} else if (element < numElementsPerVertex) {
+		return data[element];
+	}
+	dbgPrint(DBGLVL_WARNING, "VertexBox::getBoundary: invalid element param %i\n", element);
+	return 0.0;
+}
+
+double VertexBox::getMin(int element)
+{
+	return getBoundary(element, FLT_MAX, boxDataMin);
+}
+
+double VertexBox::getMax(int element)
+{
+	return getBoundary(element, -FLT_MAX, boxDataMax, true);
+}
+
+double VertexBox::getAbsMin(int element)
+{
+	return getBoundary(element, FLT_MAX, boxDataMinAbs);
+}
+
+double VertexBox::getAbsMax(int element)
+{
+	return getBoundary(element, 0.0, boxDataMaxAbs, true);
 }
 
 bool VertexBox::getDataValue(int numVertex, float *v)

@@ -2736,7 +2736,7 @@ QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 	return output;
 }
 */
-
+/*
 WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
 {
 	WatchVector *window = NULL;
@@ -2746,7 +2746,7 @@ WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
 		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			if (!window) {
-				/* Create window */
+				 Create window
 				window = new WatchVector(workspace);
 				connect(window, SIGNAL(destroyed()), this,
 						SLOT(watchWindowClosed()));
@@ -2762,7 +2762,7 @@ WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
 						SLOT(setPickMode()));
 				connect(aMinMaxLens, SIGNAL(triggered()), window,
 						SLOT(setMinMaxMode()));
-				/* initialize mouse mode */
+				 initialize mouse mode
 				agWatchControl->setEnabled(true);
 				if (agWatchControl->checkedAction() == aZoom) {
 					window->setZoomMode();
@@ -2790,7 +2790,7 @@ WatchView* MainWindow::newWatchWindowVertexTable(QModelIndexList &list)
 		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			if (!window) {
-				/* Create window */
+				 Create window
 				window = new WatchTable(workspace);
 				connect(window, SIGNAL(selectionChanged(int)), this,
 						SLOT(newSelectedVertex(int)));
@@ -2812,7 +2812,7 @@ WatchView* MainWindow::newWatchWindowGeoDataTree(QModelIndexList &list)
 		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
 		if (item) {
 			if (!window) {
-				/* Create window */
+				 Create window
 				window = new WatchGeoDataTree(m_primitiveMode,
 						m_dShResources.geoOutputType, m_pGeometryMap,
 						m_pVertexCount, workspace);
@@ -2857,6 +2857,7 @@ void MainWindow::on_tbWatchWindow_clicked()
 		}
 	}
 }
+*/
 
 void MainWindow::addToWatchWindowVertexTable(WatchView *watchView,
 		QModelIndexList &list)

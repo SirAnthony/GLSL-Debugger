@@ -22,10 +22,13 @@ public:
 	}
 	
 signals:
+	void connectDataBox(int);
 	void updateScatter();
 	void updateView(bool);
 	void clearData();
 	void updateData(int, int, float, float);
+	void getBoundaries(int, double *, double *, bool);
+	void getDataBox(DataBox **);
 	
 public slots:
 	void cbValActivated(int);

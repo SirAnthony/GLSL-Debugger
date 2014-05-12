@@ -253,7 +253,7 @@ void PixelBox::clear()
 	emit dataDeleted();
 }
 
-double PixelBox::getBoundary(int current_channel, int bval, void *data, bool max)
+double PixelBox::getBoundary(int current_channel, double bval, void *data, bool max)
 {
 	if (current_channel < 0) {
 		double result = bval;

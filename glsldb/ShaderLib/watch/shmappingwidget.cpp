@@ -77,6 +77,7 @@ void ShMappingWidget::delOption(int idx)
 		m.index--;
 		ui->cbVal->setItemData(i, getIntFromMapping(m));
 	}
+	cbValActivated(0);
 	emit updateScatter();
 }
 
@@ -103,11 +104,10 @@ void ShMappingWidget::cbValActivated(int idx)
 		ui->tbMin->click();
 		ui->tbMax->click();
 		Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
-		VertexBox *vb = model->getDataColumn(m.index);
-		connect(vb, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged()));
+		emit connectDataBox(m.index);
 	}
 	updateData();
-}
+}	
 
 void ShMappingWidget::cbMapActivated(int idx)
 {
@@ -131,44 +131,67 @@ void ShMappingWidget::updateData()
 
 void ShMappingWidget::mappingDataChanged()
 {
-	VertexBox *vb = static_cast<VertexBox*>(sender());
-	if (vb) {
+	DataBox *db = static_cast<DataBox*>(sender());
+	if (db) {
 		Mapping m = getMappingFromInt(ui->cbVal->itemData(ui->cbVal->currentIndex()).toInt());
-		VertexBox *active = model->getDataColumn(m.index);
-		if (active != vb) {
-			disconnect(vb, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged()));
+		DataBox *active = NULL;
+		emit getDataBox(&active);
+		if (active != db) {
+			disconnect(db, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged()));
 			return;
 		}
 	}
 	updateData();
+
+	VertexBox *sendingVB = static_cast<VertexBox*>(sender()); \
+	Mapping m = getMappingFromInt(cb##VAL->itemData(cb##VAL->currentIndex()).toInt()); \
+	if (sendingVB) { \
+		VertexBox *activeVB = NULL; \
+		switch (m_dataSelection) { \
+			case DATA_CURRENT: \
+				activeVB = m_dataModel->getDataColumnCurrentData(m.index); \
+				break; \
+			case DATA_VERTEX: \
+				activeVB = m_dataModel->getDataColumnVertexData(m.index); \
+				break; \
+		} \
+		if (activeVB != sendingVB) { \
+			disconnect(sendingVB, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged##VAL())); \
+			return; \
+		} \
+	} \
 }
 
 void ShMappingWidget::buttonClicked()
 {
+	double min, max, value;
 	Mapping m = getMappingFromInt(ui->cbVal->itemData(ui->cbVal->currentIndex()).toInt());
 	RangeMapping rm = getRangeMappingFromInt(ui->cbMap->itemData(ui->cbMap->currentIndex()).toInt());
+	emit getBoundaries(m.index, &min, &max, rm.range == RANGE_MAP_ABSOLUTE);
 
 	QDoubleSpinBox *target = NULL;
 	QObject* sndr = sender();
-	if (sndr == ui->tbMin)
+	if (sndr == ui->tbMin) {
 		target = ui->dsMin;
-	else if (sndr == ui->tbMax)
+		value = min;
+	} else if (sndr == ui->tbMax) {
 		target = ui->dsMax;
+		value = max;
+	}
 
-	VertexBox *vb = model->getDataColumn(m.index);
 	if (target && m.type == MAP_TYPE_VAR) {
 		switch (rm.range) {
 			case RANGE_MAP_DEFAULT:
-				target->setValue(vb->getMin());
+				target->setValue(value);
 				break;
 			case RANGE_MAP_POSITIVE:
-				target->setValue(std::max(vb->getMin(), 0.0));
+				target->setValue(std::max(value, 0.0));
 				break;
 			case RANGE_MAP_NEGATIVE:
-				target->setValue(std::min(vb->getMin(), 0.0));
+				target->setValue(std::min(value, 0.0));
 				break;
 			case RANGE_MAP_ABSOLUTE:
-				target->setValue(vb->getAbsMin());
+				target->setValue(value);
 				break;
 		}
 	}
@@ -187,23 +210,21 @@ void ShMappingWidget::updateRangeMapping(int idx, int ridx)
 {
 	Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
 	RangeMapping rm = getRangeMappingFromInt(ui->cbMap->itemData(ridx).toInt());
-	VertexBox *vb = model->getDataColumn(m.index);
+	double min, max;
+	emit getBoundaries(m.index, &min, &max, rm.range == RANGE_MAP_ABSOLUTE);
 	switch (rm.range) {
 	case RANGE_MAP_DEFAULT:
-		ui->tbMin->setText(QString::number(vb->getMin()));
-		ui->tbMax->setText(QString::number(vb->getMax()));
-		break;
+	case RANGE_MAP_ABSOLUTE:
+		ui->tbMin->setText(QString::number(min));
+		ui->tbMax->setText(QString::number(max));
+		break;	
 	case RANGE_MAP_POSITIVE:
-		ui->tbMin->setText(QString::number(std::max(vb->getMin(), 0.0)));
-		ui->tbMax->setText(QString::number(std::max(vb->getMax(), 0.0)));
+		ui->tbMin->setText(QString::number(std::max(min, 0.0)));
+		ui->tbMax->setText(QString::number(std::max(max, 0.0)));
 		break;
 	case RANGE_MAP_NEGATIVE:
-		ui->tbMin->setText(QString::number(std::min(vb->getMin(), 0.0)));
-		ui->tbMax->setText(QString::number(std::min(vb->getMax(), 0.0)));
-		break;
-	case RANGE_MAP_ABSOLUTE:
-		ui->tbMin->setText(QString::number(vb->getAbsMin()));
-		ui->tbMax->setText(QString::number(vb->getAbsMax()));
+		ui->tbMin->setText(QString::number(std::min(min, 0.0)));
+		ui->tbMax->setText(QString::number(std::min(max, 0.0)));
 		break;
 	default:
 		break;

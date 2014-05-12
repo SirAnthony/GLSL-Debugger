@@ -27,14 +27,14 @@ WatchTable::WatchTable(QWidget *parent) :
 {
 	ui->setupUi(this);
 	ui->fMapping->setVisible(false);
-	model = new VertexTableModel(this);
-	modelFilter = new VertexTableSortFilterProxyModel(this);
-	modelFilter->setSourceModel(model);
-	modelFilter->setDynamicSortFilter(true);
-	connect(ui->tbHideInactive, SIGNAL(toggled(bool)), modelFilter, SLOT(setHideInactive(bool)));
-	connect(model, SIGNAL(dataDeleted(int)), this, SLOT(detachData(int)));
-	connect(model, SIGNAL(empty()), this, SLOT(closeView()));
-	ui->tvVertices->setModel(model);
+	_model = new VertexTableModel(this);
+	_modelFilter = new VertexTableSortFilterProxyModel(this);
+	_modelFilter->setSourceModel(_model);
+	_modelFilter->setDynamicSortFilter(true);
+	connect(ui->tbHideInactive, SIGNAL(toggled(bool)), _modelFilter, SLOT(setHideInactive(bool)));
+	connect(_model, SIGNAL(dataDeleted(int)), this, SLOT(detachData(int)));
+	connect(_model, SIGNAL(empty()), this, SLOT(closeView()));
+	ui->tvVertices->setModel(_model);
 
 	connect(ui->tvVertices, SIGNAL(doubleClicked(const QModelIndex &)), this,
 			SLOT(newSelection(const QModelIndex &)));
@@ -94,12 +94,22 @@ void WatchTable::updateDataCurrent(float *data, int *count, int dataStride,
 						   scatterDataElements, ELEMENTS_PER_VERTEX);
 }
 
+void WatchTable::updateView(bool force)
+{
+	UNUSED_ARG(force)
+	dbgPrint(DBGLVL_DEBUG, "WatchTable updateView\n");
+	_model->updateData();
+	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+	update();
+	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
 void WatchTable::attachVpData(VertexBox *vb, QString name)
 {
 	if (!vb)
 		return;
 
-	if (model->addVertexBox(vb, name)) {
+	if (_model->addVertexBox(vb, name)) {
 		if (!scatterPositions) {
 			maxScatterDataElements = vb->getNumVertices();
 			scatterDataElements = 0;
@@ -112,13 +122,25 @@ void WatchTable::attachVpData(VertexBox *vb, QString name)
 				scatterDataCount[i] = 0;
 			}
 		}
-		int idx = model->columnCount() - 1;
-		QString name = model->getDataColumnName(idx);
+		int idx = _model->columnCount() - 1;
+		QString name = _model->getDataColumnName(idx);
 		for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
 			widgets[i]->addOption(idx, name);
 
 		updateGUI();
 	}
+}
+
+QAbstractItemModel* WatchTable::model()
+{
+	return _model;
+}
+
+void WatchTable::connectDataBox(int index)
+{
+	ShMappingWidget* widget = dynamic_cast<ShMappingWidget*>(sender());
+	VertexBox *vb = _model->getDataColumn(index);
+	connect(vb, SIGNAL(dataChanged()), widget, SLOT(mappingDataChanged()));
 }
 
 void WatchTable::updateData(int index, int range, float min, float max)
@@ -133,8 +155,20 @@ void WatchTable::updateData(int index, int range, float min, float max)
 		return;
 
 	updateDataCurrent(scatterData[idx], &scatterDataCount[idx],
-					  scatterDataStride[idx], model->getDataColumn(index),
+					  scatterDataStride[idx], _model->getDataColumn(index),
 					  static_cast<RangeMap>(range), min, max);
+}
+
+void WatchTable::setBoundaries(int index, double *min, double *max, bool absolute)
+{
+	VertexBox *vb = _model->getDataColumn(index);
+	if (absolute) {
+		*min = vb->getAbsMin();
+		*max = vb->getAbsMax();
+	} else {
+		*min = vb->getMin();
+		*max = vb->getMax();
+	}
 }
 
 void WatchTable::detachData(int idx)
@@ -172,31 +206,12 @@ void WatchTable::updatePointSize(int value)
 	ui->glScatter->updateGL();
 }
 
-void WatchTable::updateGUI()
-{
-	QString title("");
-	int columns = model->columnCount();
-	for (int i = 0; i < columns; i++) {
-		if (i > 0)
-			title += ", ";
-		title += model->headerData(i, Qt::Horizontal).toString();
-	}
-	setWindowTitle(title);
-}
 
-void WatchTable::updateView(bool force)
-{
-	UNUSED_ARG(force)
-	dbgPrint(DBGLVL_DEBUG, "WatchTable updateView\n");
-	model->updateData();
-	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-	update();
-	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-}
 
 void WatchTable::closeView()
 {
 	hide();
 	deleteLater();
 }
+
 

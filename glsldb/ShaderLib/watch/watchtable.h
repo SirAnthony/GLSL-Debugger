@@ -18,7 +18,8 @@ namespace Ui {
 	class ShWatchTable;
 }
 
-class WatchTable: public WatchView {
+class WatchTable: public WatchView
+{
 Q_OBJECT
 
 public:
@@ -26,6 +27,8 @@ public:
 	~WatchTable();
 	void updateView(bool force);
 	void attachVpData(VertexBox *f, QString name);
+	virtual QAbstractItemModel * model();
+
 
 public slots:
 	void closeView();
@@ -34,8 +37,10 @@ signals:
 	void selectionChanged(int vertId);
 
 private slots:	
+	virtual void connectDataBox(int);
 	void updateData(int, int, float, float);
-	void detachData(int idx);
+	void setBoundaries(int, double *, double *, bool);
+	void detachData(int idx);	
 	void clearData();
 	void newSelection(const QModelIndex & index);
 	void updatePointSize(int value);
@@ -51,8 +56,8 @@ private:
 
 	ShMappingWidget *widgets[WT_WIDGETS_COUNT];
 
-	VertexTableModel *model;
-	VertexTableSortFilterProxyModel *modelFilter;
+	VertexTableModel *_model;
+	VertexTableSortFilterProxyModel *_modelFilter;
 
 	float *scatterPositions;
 	float *scatterColorsAndSizes;

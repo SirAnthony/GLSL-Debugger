@@ -73,7 +73,7 @@ public slots:
 
 protected:
 	void clear();
-	double getBoundary(int _channel, int val, void *data, bool max = false);
+	double getBoundary(int _channel, double val, void *data, bool max = false);
 	int mapFromValue(FBMapping mapping, double f, int c);
 	double getData(void *data, int offset);
 
