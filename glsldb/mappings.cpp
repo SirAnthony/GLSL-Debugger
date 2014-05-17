@@ -103,6 +103,8 @@ float getMappedValueF(float v, RangeMap range, float min, float max)
 	case RANGE_MAP_ABSOLUTE:
 		value = map_float(fabs(v), min, max);
 		break;
+	default:
+		break;
 	}
 	return value;
 }
@@ -110,7 +112,7 @@ float getMappedValueF(float v, RangeMap range, float min, float max)
 int getMappedValueI(float v, RangeMap range, float min, float max)
 {
 	int value = 0;
-	switch (range->range) {
+	switch (range) {
 	case RANGE_MAP_DEFAULT:
 		value = map_int(v, min, max);
 		break;
@@ -122,6 +124,8 @@ int getMappedValueI(float v, RangeMap range, float min, float max)
 		break;
 	case RANGE_MAP_ABSOLUTE:
 		value = map_int(fabs(v), min, max);
+		break;
+	default:
 		break;
 	}
 	return value;

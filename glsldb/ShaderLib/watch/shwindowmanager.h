@@ -9,8 +9,8 @@ class ShWindowManager : public QWorkspace
 {
 	Q_OBJECT
 public:
-	explicit ShWindowManager(QObject *parent = 0);
-	
+	explicit ShWindowManager(QWidget *parent = 0);
+
 	enum WindowType {
 		wtNone,
 		wtVertex,
@@ -19,12 +19,12 @@ public:
 	};
 
 signals:
-	
+
 public slots:
 	void updateWindows(bool);
 	void changedActive(QWidget*);
 	void createWindow(const QList<ShVarItem*>&, enum WindowType);
-	
+
 private:
 
 };

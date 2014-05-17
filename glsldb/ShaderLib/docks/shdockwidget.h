@@ -21,7 +21,7 @@ public:
 	} tabRole;
 
 signals:
-	virtual void updateWindows(bool force);
+	void updateWindows(bool force);
 
 public slots:
 	virtual void cleanDock(EShLanguage) = 0;

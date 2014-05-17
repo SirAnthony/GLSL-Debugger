@@ -37,19 +37,19 @@ static void printDebugInfo(int option, int target, const char *shaders[3])
 }
 
 
-ShDataManager::ShDataManager(ProgramControl *_pc, QObject *parent) :
+ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent) :
 	QObject(parent), primitiveMode(0), selectedPixel {-1, -1},
 	shVariables(NULL), compiler(NULL), pc(_pc), coverage(NULL)
 {
-	windows = new ShWindowManager(this);
+	windows = new ShWindowManager(window);
+	window->setCentralWidget(windows);
 }
 
 ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc, QObject *parent)
 {
 	if (instance)
 		delete instance;
-	instance = new ShDataManager(pc, parent);
-	window->setCentralWidget(windows);
+	instance = new ShDataManager(window, pc, parent);
 	return instance;
 }
 
@@ -113,7 +113,7 @@ bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChange
 
 bool ShDataManager::cleanShader(EShLanguage type)
 {
-	pcErrorCode error = PCE_NONE;	
+	pcErrorCode error = PCE_NONE;
 	emit cleanDocks(type);
 
 	selectedPixel[0] = selectedPixel[1] = -1;
@@ -161,9 +161,14 @@ bool ShDataManager::cleanShader(EShLanguage type)
 	return processError(error, type);
 }
 
-void ShDataManager::getPixels(const int **p)
+void ShDataManager::getPixels(int *p[2])
 {
 	*p = selectedPixel;
+}
+
+bool ShDataManager::hasActiveWindow()
+{
+	return windows->activeWindow() != NULL;
 }
 
 bool ShDataManager::processError(int error, EShLanguage type)

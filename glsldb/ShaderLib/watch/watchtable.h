@@ -2,10 +2,10 @@
 #ifndef WATCHTABLE_H
 #define WATCHTABLE_H
 
-#include <QModelIndex>
 #include "data/vertexBox.h"
 #include "watchview.h"
 #include "mappings.h"
+#include <QModelIndex>
 
 #define WT_WIDGETS_COUNT 6
 
@@ -25,19 +25,14 @@ Q_OBJECT
 public:
 	WatchTable(QWidget *parent = 0);
 	~WatchTable();
-	void updateView(bool force);
-	void attachVpData(VertexBox *f, QString name);
+	virtual void updateView(bool force);
 	virtual QAbstractItemModel * model();
-
-
-public slots:
-	void closeView();
+	void attachVpData(VertexBox *f, QString name);
 
 signals:
 	void selectionChanged(int vertId);
 
-private slots:	
-	virtual void connectDataBox(int);
+public slots:
 	virtual void updateData(int, int, float, float);
 	virtual void clearData();
 	virtual void setBoundaries(int, double *, double *, bool);
@@ -49,7 +44,7 @@ private slots:
 private:
 	Ui::ShWatchTable *ui;
 
-	void updateGUI();
+	void initScatter(int elements);
 	bool countsAllZero();
 	void updateDataCurrent(float *data, int *count, int dataStride,
 			VertexBox *srcData, RangeMap range, float min, float max);

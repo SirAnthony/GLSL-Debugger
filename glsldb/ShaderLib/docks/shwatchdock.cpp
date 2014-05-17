@@ -7,7 +7,7 @@
 #include <QStack>
 
 ShWatchDock::ShWatchDock(QWidget *parent) :
-	wm(NULL), ShDockWidget(parent)
+	ShDockWidget(parent)
 {
 	ui->setupUi(this);
 	ui->tvWatchList->setModel(model);
@@ -41,8 +41,8 @@ void ShWatchDock::expand(ShVarItem *item)
 }
 
 void ShWatchDock::updateGui(bool enable)
-{
-	bool window_active = workspace->activeWindow();
+{	
+	bool window_active = ShDataManager::get()->hasActiveWindow();
 	ui->WatchWindow->setEnabled(enable);
 	ui->WatchDelete->setEnabled(enable);
 	ui->WatchWindowAdd->setEnabled(enable && window_active);
@@ -123,7 +123,7 @@ void ShWatchDock::updateCoverage(EShLanguage type, bool *coverage)
 	if (watchItems.empty())
 		return;
 
-	const int pixels[2];
+	int pixels[2];
 	ShDataManager::get()->getPixels(&pixels);
 	foreach (ShVarItem* item, watchItems) {
 		varDataFields field = DF_FIRST;
@@ -132,7 +132,7 @@ void ShWatchDock::updateCoverage(EShLanguage type, bool *coverage)
 		else if (type == EShLangVertex)
 			field = DF_DATA_VERTEXBOX;
 		else if (type == EShLangGeometry)
-			field == DF_DATA_GEOMETRYBOX;
+			field = DF_DATA_GEOMETRYBOX;
 
 		if (field == DF_FIRST)
 			continue;
@@ -149,6 +149,7 @@ void ShWatchDock::updateCoverage(EShLanguage type, bool *coverage)
 void ShWatchDock::selectionChanged()
 {
 	// TODO: make it proper use of selection lists passed by signal
+	QItemSelectionModel *sel_model = ui->tvWatchList->selectionModel();
 	int sel_count = filterSelection(sel_model->selectedRows()).count();
 	updateGui(sel_count != 0);
 }

@@ -54,6 +54,9 @@
            <height>90</height>
           </size>
          </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
          <row>
           <property name="text">
            <string>Type</string>
@@ -112,7 +115,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout">
+        <layout class="QHBoxLayout" name="hbox_layout">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -1108,21 +1111,43 @@
            </layout>
           </item>
           <item>
-           <layout class="QGridLayout">
-            <property name="margin">
-             <number>0</number>
-            </property>
+           <layout class="QHBoxLayout" name="horizontalLayout">
             <property name="spacing">
              <number>6</number>
             </property>
-            <item row="0" column="0">
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <item>
              <widget class="QLabel" name="label_5">
               <property name="text">
                <string>Pointsize</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="4">
+            <item>
+             <widget class="QSlider" name="slPointSize">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+              <property name="value">
+               <number>300</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="tickPosition">
+               <enum>QSlider::TicksBelow</enum>
+              </property>
+              <property name="tickInterval">
+               <number>50</number>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QLabel" name="lbPointSize">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1135,29 +1160,13 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
-             <widget class="QSlider" name="slPointSize">
-              <property name="maximum">
-               <number>200</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="tickPosition">
-               <enum>QSlider::TicksBelow</enum>
-              </property>
-              <property name="tickInterval">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
            </layout>
           </item>
          </layout>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout">
+        <layout class="QHBoxLayout" name="hbox_layout2">
          <property name="spacing">
           <number>1</number>
          </property>
@@ -1416,6 +1425,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>tbDataSelection</sender>
+   <signal>clicked()</signal>
+   <receiver>ShWatchGeoTree</receiver>
+   <slot>changeDataSelection()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>19</x>
+     <y>209</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>380</x>
+     <y>226</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>updateData(int,int,float,float)</slot>
@@ -1423,5 +1448,6 @@
   <slot>updatePointSize(int)</slot>
   <slot>connectDataBox(int)</slot>
   <slot>setBoundaries(int,double*,double*,bool)</slot>
+  <slot>changeDataSelection()</slot>
  </slots>
 </ui>

@@ -191,7 +191,7 @@ SelectionDialog::SelectionDialog(VertexBox *vbCondition,
 			condition++;
 		}
 
-		GeoShaderDataModel *model = new GeoShaderDataModel(inPrimitiveType,
+		GeometryDataModel *model = new GeometryDataModel(inPrimitiveType,
 				outPrimitiveType, primitiveMap, vertexCountMap, vbCondition,
 				NULL);
 		for (i = 0; i < watchItems.count(); i++) {

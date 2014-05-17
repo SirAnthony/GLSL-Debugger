@@ -14,17 +14,17 @@ class WatchView : public QWidget
 public:
 	explicit WatchView(QWidget *parent = 0);
 	virtual void updateView(bool force) = 0;
-	virtual QAbstractItemModel * _model() = 0;
+	virtual QAbstractItemModel * model() = 0;
 	inline void setActive(bool b) {
 		active = b;
 	}
 
 public slots:
-	virtual void connectDataBox(int) = 0;
+	virtual void closeView();
 	virtual void updateData(int, int, float, float) = 0;
 	virtual void clearData() = 0;
 	virtual void setBoundaries(int, double *, double *, bool) = 0;
-	virtual void setDataBox(int, DataBox **);
+	virtual void setDataBox(int, DataBox **) = 0;
 
 protected:
 	virtual void updateGUI();

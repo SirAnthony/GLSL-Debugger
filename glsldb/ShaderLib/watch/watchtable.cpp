@@ -32,6 +32,9 @@ WatchTable::WatchTable(QWidget *parent) :
 	connect(ui->tvVertices, SIGNAL(doubleClicked(const QModelIndex &)), this,
 			SLOT(newSelection(const QModelIndex &)));
 
+	for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
+		connectWidget(widgets[i]);
+
 	scatterPositions = NULL;
 	scatterColorsAndSizes = NULL;
 	maxScatterDataElements = 0;
@@ -43,49 +46,11 @@ WatchTable::WatchTable(QWidget *parent) :
 
 WatchTable::~WatchTable()
 {
-	ui->glScatter->setData(NULL, NULL, 0, 0);
 	delete[] scatterPositions;
 	delete[] scatterColorsAndSizes;
 }
 
-bool WatchTable::countsAllZero()
-{
-	for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
-		if (scatterDataCount[i] != 0)
-			return false;
-	return true;
-}
 
-void WatchTable::updateDataCurrent(float *data, int *count, int dataStride,
-		VertexBox *srcData, RangeMap range, float min, float max)
-{	
-	float *pData = data;
-	const float *pSourceData = srcData->getDataPointer();
-	const bool *pSourceCov = srcData->getCoveragePointer();
-	const bool *pSourceMap = srcData->getDataMapPointer();
-	int verticles = srcData->getNumVertices();
-
-	max = fabs(max - min) > FLT_EPSILON ? max : 1.0f + min;
-	clearDataArray(data, srcData->getNumVertices(), dataStride, 0.0f);
-
-	int total = 0;
-	for (int i = 0; i < verticles; i++) {
-		if ((pSourceCov && !pSourceCov[i]) || (pSourceMap && !pSourceMap[i]))
-			continue;
-		*pData = getMappedValueF(pSourceData[i], range, min, max);
-		pData += dataStride;
-		total++;
-	}
-
-	*count = total;
-	if (total > 0)
-		scatterDataElements = total;
-	else if (countsAllZero())
-		scatterDataElements = 0;
-
-	ui->glScatter->setData(scatterPositions, scatterColorsAndSizes,
-						   scatterDataElements, ELEMENTS_PER_VERTEX);
-}
 
 void WatchTable::updateView(bool force)
 {
@@ -97,24 +62,18 @@ void WatchTable::updateView(bool force)
 	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+QAbstractItemModel * WatchTable::model()
+{
+	return _model;
+}
+
 void WatchTable::attachVpData(VertexBox *vb, QString name)
 {
 	if (!vb)
 		return;
 
 	if (_model->addVertexBox(vb, name)) {
-		if (!scatterPositions) {
-			maxScatterDataElements = vb->getNumVertices();
-			scatterDataElements = 0;
-			scatterPositions = new float[ELEMENTS_PER_VERTEX * maxScatterDataElements];
-			scatterColorsAndSizes = new float[ELEMENTS_PER_VERTEX * maxScatterDataElements];
-			for (int i = 0; i < WT_WIDGETS_COUNT; ++i) {
-				scatterData[i] = scatterPositions + (i % ELEMENTS_PER_VERTEX);
-				clearDataArray(scatterData[i], maxScatterDataElements,
-							   scatterDataStride[i], 0.0f);
-				scatterDataCount[i] = 0;
-			}
-		}
+		initScatter(vb->getNumVertices());
 		int idx = _model->columnCount() - 1;
 		QString name = _model->getDataColumnName(idx);
 		for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
@@ -122,18 +81,6 @@ void WatchTable::attachVpData(VertexBox *vb, QString name)
 
 		updateGUI();
 	}
-}
-
-QAbstractItemModel* WatchTable::model()
-{
-	return _model;
-}
-
-void WatchTable::connectDataBox(int index)
-{
-	ShMappingWidget* widget = dynamic_cast<ShMappingWidget*>(sender());
-	VertexBox *vb = _model->getDataColumn(index);
-	connect(vb, SIGNAL(dataChanged()), widget, SLOT(mappingDataChanged()));
 }
 
 void WatchTable::updateData(int index, int range, float min, float max)
@@ -204,10 +151,59 @@ void WatchTable::updatePointSize(int value)
 	ui->glScatter->updateGL();
 }
 
-void WatchTable::closeView()
+void WatchTable::initScatter(int elements)
 {
-	hide();
-	deleteLater();
+	if (scatterPositions)
+		return;
+
+	maxScatterDataElements = elements;
+	scatterDataElements = 0;
+	scatterPositions = new float[ELEMENTS_PER_VERTEX * maxScatterDataElements];
+	scatterColorsAndSizes = new float[ELEMENTS_PER_VERTEX * maxScatterDataElements];
+	for (int i = 0; i < WT_WIDGETS_COUNT; ++i) {
+		float *source = i < ELEMENTS_PER_VERTEX ? scatterPositions : scatterColorsAndSizes;
+		scatterData[i] = source + (i % ELEMENTS_PER_VERTEX);
+		clearDataArray(scatterData[i], maxScatterDataElements,
+					   scatterDataStride[i], 0.0f);
+		scatterDataCount[i] = 0;
+	}
 }
 
+bool WatchTable::countsAllZero()
+{
+	for (int i = 0; i < WT_WIDGETS_COUNT; ++i)
+		if (scatterDataCount[i] != 0)
+			return false;
+	return true;
+}
 
+void WatchTable::updateDataCurrent(float *data, int *count, int dataStride,
+		VertexBox *srcData, RangeMap range, float min, float max)
+{
+	float *pData = data;
+	const float *pSourceData = srcData->getDataPointer();
+	const bool *pSourceCov = srcData->getCoveragePointer();
+	const bool *pSourceMap = srcData->getDataMapPointer();
+	int verticles = srcData->getNumVertices();
+
+	max = fabs(max - min) > FLT_EPSILON ? max : 1.0f + min;
+	clearDataArray(data, srcData->getNumVertices(), dataStride, 0.0f);
+
+	int total = 0;
+	for (int i = 0; i < verticles; i++) {
+		if ((pSourceCov && !pSourceCov[i]) || (pSourceMap && !pSourceMap[i]))
+			continue;
+		*pData = getMappedValueF(pSourceData[i], range, min, max);
+		pData += dataStride;
+		total++;
+	}
+
+	*count = total;
+	if (total > 0)
+		scatterDataElements = total;
+	else if (countsAllZero())
+		scatterDataElements = 0;
+
+	ui->glScatter->setData(scatterPositions, scatterColorsAndSizes,
+						   scatterDataElements, ELEMENTS_PER_VERTEX);
+}

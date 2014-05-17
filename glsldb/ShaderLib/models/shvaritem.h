@@ -59,6 +59,7 @@ public:
 
 	QVariant data(int role = DF_FIRST) const;
 	void setData(const QVariant &value, int role = DF_FIRST);
+	void setCurrentValue(int pixels[2], EShLanguage type);
 
 	bool updateWatchData(EShLanguage type);
 	void invalidateWatchData();

@@ -20,7 +20,7 @@ static QString range_icons[RANGE_MAP_COUNT] = {
 
 ShMappingWidget::ShMappingWidget(QWidget *parent) :
 	QWidget(parent)
-{	
+{
 	Mapping m;
 	RangeMapping rm;
 	ui->setupUi(this);
@@ -81,6 +81,10 @@ void ShMappingWidget::delOption(int idx)
 	emit updateScatter();
 }
 
+int ShMappingWidget::currentValIndex()
+{
+	return ui->cbVal->currentIndex();
+}
 
 void ShMappingWidget::cbValActivated(int idx)
 {
@@ -104,10 +108,12 @@ void ShMappingWidget::cbValActivated(int idx)
 		ui->tbMin->click();
 		ui->tbMax->click();
 		Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
-		emit connectDataBox(m.index);
+		DataBox *box = NULL;
+		emit getDataBox(m.index, &box);
+		connect(box, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged()));
 	}
 	updateData();
-}	
+}
 
 void ShMappingWidget::cbMapActivated(int idx)
 {
@@ -135,7 +141,7 @@ void ShMappingWidget::mappingDataChanged()
 	if (db) {
 		Mapping m = getMappingFromInt(ui->cbVal->itemData(ui->cbVal->currentIndex()).toInt());
 		DataBox *active = NULL;
-		emit getDataBox(&active);
+		emit getDataBox(m.index, &active);
 		if (active != db) {
 			disconnect(db, SIGNAL(dataChanged()), this, SLOT(mappingDataChanged()));
 			return;
@@ -175,6 +181,8 @@ void ShMappingWidget::buttonClicked()
 			case RANGE_MAP_ABSOLUTE:
 				target->setValue(value);
 				break;
+			default:
+				break;
 		}
 	}
 	updateData();
@@ -199,7 +207,7 @@ void ShMappingWidget::updateRangeMapping(int idx, int ridx)
 	case RANGE_MAP_ABSOLUTE:
 		ui->tbMin->setText(QString::number(min));
 		ui->tbMax->setText(QString::number(max));
-		break;	
+		break;
 	case RANGE_MAP_POSITIVE:
 		ui->tbMin->setText(QString::number(std::max(min, 0.0)));
 		ui->tbMax->setText(QString::number(std::max(max, 0.0)));

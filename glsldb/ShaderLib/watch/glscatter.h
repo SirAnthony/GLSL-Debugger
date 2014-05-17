@@ -12,6 +12,9 @@
 #include <QGLShaderProgram>
 
 
+#define ELEMENTS_PER_VERTEX 3
+
+
 class GLScatter: public QGLWidget, protected QGLFunctions {
 Q_OBJECT
 

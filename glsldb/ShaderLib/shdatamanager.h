@@ -15,7 +15,7 @@ class ShWindowManager;
 class ShDataManager : public QObject
 {
 	Q_OBJECT
-public:	
+public:
 	/**
 	 * Due to current architecture I have no other choise than
 	 * make it a singleton. It must have access to ProgramControl
@@ -38,8 +38,8 @@ public:
 	bool getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
 					  int format, bool *coverage, DataBox *data);
 	bool cleanShader(EShLanguage type);
-	void getPixels(const int **);
-
+	void getPixels(int (*)[2]);
+	bool hasActiveWindow();
 
 signals:
 	void cleanDocks(EShLanguage);
@@ -47,14 +47,14 @@ signals:
 	void setErrorStatus(int);
 	void setRunLevel(int);
 	void killProgram(int);
-	
+
 protected:
 	bool processError(int, EShLanguage type);
 	int retriveVertexData(const char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
 	int retriveFragmentData(const char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
-	
+
 private:
-	ShDataManager(ProgramControl *_pc, QObject *parent = 0);
+	ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent = 0);
 	ShWindowManager* windows;
 	int primitiveMode;
 	int selectedPixel[2];

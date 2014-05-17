@@ -8,10 +8,16 @@ WatchView::WatchView(QWidget *parent) :
 	setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
+void WatchView::closeView()
+{
+	hide();
+	deleteLater();
+}
+
 void WatchView::updateGUI()
 {
 	QString title("");
-	QAbstractItemModel *m = _model();
+	QAbstractItemModel *m = model();
 	int columns = m->columnCount();
 	for (int i = 0; i < columns; i++) {
 		if (i > 0)
@@ -23,10 +29,10 @@ void WatchView::updateGUI()
 
 void WatchView::connectWidget(ShMappingWidget *widget)
 {
+	connect(widget, SIGNAL(updateView(bool)), this, SLOT(updateView(bool)));
 	connect(widget, SIGNAL(updateData(int,int,float,float)),
 			this, SLOT(updateData(int,int,float,float)));
 	connect(widget, SIGNAL(clearData()), this, SLOT(clearData()));
-	connect(widget, SIGNAL(connectDataBox(int)), this, SLOT(connectDataBox(int)));
 	connect(widget, SIGNAL(getBoundaries(int,double*,double*,bool)),
 			this, SLOT(setBoundaries(int,double*,double*,bool)));
 	connect(widget, SIGNAL(getDataBox(int, DataBox**)),

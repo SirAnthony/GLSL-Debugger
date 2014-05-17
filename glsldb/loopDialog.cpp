@@ -83,7 +83,7 @@ LoopDialog::LoopDialog(LoopData *data, QList<OldShVarItem*> &watchItems,
 		m_qTreeView = new QTreeView(this);
 		m_qTreeView->setAlternatingRowColors(true);
 
-		GeoShaderDataModel *model = new GeoShaderDataModel(inPrimitiveType,
+		GeometryDataModel *model = new GeometryDataModel(inPrimitiveType,
 				outPrimitiveType, primitiveMap, vertexCountMap,
 				m_pData->getActualVertexBox(), m_pData->getInitialCoverage());
 

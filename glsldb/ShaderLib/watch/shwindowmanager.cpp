@@ -1,16 +1,16 @@
 #include "shwindowmanager.h"
 #include "watchview.h"
 #include "watchtable.h"
+#include "watchgeotree.h"
 #include "utils/dbgprint.h"
 
-ShWindowManager::ShWindowManager(QObject *parent) :
-	QObject(parent)
+ShWindowManager::ShWindowManager(QWidget *parent) :
+	QWorkspace(parent)
 {
 	connect(this, SIGNAL(windowActivated(QWidget*)), this, SLOT(changedActive(QWidget*)));
-
 }
 
-void ShWindowManager::updateWindows(bool)
+void ShWindowManager::updateWindows(bool force)
 {
 	foreach (QWidget* widget, this->windowList()) {
 		WatchView* view = dynamic_cast<WatchView*>(widget);

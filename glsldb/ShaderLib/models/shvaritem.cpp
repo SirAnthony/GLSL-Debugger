@@ -185,6 +185,60 @@ void ShVarItem::setData(const QVariant &value, int role)
 	}
 }
 
+void ShVarItem::setCurrentValue(int pixels[2], EShLanguage type)
+{
+	if (!watched || pixels[0] < 0 || (type == EShLangFragment && pixels[1] < 0)) {
+		this->selected = QVariant();
+		return;
+	}
+
+	QVariant value;
+	switch (type) {
+	case EShLangVertex: {
+		VertexBox* vb = this->vertexBox.value<VertexBox*>();
+		if (vb) {
+			// FIXME: This is definitionally must not work
+			Q_ASSERT(!"Stop right there");
+			QVariant data;
+			if (vb->getDataValue(pixels[0], &data))
+				value.setValue(data.toString());
+		} else {
+			value.setValue("?");
+		}
+		break;
+	}
+	case EShLangGeometry: {
+		VertexBox* gb = this->geometryBox.value<VertexBox*>();
+		if (gb) {
+			// FIXME: This is definitionally must not work
+			Q_ASSERT(!"Stop right there");
+			QVariant data;
+			if (gb->getDataValue(pixels[0], &data))
+				value.setValue(data.toString());
+		} else {
+			value.setValue("?");
+		}
+		break;
+	}
+	case EShLangFragment: {
+		PixelBox* pb = this->pixelBox.value<PixelBox*>();
+		if (pb) {
+			// FIXME: This is definitionally must not work
+			Q_ASSERT(!"Stop right there");
+			QVariant data;
+			if (pb->getDataValue(pixels[0], pixels[1], &data))
+				value.setValue(data.toString());
+		} else {
+			value.setValue("?");
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	this->selected = value;
+}
+
 bool ShVarItem::updateWatchData(EShLanguage type)
 {
 	int format = this->readbackFormat();

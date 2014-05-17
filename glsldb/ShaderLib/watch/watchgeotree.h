@@ -6,17 +6,17 @@
 #include "watchview.h"
 #include "glscatter.h"
 #include "mappings.h"
+#include <QModelIndex>
 
-
-class GeoShaderDataModel;
-class GeoShaderDataSortFilterProxyModel;
+class GeometryDataModel;
+class GeometryDataSortFilterProxyModel;
 class ShMappingWidget;
 
 #define GT_WIDGETS_COUNT 6
 
 
 namespace Ui {
-	class ShWatchGeometry;
+	class ShWatchGeoTree;
 }
 
 
@@ -30,18 +30,15 @@ public:
 			QWidget *parent = 0);
 	~WatchGeoTree();
 
-	void updateView(bool force);
+	virtual void updateView(bool force);
 	virtual QAbstractItemModel * model();
-	void attachData(VertexBox *currentData, VertexBox *vertexData,
-			QString name);
+	void attachData(VertexBox *, VertexBox *, QString);
 
 public slots:
-	virtual void connectDataBox(int);
 	virtual void updateData(int, int, float, float);
 	virtual void clearData();
 	virtual void setBoundaries(int, double *, double *, bool);
 	virtual void setDataBox(int, DataBox **);
-	void closeView();
 
 signals:
 	void selectionChanged(int dataIdx);
@@ -49,24 +46,23 @@ signals:
 private slots:
 	void newSelection(const QModelIndex & index);
 	void detachData(int idx);
-	void on_tbDataSelection_clicked();
+	void changeDataSelection();
 	void updatePointSize(int value);
 
 private:
-	Ui::ShWatchGeometry *ui;
+	Ui::ShWatchGeoTree *ui;
 
+	void updateDataInfo(int primitiveIn, int primitiveOut);
 	float getDataMin(int column);
 	float getDataMax(int column);
 	float getDataAbsMin(int column);
 	float getDataAbsMax(int column);
+	VertexBox *getDataColumn(int index);
 
+	void initScatter(int elements);
 	bool countsAllZero();
 	void updateDataCurrent(float *data, int *count, int dataStride,
-			VertexBox *srcData, RangeMapping *rangeMapping,
-			float min, float max);
-	void updateDataVertex(float *data, int *count, int dataStride,
-			VertexBox *srcData, RangeMapping *rangeMapping,
-			float min, float max);
+			VertexBox *srcData, RangeMap range, float min, float max);
 
 	enum DataSelection {
 		DATA_CURRENT,
@@ -75,8 +71,8 @@ private:
 
 	ShMappingWidget *widgets[GT_WIDGETS_COUNT];
 
-	GeoShaderDataModel *_model;
-	GeoShaderDataSortFilterProxyModel *modelFilter;
+	GeometryDataModel *_model;
+	GeometryDataSortFilterProxyModel *modelFilter;
 
 	float *scatterPositions;
 	float *scatterColorsAndSizes;

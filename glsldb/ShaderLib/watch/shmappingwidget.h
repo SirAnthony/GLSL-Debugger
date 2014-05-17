@@ -16,6 +16,7 @@ public:
 	explicit ShMappingWidget(QWidget *parent = 0);
 	void addOption(int, QString);
 	void delOption(int);
+	int currentValIndex();
 	
 signals:
 	void connectDataBox(int);
