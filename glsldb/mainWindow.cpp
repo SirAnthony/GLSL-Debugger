@@ -2737,6 +2737,8 @@ QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 }
 */
 /*
+
+
 WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
 {
 	WatchVector *window = NULL;
@@ -2826,7 +2828,7 @@ WatchView* MainWindow::newWatchWindowGeoDataTree(QModelIndexList &list)
 	}
 	return window;
 }
-*/
+
 
 
 void MainWindow::on_tbWatchWindow_clicked()
@@ -2906,9 +2908,10 @@ void MainWindow::addToWatchWindowGeoDataTree(WatchView *watchView,
 	}
 }
 
+
 void MainWindow::on_tbWatchWindowAdd_clicked()
 {
-	/* TODO: do not use static cast! instead watchView should provide functionality */
+	 TODO: do not use static cast! instead watchView should provide functionality
 	WatchView *window = static_cast<WatchView*>(workspace->activeWindow());
 	QModelIndexList list = cleanupSelectionList(
 			tvWatchList->selectionModel()->selectedRows(0));
@@ -2936,6 +2939,7 @@ void MainWindow::on_tbWatchWindowAdd_clicked()
 	}
 }
 
+
 void MainWindow::watchWindowClosed()
 {
 	QWidgetList windowList = workspace->windowList();
@@ -2944,7 +2948,7 @@ void MainWindow::watchWindowClosed()
 	}
 }
 
-/*
+
 void MainWindow::updateWatchGui(int s)
 {
 	if (s == 0) {
@@ -3788,35 +3792,36 @@ void MainWindow::setMouseOverValues(int x, int y, const bool *active,
 	}
 }
 
-void MainWindow::newSelectedPixel(int x, int y)
-{
-	m_selectedPixel[0] = x;
-	m_selectedPixel[1] = y;
-	lWatchSelectionPos->setText(
-			"Pixel " + QString::number(x) + ", " + QString::number(y));
-	if (m_pShVarModel && m_selectedPixel[0] >= 0 && m_selectedPixel[1] >= 0) {
-		m_pShVarModel->setCurrentValues(m_selectedPixel[0], m_selectedPixel[1]);
-	}
-}
+//void MainWindow::newSelectedPixel(int x, int y)
+//{
+//	m_selectedPixel[0] = x;
+//	m_selectedPixel[1] = y;
+//	lWatchSelectionPos->setText(
+//			"Pixel " + QString::number(x) + ", " + QString::number(y));
+//	if (m_pShVarModel && m_selectedPixel[0] >= 0 && m_selectedPixel[1] >= 0) {
+//		m_pShVarModel->setCurrentValues(m_selectedPixel[0], m_selectedPixel[1]);
+//	}
+//}
+//
+//void MainWindow::newSelectedVertex(int n)
+//{
+//	m_selectedPixel[0] = n;
+//	m_selectedPixel[1] = -1;
+//	if (m_pShVarModel && m_selectedPixel[0] >= 0) {
+//		lWatchSelectionPos->setText("Vertex " + QString::number(n));
+//		m_pShVarModel->setCurrentValues(m_selectedPixel[0]);
+//	}
+//}
+//
+//void MainWindow::newSelectedPrimitive(int dataIdx)
+//{
+//	m_selectedPixel[0] = dataIdx;
+//	if (m_pShVarModel && m_selectedPixel[0] >= 0) {
+//		lWatchSelectionPos->setText("Primitive " + QString::number(dataIdx));
+//		m_pShVarModel->setCurrentValues(m_selectedPixel[0]);
+//	}
+//}
 
-void MainWindow::newSelectedVertex(int n)
-{
-	m_selectedPixel[0] = n;
-	m_selectedPixel[1] = -1;
-	if (m_pShVarModel && m_selectedPixel[0] >= 0) {
-		lWatchSelectionPos->setText("Vertex " + QString::number(n));
-		m_pShVarModel->setCurrentValues(m_selectedPixel[0]);
-	}
-}
-
-void MainWindow::newSelectedPrimitive(int dataIdx)
-{
-	m_selectedPixel[0] = dataIdx;
-	if (m_pShVarModel && m_selectedPixel[0] >= 0) {
-		lWatchSelectionPos->setText("Primitive " + QString::number(dataIdx));
-		m_pShVarModel->setCurrentValues(m_selectedPixel[0]);
-	}
-}
 void MainWindow::resetPerFrameStatistics(void)
 {
 	if (m_pCurrentCall && m_pCurrentCall->isFrameEnd()) {

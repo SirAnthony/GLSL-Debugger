@@ -32,7 +32,8 @@ public:
 	}
 
 	bool getDataValue(int numVertex, float *v);
-	bool getDataValue(int numVertex, QVariant *v);
+	virtual bool getDataValue(int numVertex, QVariant *v);
+
 	int getNumElementsPerVertex(void)
 	{
 		return numElementsPerVertex;

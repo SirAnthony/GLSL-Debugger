@@ -39,6 +39,7 @@ public slots:
 	void newItem(ShVarItem* item);	
 	void removeSelected();
 	void clearWatchList();
+	void updateSelection(int, int, QString &, EShLanguage);
 
 	void newWindow();
 	void extendWindow();

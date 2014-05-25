@@ -4,6 +4,7 @@
 #include "docks/shwatchdock.h"
 #include "docks/shdockwidget.h"
 #include "watch/shwindowmanager.h"
+#include "watch/watchview.h"
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
 #include "debuglib.h"
@@ -67,7 +68,7 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 {
 	docks[type] = dock;
 	connect(this, SIGNAL(cleanDocks(EShLanguage)), dock, SLOT(cleanDock(EShLanguage)));
-	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));
+	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));	
 
 	if (type == dmDTWatch) {
 		ShWatchDock* wdock = dynamic_cast<ShWatchDock *>(dock);
@@ -75,6 +76,8 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 				windows, SLOT(createWindow(QList<ShVarItem*>&,ShWindowManager::WindowType)));
 		connect(wdock, SIGNAL(extendWindow(QList<ShVarItem*>,int)),
 				windows, SLOT(extendWindow(QList<ShVarItem*>,ShWindowManager::WindowType)));
+		connect(this, SIGNAL(updateSelection(int,int,QString&,EShLanguage)),
+				wdock, SLOT(updateSelection(int,int,QString&,EShLanguage)));
 	}
 }
 
@@ -195,6 +198,35 @@ GeometryInfo ShDataManager::getGeometryInfo()
 EShLanguage ShDataManager::getLang()
 {
 	return shaderMode;
+}
+
+void ShDataManager::selectionChanged(int x, int y)
+{
+	WatchView *view = dynamic_cast<WatchView *>(sender());
+	if (!view)
+		return;
+
+	int type = view->getType();
+	if (x < 0 || (type == ShWindowManager::wtFragment && y < 0))
+		return;
+
+	selectedPixel[0] = x;
+	selectedPixel[1] = y;
+
+	QString text("Error");
+	EShLanguage mode;
+	if (type == ShWindowManager::wtVertex) {
+		mode = EShLangVertex;
+		text = "Vertex " + QString::number(x);
+	} else if (type == ShWindowManager::wtGeometry) {
+		mode = EShLangGeometry;
+		text = "Primitive " + QString::number(x);
+	} else if (type == ShWindowManager::wtFragment) {
+		mode = EShLangFragment;
+		text = "Pixel " + QString::number(x) + ", " + QString::number(y);
+	}
+
+	emit updateSelection(x, y, text, mode);
 }
 
 bool ShDataManager::processError(int error, EShLanguage type)

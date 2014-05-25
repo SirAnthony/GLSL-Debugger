@@ -19,28 +19,22 @@ public:
 	virtual double getAbsMax(int element = -1) = 0;
 
 	void setNewCoverage(bool* _coverage)
-	{
-		coverage = _coverage;
-	}
+	{ coverage = _coverage; }
 
 	bool getCoverageValue(int index)
-	{
-		return coverage ? coverage[index] : false;
-	}
+	{ return coverage ? coverage[index] : false; }
+
+	virtual bool getDataValue(int, QVariant *) = 0;
+	virtual bool getDataValue(int x, int, QVariant *v)
+	{ return getDataValue(x, v); }
 
 	bool getDataMapValue(int index)
-	{
-		return boxDataMap ? boxDataMap[index] : false;
-	}
+	{ return boxDataMap ? boxDataMap[index] : false; }
 
 	const bool* getCoveragePointer(void)
-	{
-		return coverage;
-	}
+	{ return coverage; }
 	const bool* getDataMapPointer(void)
-	{
-		return boxDataMap;
-	}
+	{ return boxDataMap; }
 
 signals:
 	void dataChanged();

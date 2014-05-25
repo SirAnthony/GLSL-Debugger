@@ -23,6 +23,9 @@ public:
 	inline int getType() const
 	{ return type; }
 
+signals:
+	void selectionChanged(int, int);
+
 public slots:
 	virtual void closeView();
 	virtual void updateData(int, int, float, float) = 0;

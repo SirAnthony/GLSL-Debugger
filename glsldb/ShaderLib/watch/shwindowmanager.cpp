@@ -70,9 +70,8 @@ void ShWindowManager::createWindow(const QList<ShVarItem*> &list, enum WindowTyp
 	}
 
 	this->addWindow(window);
-	connect(window, SIGNAL(selectionChanged(int)), this, SLOT(newSelectedVertex(int)));
-	connect(window, SIGNAL(selectionChanged(int)), this, SLOT(newSelectedPrimitive(int)));
-	connect(window, SIGNAL(selectionChanged(int, int)), this, SLOT(newSelectedPixel(int, int)));
+	connect(window, SIGNAL(selectionChanged(int,int)),
+			manager, SLOT(selectionChanged(int,int)));
 	attachData(window, list, type);
 }
 

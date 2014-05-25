@@ -40,9 +40,6 @@ public slots:
 	virtual void setBoundaries(int, double *, double *, bool);
 	virtual void setDataBox(int, DataBox **);
 
-signals:
-	void selectionChanged(int dataIdx);
-
 private slots:
 	void newSelection(const QModelIndex & index);
 	void detachData(int idx);

@@ -45,12 +45,10 @@ public slots:
 signals:
 	void mouseOverValuesChanged(int x, int y, const bool *active,
 			const QVariant *values);
-	void selectionChanged(int x, int y);
 
 private slots:
 	void updateFocus(Qt::FocusReason);
 	void setMousePos(int x, int y);
-	void newSelection(int x, int y);
 	void newViewCenter(int x, int y);
 
 private:

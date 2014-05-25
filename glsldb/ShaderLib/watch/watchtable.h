@@ -29,9 +29,6 @@ public:
 	virtual QAbstractItemModel * model();
 	virtual void attachData(DataBox *, QString &);
 
-signals:
-	void selectionChanged(int vertId);
-
 public slots:
 	virtual void updateData(int, int, float, float);
 	virtual void clearData();

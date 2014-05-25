@@ -138,9 +138,9 @@ private slots:
 	// void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
 	void setMouseOverValues(int x, int y, const bool *active,
 			const QVariant *values);
-	void newSelectedPixel(int x, int y);
-	void newSelectedVertex(int n);
-	void newSelectedPrimitive(int dataIdx);
+//	void newSelectedPixel(int x, int y);
+//	void newSelectedVertex(int n);
+//	void newSelectedPrimitive(int dataIdx);
 	// void changedActiveWindow(QWidget *w);
 	void ShaderStep(int action, bool updateData = true, bool updateCovermap =
 			true);

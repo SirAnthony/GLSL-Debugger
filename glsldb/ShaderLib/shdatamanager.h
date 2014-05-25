@@ -57,6 +57,10 @@ signals:
 	void setErrorStatus(int);
 	void setRunLevel(int);
 	void killProgram(int);
+	void updateSelection(int, int, QString &, EShLanguage);
+
+public slots:
+	void selectionChanged(int, int);
 
 protected:
 	bool processError(int, EShLanguage type);

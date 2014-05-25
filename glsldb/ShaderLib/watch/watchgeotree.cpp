@@ -145,7 +145,7 @@ void WatchGeoTree::newSelection(const QModelIndex & index)
 		int dataIdx = index.data(GeometryDataModel::IndexRole).toInt();
 		if (dataIdx >= 0
 				&& !index.data(GeometryDataModel::VertexRole).toBool()) {
-			emit selectionChanged(dataIdx);
+			emit selectionChanged(dataIdx, -1);
 		}
 	}
 }

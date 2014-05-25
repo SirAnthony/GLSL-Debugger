@@ -194,50 +194,23 @@ void ShVarItem::setCurrentValue(int pixels[2], EShLanguage type)
 		return;
 	}
 
-	QVariant value;
-	switch (type) {
-	case EShLangVertex: {
-		VertexBox* vb = this->vertexBox.value<VertexBox*>();
-		if (vb) {
-			// FIXME: This is definitionally must not work
-			Q_ASSERT(!"Stop right there");
-			QVariant data;
-			if (vb->getDataValue(pixels[0], &data))
-				value.setValue(data.toString());
-		} else {
-			value.setValue("?");
-		}
-		break;
+	QVariant value("?");
+	DataBox* box = NULL;
+	if (type == EShLangVertex)
+		box = this->vertexBox.value<VertexBox*>();
+	else if (type == EShLangGeometry)
+		box = this->geometryBox.value<VertexBox*>();
+	else if (type == EShLangFragment)
+		box = this->pixelBox.value<PixelBox*>();
+
+	if (box) {
+		// FIXME: This is definitionally must not work
+		Q_ASSERT(!"Stop right there");
+		QVariant data;
+		if (box->getDataValue(pixels[0], pixels[1], &data))
+			value.setValue(data.toString());
 	}
-	case EShLangGeometry: {
-		VertexBox* gb = this->geometryBox.value<VertexBox*>();
-		if (gb) {
-			// FIXME: This is definitionally must not work
-			Q_ASSERT(!"Stop right there");
-			QVariant data;
-			if (gb->getDataValue(pixels[0], &data))
-				value.setValue(data.toString());
-		} else {
-			value.setValue("?");
-		}
-		break;
-	}
-	case EShLangFragment: {
-		PixelBox* pb = this->pixelBox.value<PixelBox*>();
-		if (pb) {
-			// FIXME: This is definitionally must not work
-			Q_ASSERT(!"Stop right there");
-			QVariant data;
-			if (pb->getDataValue(pixels[0], pixels[1], &data))
-				value.setValue(data.toString());
-		} else {
-			value.setValue("?");
-		}
-		break;
-	}
-	default:
-		break;
-	}
+
 	this->selected = value;
 }
 

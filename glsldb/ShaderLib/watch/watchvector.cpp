@@ -45,7 +45,7 @@ WatchVector::WatchVector(QWidget *parent) :
 	connect(ui->imageView, SIGNAL(mousePosChanged(int, int)), this,
 			SLOT(setMousePos(int, int)));
 	connect(ui->imageView, SIGNAL(picked(int, int)), this,
-			SLOT(newSelection(int, int)));
+			SIGNAL(selectionChanged(int,int)));
 	connect(ui->imageView, SIGNAL(viewCenterChanged(int, int)), this,
 			SLOT(newViewCenter(int, int)));
 	connect(ui->imageView, SIGNAL(updateFocus(int)), this,
@@ -313,11 +313,6 @@ void WatchVector::setMousePos(int x, int y)
 	} else {
 		emit mouseOverValuesChanged(-1, -1, NULL, NULL);
 	}
-}
-
-void WatchVector::newSelection(int x, int y)
-{
-	emit selectionChanged(x, y);
 }
 
 void WatchVector::setZoomMode()

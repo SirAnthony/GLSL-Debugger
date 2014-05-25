@@ -144,7 +144,7 @@ void WatchTable::detachData(int idx)
 
 void WatchTable::newSelection(const QModelIndex & index)
 {
-	emit selectionChanged(index.row());
+	emit selectionChanged(index.row(), -1);
 }
 
 void WatchTable::updatePointSize(int value)

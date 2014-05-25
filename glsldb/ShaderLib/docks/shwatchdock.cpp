@@ -182,6 +182,14 @@ void ShWatchDock::clearWatchList()
 	watchItems.clear();
 }
 
+void ShWatchDock::updateSelection(int x, int y, QString &text, EShLanguage type)
+{
+	int pixels[2] = {x, y};
+	ui->SelectionPos->setText(text);
+	foreach (ShVarItem* item, watchItems)
+		item->setCurrentValue(pixels, type);
+}
+
 void ShWatchDock::newWindow()
 {
 	int type = getWindowType();

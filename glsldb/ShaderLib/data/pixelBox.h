@@ -33,9 +33,10 @@ public:
 	template<typename vType>
 	void setData(int width, int height, int channel, vType *data, bool *coverage = 0);
 	bool* getCoverageFromData(int *activePixels = NULL);
-	void* getDataPointer(void) { return boxData; }
+	void* getDataPointer(void) { return boxData; }		
 	bool getDataValue(int x, int y, double *v);
-	bool getDataValue(int x, int y, QVariant *v);
+	virtual bool getDataValue(int, QVariant *) { return false; }
+	virtual bool getDataValue(int x, int y, QVariant *v);
 
 	/* get min/max data values per channel, channel == -1 means all channels */
 	virtual double getMin(int _channel = -1);
