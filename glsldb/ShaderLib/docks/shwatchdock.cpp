@@ -2,6 +2,7 @@
 #include "ui_shwatchdock.h"
 #include "shdatamanager.h"
 #include "watch/watchview.h"
+#include "data/dataBox.h"
 #include "utils/dbgprint.h"
 
 #include <QStack>
@@ -137,7 +138,7 @@ void ShWatchDock::updateCoverage(EShLanguage type, bool *coverage)
 		if (field == DF_FIRST)
 			continue;
 
-		DataBox *box = item->data(field).value<DataBox*>();
+		DataBox *box = static_cast<DataBox*>(item->data(field).value<void *>());
 		box->setNewCoverage(coverage);
 		item->setCurrentValue(pixels, type);
 	}
@@ -181,30 +182,50 @@ void ShWatchDock::clearWatchList()
 	watchItems.clear();
 }
 
-void ShWatchDock::newWatchWindow()
+void ShWatchDock::newWindow()
 {
-	QItemSelectionModel *sel_model = ui->tvWatchList->selectionModel();
-	QModelIndexList list = filterSelection(sel_model->selectedRows(0));
-
-	if (list.isEmpty())
+	int type = getWindowType();
+	QList<ShVarItem*> items;
+	if (!getItems(items))
 		return;
 
-	QList<ShVarItem*> items;
-	foreach(QModelIndex index, list) {
-		ShVarItem* item = dynamic_cast<ShVarItem *>(model->itemFromIndex(index));
-		items.append(item);
-	}
+	emit createWindow(items, type);
+}
 
+void ShWatchDock::extendWindow()
+{
+	int type = getWindowType();
+	QList<ShVarItem*> items;
+	if (!getItems(items))
+		return;
+
+	emit extendWindow(items, type);
+}
+
+int ShWatchDock::getWindowType()
+{
 	ShWindowManager::WindowType type = ShWindowManager::wtNone;
-	EShLanguage lang = ShDataManager::get()->currentLang();
+	EShLanguage lang = ShDataManager::get()->getLang();
 	if (lang == EShLangFragment)
 		type = ShWindowManager::wtFragment;
 	else if (lang == EShLangVertex)
 		type = ShWindowManager::wtVertex;
 	else if (lang == EShLangGeometry)
 		type = ShWindowManager::wtGeometry;
+	return type;
+}
 
-	emit createWindow(items, type);
+int ShWatchDock::getItems(QList<ShVarItem *> &items)
+{
+	QItemSelectionModel *sel_model = ui->tvWatchList->selectionModel();
+	QModelIndexList list = filterSelection(sel_model->selectedRows(0));
+
+	foreach(QModelIndex index, list) {
+		ShVarItem* item = dynamic_cast<ShVarItem *>(model->itemFromIndex(index));
+		items.append(item);
+	}
+
+	return items.count();
 }
 
 QModelIndexList ShWatchDock::filterSelection(const QModelIndexList &input)

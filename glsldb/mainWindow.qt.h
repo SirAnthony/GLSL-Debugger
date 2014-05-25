@@ -125,9 +125,9 @@ private slots:
 
 	/* watch */
 	//void on_tbWatchWindow_clicked();
-	void on_tbWatchWindowAdd_clicked();
+	// void on_tbWatchWindowAdd_clicked();
 	/*void on_tbWatchDelete_clicked();*/
-	void watchWindowClosed();
+	// void watchWindowClosed();
 
 	/****************
 	 * self connect *
@@ -262,11 +262,11 @@ private:
 	//WatchView* newWatchWindowGeoDataTree(QModelIndexList &list);
 	//WatchView* newWatchWindowVertexTable(QModelIndexList &list);
 	//WatchView* newWatchWindowFragment(QModelIndexList &list);
-	void addToWatchWindowGeoDataTree(WatchView *watchView,
-			QModelIndexList &list);
-	void addToWatchWindowVertexTable(WatchView *watchView,
-			QModelIndexList &list);
-	void addToWatchWindowFragment(WatchView *watchView, QModelIndexList &list);
+//	void addToWatchWindowGeoDataTree(WatchView *watchView,
+//			QModelIndexList &list);
+//	void addToWatchWindowVertexTable(WatchView *watchView,
+//			QModelIndexList &list);
+//	void addToWatchWindowFragment(WatchView *watchView, QModelIndexList &list);
 
 	int m_selectedPixel[2];
 

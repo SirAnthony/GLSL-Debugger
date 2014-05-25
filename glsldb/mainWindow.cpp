@@ -2826,6 +2826,8 @@ WatchView* MainWindow::newWatchWindowGeoDataTree(QModelIndexList &list)
 	}
 	return window;
 }
+*/
+
 
 void MainWindow::on_tbWatchWindow_clicked()
 {
@@ -2857,7 +2859,7 @@ void MainWindow::on_tbWatchWindow_clicked()
 		}
 	}
 }
-*/
+
 
 void MainWindow::addToWatchWindowVertexTable(WatchView *watchView,
 		QModelIndexList &list)

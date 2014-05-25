@@ -27,7 +27,7 @@ public:
 	~WatchTable();
 	virtual void updateView(bool force);
 	virtual QAbstractItemModel * model();
-	void attachVpData(VertexBox *f, QString name);
+	virtual void attachData(DataBox *, QString &);
 
 signals:
 	void selectionChanged(int vertId);

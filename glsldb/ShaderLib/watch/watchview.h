@@ -15,9 +15,13 @@ public:
 	explicit WatchView(QWidget *parent = 0);
 	virtual void updateView(bool force) = 0;
 	virtual QAbstractItemModel * model() = 0;
-	inline void setActive(bool b) {
-		active = b;
-	}
+	virtual void attachData(DataBox *, QString &) = 0;
+	virtual void attachData(DataBox *box, DataBox *, QString &string)
+	{ attachData(box, string); }
+	inline void setActive(bool b)
+	{ active = b; }
+	inline int getType() const
+	{ return type; }
 
 public slots:
 	virtual void closeView();
@@ -31,6 +35,7 @@ protected:
 	virtual void connectWidget(ShMappingWidget *widget);
 	static void clearDataArray(float *, int, int, float);
 
+	int type;
 	bool active;
 };
 

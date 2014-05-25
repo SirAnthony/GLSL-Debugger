@@ -3,6 +3,7 @@
 #include "ui_shmappingwidget.h"
 #include "mappings.h"
 #include "data/dataBox.h"
+#include <float.h>
 #include <algorithm>
 
 
@@ -17,28 +18,24 @@ static QString range_icons[RANGE_MAP_COUNT] = {
 	"solid", "positive", "negative", "absolute"
 };
 
+static QString get_color(QString name)
+{
+	for (int i = 0; i < COLORS_COUNT; ++i) {
+		if (!name.compare(mapping_names[i]))
+			return colors[i];
+	}
+	return colors[0];
+}
+
 
 ShMappingWidget::ShMappingWidget(QWidget *parent) :
 	QWidget(parent)
 {
-	Mapping m;
 	RangeMapping rm;
 	ui->setupUi(this);
+	initValButtons();
 
-	m.index = 0;
-	m.type = MAP_TYPE_OFF;
-	ui->cbVal->addItem(QString("-"), QVariant(getIntFromMapping(m)));
-	ui->cbVal->setCurrentIndex(0);
-
-	QString name = this->objectName();
-	QString color = colors[0];
-	for (int i = 0; i < COLORS_COUNT; ++i) {
-		if (!name.compare(mapping_names[i])) {
-			color = colors[i];
-			break;
-		}
-	}
-
+	QString color = get_color(this->objectName());
 	for (int i = 0; i < RANGE_MAP_COUNT; ++i) {
 		rm.index = i;
 		rm.range = static_cast<RangeMap>(RANGE_MAP_DEFAULT + i);
@@ -48,7 +45,7 @@ ShMappingWidget::ShMappingWidget(QWidget *parent) :
 	}
 }
 
-void ShMappingWidget::addOption(int idx, QString name)
+void ShMappingWidget::addOption(int idx, QString &name)
 {
 	Mapping m;
 	m.type = MAP_TYPE_VAR;
@@ -56,15 +53,14 @@ void ShMappingWidget::addOption(int idx, QString name)
 	ui->cbVal->addItem(name, QVariant(getIntFromMapping(m)));
 }
 
+
 void ShMappingWidget::delOption(int idx)
 {
 	/* Check if it's in use right now */
 	QVariant data = ui->cbVal->itemData(ui->cbVal->currentIndex());
 	Mapping m = getMappingFromInt(data.toInt());
-	if (m.index == idx) {
+	if (m.index == idx)
 		ui->cbVal->setCurrentIndex(0);
-		cbValActivated(0);
-	}
 
 	/* Delete options in comboboxes */
 	m.index = idx;
@@ -72,11 +68,7 @@ void ShMappingWidget::delOption(int idx)
 	int map = getIntFromMapping(m);
 	int didx = ui->cbVal->findData(QVariant(map));
 	ui->cbVal->removeItem(didx);
-	for (int i = didx; i < ui->cbVal->count(); i++) {
-		m = getMappingFromInt(ui->cbVal->itemData(i).toInt());
-		m.index--;
-		ui->cbVal->setItemData(i, getIntFromMapping(m));
-	}
+	shiftOptions(didx);
 	cbValActivated(0);
 	emit updateScatter();
 }
@@ -86,27 +78,39 @@ int ShMappingWidget::currentValIndex()
 	return ui->cbVal->currentIndex();
 }
 
-void ShMappingWidget::cbValActivated(int idx)
+int ShMappingWidget::currentValData()
 {
-	bool enabled = bool(idx);
-	ui->tbMin->setEnabled(enabled);
-	ui->tbMax->setEnabled(enabled);
-	ui->dsMin->setEnabled(enabled);
-	ui->dsMax->setEnabled(enabled);
-	ui->cbSync->setEnabled(enabled);
-	ui->cbMap->setEnabled(enabled);
-	ui->tbSwitch->setEnabled(enabled);
+	return ui->cbVal->itemData(ui->cbVal->currentIndex()).toInt();
+}
 
-	if (!idx) {
+int ShMappingWidget::currentMapData()
+{
+	return ui->cbMap->itemData(ui->cbMap->currentIndex()).toInt();
+}
+
+void ShMappingWidget::minMax(float minmax[2])
+{
+	float max = ui->dsMax->value();
+	float min = ui->dsMin->value();
+	minmax[0] = min;
+	minmax[1] = fabs(max - min) > FLT_EPSILON ? max : 1.0f + min;
+}
+
+void ShMappingWidget::cbValActivated(int idx)
+{	
+	Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
+	bool enabled = m.type == MAP_TYPE_VAR;
+	updateControls(enabled);
+
+	if (!enabled) {
 		ui->tbMin->setText(QString::number(0.0));
 		ui->tbMax->setText(QString::number(0.0));
 		ui->dsMin->setValue(0.0);
 		ui->dsMax->setValue(0.0);
-		ui->cbMap->setCurrentIndex(0);
+		ui->cbMap->setCurrentIndex(idx);
 	} else {
 		updateRangeMapping(idx, ui->cbMap->currentIndex());
-		ui->tbMin->click();
-		ui->tbMax->click();
+		updateBoundaries();
 		Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
 		DataBox *box = NULL;
 		emit getDataBox(m.index, &box);
@@ -196,6 +200,12 @@ void ShMappingWidget::switchBoundaries()
 	updateData();
 }
 
+void ShMappingWidget::updateBoundaries()
+{
+	ui->tbMin->click();
+	ui->tbMax->click();
+}
+
 void ShMappingWidget::updateRangeMapping(int idx, int ridx)
 {
 	Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
@@ -219,4 +229,109 @@ void ShMappingWidget::updateRangeMapping(int idx, int ridx)
 	default:
 		break;
 	}
+}
+
+void ShMappingWidget::updateControls(bool enabled)
+{
+	ui->tbMin->setEnabled(enabled);
+	ui->tbMax->setEnabled(enabled);
+	ui->dsMin->setEnabled(enabled);
+	ui->dsMax->setEnabled(enabled);
+	ui->cbSync->setEnabled(enabled);
+	ui->cbMap->setEnabled(enabled);
+	ui->tbSwitch->setEnabled(enabled);
+}
+
+void ShMappingWidget::initValButtons()
+{
+	Mapping m;
+	m.index = 0;
+	m.type = MAP_TYPE_OFF;
+	ui->cbVal->addItem(QString("-"), QVariant(getIntFromMapping(m)));
+	ui->cbVal->setCurrentIndex(0);
+}
+
+void ShMappingWidget::shiftOptions(int didx)
+{
+	Mapping m;
+	for (int i = didx; i < ui->cbVal->count(); i++) {
+		m = getMappingFromInt(ui->cbVal->itemData(i).toInt());
+		m.index--;
+		ui->cbVal->setItemData(i, getIntFromMapping(m));
+	}
+}
+
+
+
+void ShMappingWidgetFragment::addOption(int idx, QString &name)
+{
+	Mapping mapping;
+	int itemIndex;
+	mapping.type = MAP_TYPE_VAR;
+	mapping.index = idx;
+	QVariant itemData = QVariant(getIntFromMapping(mapping));
+	ui->cbVal->addItem(name, itemData);
+
+	/* Check if this new mapping could be used */
+	itemIndex = ui->cbVal->currentIndex();
+	itemData = ui->cbVal->itemData(itemIndex);
+	mapping = getMappingFromInt(itemData.toInt());
+
+	if (mapping.type == MAP_TYPE_BLACK) {
+		mapping.type = MAP_TYPE_VAR;
+		mapping.index = idx;
+		itemData = QVariant(getIntFromMapping(mapping));
+		itemIndex = ui->cbVal->findData(itemData);
+		ui->cbVal->setCurrentIndex(itemIndex);
+		ui->tbMin->click();
+		ui->tbMax->click();
+	}
+}
+
+QString ShMappingWidgetFragment::asText()
+{
+	int index = ui->cbMap->currentIndex();
+	int data = ui->cbMap->itemData(index).toInt();
+	Mapping m = getMappingFromInt(data);
+
+	switch (m.type) {
+	case MAP_TYPE_BLACK:
+	case MAP_TYPE_OFF:
+		return "black";
+	case MAP_TYPE_WHITE:
+		return get_color(this->objectName());
+	case MAP_TYPE_VAR: {
+		RangeMapping rm = getRangeMappingFromInt(data);
+		QString text = ui->cbVal->itemText(index);
+		switch (rm.range) {
+		case RANGE_MAP_POSITIVE:
+			return "+(" + text + ")";
+		case RANGE_MAP_NEGATIVE:
+			return "-(" + text + ")";
+		case RANGE_MAP_ABSOLUTE:
+			return "|" + text + "|";
+		case RANGE_MAP_DEFAULT:
+		default:
+			return text;
+		}
+		break;
+	}
+	}
+
+	return "?";
+}
+
+void ShMappingWidgetFragment::initValButtons()
+{
+	/* Initialize color mapping comboboxes */
+	Mapping m;
+	m.index = 0;
+	m.type = MAP_TYPE_BLACK;
+	ui->cbVal->addItem(QString("black"), QVariant(getIntFromMapping(m)));
+
+	m.index = 1;
+	m.type = MAP_TYPE_WHITE;
+	QString color = get_color(this->objectName());
+	ui->cbVal->addItem(QString(color), QVariant(getIntFromMapping(m)));
+	ui->cbVal->setCurrentIndex(0);
 }

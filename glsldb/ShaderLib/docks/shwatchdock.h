@@ -26,7 +26,8 @@ public:
 	void expand(ShVarItem *item);
 
 signals:
-	void createWindow(const QList<ShVarItem*>&, ShWindowManager::WindowType);
+	void createWindow(const QList<ShVarItem*>&, int);
+	void extendWindow(const QList<ShVarItem*>&, int);
 
 public slots:
 	void updateGui(bool enable);
@@ -39,9 +40,12 @@ public slots:
 	void removeSelected();
 	void clearWatchList();
 
-	void newWatchWindow();
+	void newWindow();
+	void extendWindow();
 
-protected:
+protected:	
+	int getWindowType();
+	int getItems(QList<ShVarItem *> &);
 	QModelIndexList filterSelection(const QModelIndexList& input);
 
 private:

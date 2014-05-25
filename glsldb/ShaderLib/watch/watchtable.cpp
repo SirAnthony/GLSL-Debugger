@@ -1,4 +1,5 @@
 
+#include "shwindowmanager.h"
 #include "mappings.h"
 #include "watchtable.h"
 #include "ui_watchtable.h"
@@ -20,6 +21,7 @@ WatchTable::WatchTable(QWidget *parent) :
 {
 	ui->setupUi(this);
 	ui->fMapping->setVisible(false);
+	type = ShWindowManager::wtVertex;
 	_model = new VertexTableModel(this);
 	_modelFilter = new VertexTableSortFilterProxyModel(this);
 	_modelFilter->setSourceModel(_model);
@@ -67,8 +69,10 @@ QAbstractItemModel * WatchTable::model()
 	return _model;
 }
 
-void WatchTable::attachVpData(VertexBox *vb, QString name)
+void WatchTable::attachData(DataBox *box, QString &name)
 {
+	VertexBox* vb = dynamic_cast<VertexBox*>(box);
+
 	if (!vb)
 		return;
 

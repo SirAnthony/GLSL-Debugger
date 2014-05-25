@@ -11,6 +11,7 @@
 class GeometryDataModel;
 class GeometryDataSortFilterProxyModel;
 class ShMappingWidget;
+class GeometryInfo;
 
 #define GT_WIDGETS_COUNT 6
 
@@ -25,14 +26,13 @@ class WatchGeoTree: public WatchView
 Q_OBJECT
 
 public:
-	WatchGeoTree(int inPrimitiveType, int outPrimitiveType,
-			VertexBox *primitiveMap, VertexBox *vertexCount,
-			QWidget *parent = 0);
+	WatchGeoTree(GeometryInfo *info, QWidget *parent = 0);
 	~WatchGeoTree();
 
 	virtual void updateView(bool force);
 	virtual QAbstractItemModel * model();
-	void attachData(VertexBox *, VertexBox *, QString);
+	virtual void attachData(DataBox *, QString &) {}
+	virtual void attachData(DataBox *, DataBox *, QString &);
 
 public slots:
 	virtual void updateData(int, int, float, float);

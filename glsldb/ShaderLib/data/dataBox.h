@@ -1,13 +1,17 @@
 #ifndef DATABOX_H
 #define DATABOX_H
 
-#include <QtCore/QObject>
+#include <QObject>
 
 class DataBox: public QObject {
 Q_OBJECT
 
 public:
-	explicit DataBox(QObject *parent);
+	explicit DataBox(QObject *parent) : QObject(parent) { }
+	explicit DataBox(bool *dataMap, bool *cov, QObject *parent)
+		: QObject(parent), boxDataMap(dataMap), coverage(cov) {}
+	~DataBox() {}
+
 	/* get min/max data values per element, channel == -1 means all elements */
 	virtual double getMin(int element = -1) = 0;
 	virtual double getMax(int element = -1) = 0;
@@ -48,3 +52,6 @@ protected:
 };
 
 #endif // DATABOX_H
+
+
+

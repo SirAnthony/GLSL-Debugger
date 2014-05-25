@@ -131,6 +131,8 @@ QVariant ShVarItem::data(int role) const
 	switch (role) {
 	case DF_NAME:
 		return this->name;
+	case DF_FULLNAME:
+		return this->name;
 	case DF_TYPE:
 		return this->type;
 	case DF_ARRAYTYPE:

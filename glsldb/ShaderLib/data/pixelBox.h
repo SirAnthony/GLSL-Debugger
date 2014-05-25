@@ -8,16 +8,16 @@
 #include <QImage>
 #include <QRect>
 
+enum ImageChannels {
+	icRed = 0,
+	icGreen,
+	icBlue
+};
 
 class PixelBox: public DataBox {
 Q_OBJECT
 
 public:
-	enum Channels {
-		pbcRed = 0,
-		pbcGreen,
-		pbcBlue
-	};
 	enum FBMapping {
 		FBM_CLAMP,
 		FBM_MIN_MAX
@@ -44,23 +44,8 @@ public:
 	virtual double getAbsMax(int _channel = -1);
 
 	QImage getByteImage(enum FBMapping mapping);
-	void setByteImageChannel(enum Channels, QImage *image, RangeMap range,
+	void setByteImageChannel(enum ImageChannels, QImage *image, RangeMap range,
 							 float minmax[2], bool useAlpha);
-	inline void setByteImageRedChannel(QImage *image, RangeMap range,
-									   float minmax[2], bool useAlpha)
-	{
-		setByteImageChannel(pbcRed, image, range, minmax, useAlpha);
-	}
-	inline void setByteImageGreenChannel(QImage *image, RangeMap range,
-										 float minmax[2], bool useAlpha)
-	{
-		setByteImageChannel(pbcGreen, image, range, minmax, useAlpha);
-	}
-	inline void setByteImageBlueChannel(QImage *image, RangeMap range,
-										float minmax[2], bool useAlpha)
-	{
-		setByteImageChannel(pbcBlue, image, range, minmax, useAlpha);
-	}
 
 	bool isAllDataAvailable();
 	void invalidateData();

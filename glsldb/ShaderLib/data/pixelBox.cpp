@@ -161,7 +161,7 @@ QImage PixelBox::getByteImage(enum FBMapping mapping)
 	return image;
 }
 
-void PixelBox::setByteImageChannel(Channels _channel, QImage *image, RangeMap range,
+void PixelBox::setByteImageChannel(ImageChannels _channel, QImage *image, RangeMap range,
 								   float minmax[], bool useAlpha)
 {
 	if (!coverage || !boxData) {
@@ -183,13 +183,13 @@ void PixelBox::setByteImageChannel(Channels _channel, QImage *image, RangeMap ra
 				val = ((x / 8) % 2) == ((y / 8) % 2) ? 255 : 204;
 
 			switch (_channel) {
-			case pbcRed:
+			case icRed:
 				c.setRed(val);
 				break;
-			case pbcGreen:
+			case icGreen:
 				c.setGreen(val);
 				break;
-			case pbcBlue:
+			case icBlue:
 				c.setBlue(val);
 				break;
 			}

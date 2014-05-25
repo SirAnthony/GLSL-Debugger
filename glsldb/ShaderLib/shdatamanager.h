@@ -2,14 +2,22 @@
 #define SHDATAMANAGER_H
 
 #include <QObject>
-#include "docks/shdockwidget.h"
-#include "data/dataBox.h"
 #include "ShaderLang.h"
 
+class DataBox;
 class VertexBox;
 class PixelBox;
 class ProgramControl;
+class ShDockWidget;
 class ShWindowManager;
+class QMainWindow;
+
+struct GeometryInfo {
+	int primitiveMode;
+	int outputType;
+	VertexBox* map;
+	VertexBox* count;
+};
 
 
 class ShDataManager : public QObject
@@ -40,6 +48,8 @@ public:
 	bool cleanShader(EShLanguage type);
 	void getPixels(int (*)[2]);
 	bool hasActiveWindow();
+	GeometryInfo getGeometryInfo();
+	EShLanguage getLang();
 
 signals:
 	void cleanDocks(EShLanguage);
@@ -56,8 +66,11 @@ protected:
 private:
 	ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent = 0);
 	ShWindowManager* windows;
+	EShLanguage shaderMode;
 	int primitiveMode;
 	int selectedPixel[2];
+	VertexBox* geometryMap;
+	VertexBox* vertexCount;
 	ShVariableList* shVariables;
 	ShHandle compiler;
 	ShDockWidget* docks[dmDTCount];

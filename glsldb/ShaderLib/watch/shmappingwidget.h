@@ -14,9 +14,12 @@ class ShMappingWidget : public QWidget
 	Q_OBJECT
 public:
 	explicit ShMappingWidget(QWidget *parent = 0);
-	void addOption(int, QString);
+	virtual void addOption(int, QString &);
 	void delOption(int);
 	int currentValIndex();
+	int currentValData();
+	int currentMapData();
+	void minMax(float [2]);
 	
 signals:
 	void connectDataBox(int);
@@ -28,19 +31,33 @@ signals:
 	void getDataBox(int, DataBox **);
 	
 public slots:
-	void cbValActivated(int);
+	virtual void cbValActivated(int);
 	void cbMapActivated(int);
 	void updateData();
 	void mappingDataChanged();
 	void buttonClicked();
 	void switchBoundaries();
+	void updateBoundaries();
 
 protected:
-	void updateRangeMapping(int, int);
+	void updateRangeMapping(int, int);	
+	void updateControls(bool);
+	virtual void initValButtons();
+	virtual void shiftOptions(int);
 
-private:
+protected:
 	Ui::ShMappingWidget *ui;
 	
+};
+
+class ShMappingWidgetFragment : public ShMappingWidget {
+public:
+	explicit ShMappingWidgetFragment(QWidget *parent = 0) : ShMappingWidget(parent) {}
+	virtual void addOption(int, QString &);
+	QString asText();
+protected:
+	virtual void initValButtons();
+	virtual void shiftOptions(int) {}
 };
 
 #endif // SHMAPPINGWIDGET_H

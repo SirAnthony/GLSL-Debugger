@@ -166,8 +166,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>WatchWindow</sender>
+   <signal>clicked()</signal>
+   <receiver>ShWatchDock</receiver>
+   <slot>newWindow()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>16</x>
+     <y>42</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>0</x>
+     <y>59</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>WatchWindowAdd</sender>
+   <signal>clicked()</signal>
+   <receiver>ShWatchDock</receiver>
+   <slot>extendWindow()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>47</x>
+     <y>42</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>0</x>
+     <y>91</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>removeItems()</slot>
+  <slot>newWindow()</slot>
+  <slot>extendWindow()</slot>
  </slots>
 </ui>

@@ -2073,7 +2073,7 @@
      <x>0</x>
      <y>0</y>
      <width>1089</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -2151,33 +2151,6 @@
    </property>
    <property name="text">
     <string>&amp;Quit</string>
-   </property>
-  </action>
-  <action name="aZoom">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../glslDevil.qrc">
-     <normaloff>:/icons/icons/system-search_32.png</normaloff>:/icons/icons/system-search_32.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Zoom Mode</string>
-   </property>
-  </action>
-  <action name="aSelectPixel">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../glslDevil.qrc">
-     <normaloff>:/icons/icons/crosshair_32.png</normaloff>:/icons/icons/crosshair_32.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Select Pixel Mode</string>
    </property>
   </action>
   <action name="aAbout">
@@ -2266,6 +2239,33 @@
    </property>
    <property name="text">
     <string>&amp;Min Max Lens</string>
+   </property>
+  </action>
+  <action name="aSelectPixel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../glslDevil.qrc">
+     <normaloff>:/icons/icons/crosshair_32.png</normaloff>:/icons/icons/crosshair_32.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Select Pixel Mode</string>
+   </property>
+  </action>
+  <action name="aZoom">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../glslDevil.qrc">
+     <normaloff>:/icons/icons/system-search_32.png</normaloff>:/icons/icons/system-search_32.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Zoom Mode</string>
    </property>
   </action>
  </widget>

@@ -2,23 +2,25 @@
 #include <math.h>
 #include <float.h>
 
+#include "shwindowmanager.h"
 #include "watchgeotree.h"
 #include "ui_watchgeometry.h"
 #include "shmappingwidget.h"
 #include "mappings.h"
+#include "shdatamanager.h"
 #include "models/geometrydatamodel.h"
 #include "utils/dbgprint.h"
 
-WatchGeoTree::WatchGeoTree(int inPrimitiveType, int outPrimitiveType,
-		VertexBox *primitiveMap, VertexBox *vertexCount, QWidget *parent) :
+WatchGeoTree::WatchGeoTree(GeometryInfo *info, QWidget *parent) :
 		WatchView(parent)
 {
 	/* Setup GUI */
 	ui->setupUi(this);
 	ui->fMapping->setVisible(false);
+	type = ShWindowManager::wtGeometry;
 
-	_model = new GeometryDataModel(inPrimitiveType, outPrimitiveType,
-			primitiveMap, vertexCount, NULL, NULL, this);
+	_model = new GeometryDataModel(info->primitiveMode, info->outputType,
+			info->map, info->count, NULL, NULL, this);
 	modelFilter = new GeometryDataSortFilterProxyModel(this);
 	modelFilter->setSourceModel(_model);
 	modelFilter->setDynamicSortFilter(true);
@@ -40,7 +42,7 @@ WatchGeoTree::WatchGeoTree(int inPrimitiveType, int outPrimitiveType,
 	for (int i = 0; i < GT_WIDGETS_COUNT; ++i)
 		connectWidget(widgets[i]);
 
-	updateDataInfo(inPrimitiveType, outPrimitiveType);
+	updateDataInfo(info->primitiveMode, info->outputType);
 
 	dataSelection = DATA_CURRENT;
 	initScatter(std::max(_model->getNumInPrimitives(), _model->getNumOutVertices()));
@@ -54,9 +56,10 @@ WatchGeoTree::~WatchGeoTree()
 	delete[] scatterColorsAndSizes;
 }
 
-void WatchGeoTree::attachData(VertexBox *currentData, VertexBox *vertexData,
-							  QString name)
+void WatchGeoTree::attachData(DataBox *cbox, DataBox *dbox, QString &name)
 {
+	VertexBox* currentData = dynamic_cast<VertexBox *>(cbox);
+	VertexBox* vertexData = dynamic_cast<VertexBox *>(dbox);
 	if (!currentData || !vertexData)
 		return;
 

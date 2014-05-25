@@ -1,5 +1,8 @@
+
 #include "shdatamanager.h"
 #include "docks/shsourcedock.h"
+#include "docks/shwatchdock.h"
+#include "docks/shdockwidget.h"
 #include "watch/shwindowmanager.h"
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
@@ -38,7 +41,7 @@ static void printDebugInfo(int option, int target, const char *shaders[3])
 
 
 ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent) :
-	QObject(parent), primitiveMode(0), selectedPixel {-1, -1},
+	QObject(parent), primitiveMode(GL_NONE), selectedPixel {-1, -1},
 	shVariables(NULL), compiler(NULL), pc(_pc), coverage(NULL)
 {
 	windows = new ShWindowManager(window);
@@ -65,6 +68,14 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 	docks[type] = dock;
 	connect(this, SIGNAL(cleanDocks(EShLanguage)), dock, SLOT(cleanDock(EShLanguage)));
 	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));
+
+	if (type == dmDTWatch) {
+		ShWatchDock* wdock = dynamic_cast<ShWatchDock *>(dock);
+		connect(wdock, SIGNAL(createWindow(QList<ShVarItem*>&,int)),
+				windows, SLOT(createWindow(QList<ShVarItem*>&,ShWindowManager::WindowType)));
+		connect(wdock, SIGNAL(extendWindow(QList<ShVarItem*>,int)),
+				windows, SLOT(extendWindow(QList<ShVarItem*>,ShWindowManager::WindowType)));
+	}
 }
 
 bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
@@ -169,6 +180,21 @@ void ShDataManager::getPixels(int *p[2])
 bool ShDataManager::hasActiveWindow()
 {
 	return windows->activeWindow() != NULL;
+}
+
+GeometryInfo ShDataManager::getGeometryInfo()
+{
+	GeometryInfo info;
+	info.primitiveMode = primitiveMode;
+	info.outputType = resources.geoOutputType;
+	info.map = geometryMap;
+	info.count = vertexCount;
+	return info;
+}
+
+EShLanguage ShDataManager::getLang()
+{
+	return shaderMode;
 }
 
 bool ShDataManager::processError(int error, EShLanguage type)

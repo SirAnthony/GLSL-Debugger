@@ -1,11 +1,13 @@
 #include "watchview.h"
 #include "shmappingwidget.h"
+#include "shwindowmanager.h"
 #include <QAbstractItemModel>
 
 WatchView::WatchView(QWidget *parent) :
 	QWidget(parent)
 {
 	setAttribute(Qt::WA_DeleteOnClose, true);
+	type = ShWindowManager::wtNone;
 }
 
 void WatchView::closeView()
