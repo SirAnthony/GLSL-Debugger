@@ -25,7 +25,7 @@ PixelBox::PixelBox(QObject *parent) :
 {
 	width = 0;
 	height = 0;
-	channel = 0;
+	channels = 0;
 	coverage = NULL;
 	boxData = NULL;
 	boxDataMap = NULL;
@@ -40,26 +40,26 @@ PixelBox::PixelBox(PixelBox *src) :
 {
 	width = src->width;
 	height = src->height;
-	channel = src->channel;
+	channels = src->channels;
 	coverage = src->coverage;
 	minVal = src->minVal;
 	maxVal = src->maxVal;
 	dataType = src->dataType;
-	channelLen = src->channelLen;
+	channelsLen = src->channelsLen;
 
-	boxData = malloc(width * height * channelLen);
+	boxData = malloc(width * height * channelsLen);
 	boxDataMap = (bool*)malloc(width * height * sizeof(bool));
-	memcpy(boxData, src->boxData, width * height * channelLen);
+	memcpy(boxData, src->boxData, width * height * channelsLen);
 	memcpy(boxDataMap, src->boxDataMap, width * height * sizeof(bool));
 
-	boxDataMin = malloc(channelLen);
-	boxDataMax = malloc(channelLen);
-	boxDataMinAbs = malloc(channelLen);
-	boxDataMaxAbs = malloc(channelLen);
-	memcpy(boxDataMin, src->boxDataMin, channelLen);
-	memcpy(boxDataMax, src->boxDataMax, channelLen);
-	memcpy(boxDataMinAbs, src->boxDataMinAbs, channelLen);
-	memcpy(boxDataMaxAbs, src->boxDataMaxAbs, channelLen);
+	boxDataMin = malloc(channelsLen);
+	boxDataMax = malloc(channelsLen);
+	boxDataMinAbs = malloc(channelsLen);
+	boxDataMaxAbs = malloc(channelsLen);
+	memcpy(boxDataMin, src->boxDataMin, channelsLen);
+	memcpy(boxDataMax, src->boxDataMax, channelsLen);
+	memcpy(boxDataMinAbs, src->boxDataMinAbs, channelsLen);
+	memcpy(boxDataMaxAbs, src->boxDataMaxAbs, channelsLen);
 }
 
 PixelBox::~PixelBox()
@@ -79,7 +79,7 @@ bool* PixelBox::getCoverageFromData(int *_activePixels)
 	int active = 0;
 
 	for (int i = 0; i < width * height; i++) {
-		if (getData(boxData, i + channel) > 0.5f) {
+		if (getData(boxData, i * channels) > 0.5f) {
 			cov[i] = true;
 			active++;
 		} else {
@@ -95,8 +95,8 @@ bool PixelBox::getDataValue(int x, int y, double *v)
 {
 	int pos = y * width + x;
 	if (coverage && boxData && coverage[pos] && boxDataMap[pos]) {
-		int offset = pos * channel;
-		for (int i = 0; i < channel; i++)
+		int offset = pos * channels;
+		for (int i = 0; i < channels; i++)
 			v[i] = getData(boxData, offset + i);
 		return true;
 	}
@@ -105,9 +105,9 @@ bool PixelBox::getDataValue(int x, int y, double *v)
 
 bool PixelBox::getDataValue(int x, int y, QVariant *v)
 {
-	double value[channel];
+	double value[channels];
 	if (getDataValue(x, y, value)) {
-		for (int i = 0; i < channel; i++)
+		for (int i = 0; i < channels; i++)
 			v[i].setValue(value[i]);
 		return true;
 	}
@@ -144,7 +144,7 @@ QImage PixelBox::getByteImage(enum FBMapping mapping)
 				/* data available */
 				QColor color;
 				for (int i = 0; i < 3; ++i) {
-					if (channel < i)
+					if (channels < i)
 						break;
 					color.setRed(mapFromValue(mapping, getData(boxData, pos + i), i));
 				}
@@ -222,10 +222,10 @@ void PixelBox::invalidateData()
 	if (!boxDataMap)
 		return;
 	memset(boxDataMap, 0, width * height * sizeof(bool));
-	memset(boxDataMin, 0, channelLen);
-	memset(boxDataMax, 0, channelLen);
-	memset(boxDataMinAbs, 0, channelLen);
-	memset(boxDataMaxAbs, 0, channelLen);
+	memset(boxDataMin, 0, channelsLen);
+	memset(boxDataMax, 0, channelsLen);
+	memset(boxDataMinAbs, 0, channelsLen);
+	memset(boxDataMaxAbs, 0, channelsLen);
 	emit dataChanged();
 }
 
@@ -257,13 +257,13 @@ double PixelBox::getBoundary(int current_channel, double bval, void *data, bool 
 {
 	if (current_channel < 0) {
 		double result = bval;
-		for (int c = 0; c < channel; c++) {
+		for (int c = 0; c < channels; c++) {
 			double val = getData(data, c);
 			if (max ? (val > result) : (val < result))
 				result = val;
 		}
 		return result;
-	} else if (current_channel < channel) {
+	} else if (current_channel < channels) {
 		return getData(data, current_channel);
 	} else {
 		// TODO: Should this be silent?
@@ -283,7 +283,7 @@ int PixelBox::mapFromValue(FBMapping mapping, double f, int c)
 	return CLAMP((int)(f * 255), 0, 255);
 }
 
-double PixelBox::getData(void *data, int offset)
+double PixelBox::getData(const void *data, int offset)
 {
 	switch (dataType) {
 	case dtInt:

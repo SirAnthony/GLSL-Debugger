@@ -10,6 +10,7 @@ class PixelBox;
 class ProgramControl;
 class ShDockWidget;
 class ShWindowManager;
+class ShVarModel;
 class QMainWindow;
 
 struct GeometryInfo {
@@ -43,12 +44,13 @@ public:
 
 	void registerDock(ShDockWidget*, DockType);
 
+	void step(int action, bool updateData = true, bool updateCovermap = true);
 	bool getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
 					  int format, bool *coverage, DataBox *data);
 	bool cleanShader(EShLanguage type);
 	void getPixels(int (*)[2]);
 	bool hasActiveWindow();
-	GeometryInfo getGeometryInfo();
+	const GeometryInfo &getGeometryInfo() const;
 	EShLanguage getLang();
 
 signals:
@@ -58,23 +60,25 @@ signals:
 	void setRunLevel(int);
 	void killProgram(int);
 	void updateSelection(int, int, QString &, EShLanguage);
+	void updateSourceHighlight(EShLanguage, DbgRsRange &);
+	void updateStepControls(bool);	
 
 public slots:
 	void selectionChanged(int, int);
 
 protected:
+	void updateDialogs(DbgRsTargetPosition, int, bool, bool);
 	bool processError(int, EShLanguage type);
 	int retriveVertexData(const char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
 	int retriveFragmentData(const char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
 
 private:
 	ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent = 0);
+	ShVarModel* model;
 	ShWindowManager* windows;
 	EShLanguage shaderMode;
-	int primitiveMode;
 	int selectedPixel[2];
-	VertexBox* geometryMap;
-	VertexBox* vertexCount;
+	GeometryInfo geometry;
 	ShVariableList* shVariables;
 	ShHandle compiler;
 	ShDockWidget* docks[dmDTCount];

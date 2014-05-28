@@ -7,9 +7,9 @@ template<typename vType> double get_min();
 template<typename vType> double get_max();
 
 template<typename vType>
-inline double PixelBox::getDataTyped(void *data, int index)
+inline double PixelBox::getDataTyped(const void *data, int index)
 {
-	vType *pData = (vType *)data;
+	const vType *pData = static_cast<const vType *>(data);
 	return pData[index];
 }
 
@@ -23,7 +23,7 @@ void PixelBox::calcMinMax(QRect area)
 	vType *pBoxData = boxData;
 
 	int left, right, top, bottom;
-	for (int c = 0; c < channel; c++) {
+	for (int c = 0; c < channels; c++) {
 		pBoxDataMin[c] = maxVal;
 		pBoxDataMax[c] = minVal;
 		pBoxDataMinAbs[c] = maxVal;
@@ -50,7 +50,7 @@ void PixelBox::calcMinMax(QRect area)
 			int pos = y * width + x;
 			if (!pCoverage[pos])
 				continue;
-			for (int c = 0; c < channel; c++) {				
+			for (int c = 0; c < channels; c++) {
 				int idx = pos + c;
 				double fabsval = fabs((double) pBoxData[idx]);
 				if (pBoxData[idx] < pBoxDataMin[c])
@@ -68,26 +68,26 @@ void PixelBox::calcMinMax(QRect area)
 
 
 template<typename vType>
-void PixelBox::setData(int _width, int _height, int _channel,
+void PixelBox::setData(int _width, int _height, int _channels,
 							vType *_data, bool *_coverage)
 {
 	clear();
 	width = _width;
 	height = _height;
-	channel = _channel;
+	channels = _channels;
 	minVal = get_min<vType>();
 	maxVal = get_max<vType>();
 	setType<vType>();
 
-	channelLen = channel * sizeof(vType);
-	boxData = malloc(width * height * channelLen);
+	channelsLen = channels * sizeof(vType);
+	boxData = malloc(width * height * channelsLen);
 	boxDataMap = malloc(width * height * sizeof(bool));
 
 	/* Initially use all given data */
 	if (_data)
-		memcpy(boxData, _data, width * height * channelLen);
+		memcpy(boxData, _data, width * height * channelsLen);
 	else
-		memset(boxData, 0, width * height * channelLen);
+		memset(boxData, 0, width * height * channelsLen);
 
 	/* Initially use all given data */
 	if (_coverage) {
@@ -98,11 +98,11 @@ void PixelBox::setData(int _width, int _height, int _channel,
 	}
 	coverage = _coverage;
 
-	if (_channel && _data) {
-		boxDataMin = malloc(channelLen);
-		boxDataMax = malloc(channelLen);
-		boxDataMinAbs = malloc(channelLen);
-		boxDataMaxAbs = malloc(channelLen);
+	if (_channels && _data) {
+		boxDataMin = malloc(channelsLen);
+		boxDataMax = malloc(channelsLen);
+		boxDataMinAbs = malloc(channelsLen);
+		boxDataMaxAbs = malloc(channelsLen);
 		calcMinMax<vType>(this->minMaxArea);
 	}
 

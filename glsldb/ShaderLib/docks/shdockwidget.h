@@ -10,6 +10,7 @@ class ShDockWidget : public QDockWidget
 	Q_OBJECT
 public:
 	explicit ShDockWidget(QWidget *parent = 0);
+	void setModel(ShVarModel*);
 
 	typedef enum {
 		trAll = 0,
@@ -27,7 +28,7 @@ public slots:
 	virtual void cleanDock(EShLanguage) = 0;
 
 protected:
-	static ShVarModel* model;
+	ShVarModel* model;
 };
 
 #endif // SHDOCKWIDGET_H

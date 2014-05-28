@@ -134,7 +134,7 @@ private slots:
 	 ****************/
 
 	void setRunLevel(int);
-	void updateWatchItemData(OldShVarItem*);
+	// void updateWatchItemData(OldShVarItem*);
 	// void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
 	void setMouseOverValues(int x, int y, const bool *active,
 			const QVariant *values);
@@ -157,10 +157,10 @@ private:
 	//void setShaderCodeText(char *shaders[3]);
 	void leaveDBGState();
 	void cleanupDBGShader();
-	bool getDebugImage(DbgCgOptions option, ShChangeableList *cl, int rbFormat,
-			bool *coverage, PixelBox **fbData);
-	bool getDebugVertexData(DbgCgOptions option, ShChangeableList *cl,
-			bool *coverage, VertexBox *vdata);
+//	bool getDebugImage(DbgCgOptions option, ShChangeableList *cl, int rbFormat,
+//			bool *coverage, PixelBox **fbData);
+//	bool getDebugVertexData(DbgCgOptions option, ShChangeableList *cl,
+//			bool *coverage, VertexBox *vdata);
 
 	/* Gui update handling */
 	void setGuiUpdates(bool);

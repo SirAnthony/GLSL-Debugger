@@ -122,25 +122,6 @@ void VertexBox::setData(float *data, int elementsPerVertex,
 	emit dataChanged();
 }
 
-bool* VertexBox::getCoverageFromData(bool *oldCoverage, bool *coverageChanged)
-{
-	bool *coverage = new bool[verticesCount];
-	bool *pCoverage = coverage;
-	bool *pOldCoverage = oldCoverage;
-	float *pData = boxData;
-	*coverageChanged = !oldCoverage;
-
-	for (int i = 0; i < verticesCount; i++) {
-		*pCoverage = bool(*pData > 0.5f);
-		if (oldCoverage && *pCoverage != *pOldCoverage)
-			*coverageChanged = true;
-		pOldCoverage++;
-		pCoverage++;
-		pData += numElementsPerVertex;
-	}
-	return coverage;
-}
-
 void VertexBox::addVertexBox(VertexBox *f)
 {
 	if (verticesCount != f->getNumVertices()
@@ -254,6 +235,12 @@ double VertexBox::getAbsMin(int element)
 double VertexBox::getAbsMax(int element)
 {
 	return getBoundary(element, 0.0, boxDataMaxAbs, true);
+}
+
+double VertexBox::getData(const void *data, int offset)
+{
+	const float* pData = static_cast<const float*>(data);
+	return pData[offset];
 }
 
 bool VertexBox::getDataValue(int numVertex, float *v)

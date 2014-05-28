@@ -28,11 +28,11 @@ public:
 	virtual ~PixelBox();
 	int getWidth(void) { return width; }
 	int getHeight(void) { return height; }
-	int getChannel(void) { return channel; }
+	int getChannel(void) { return channels; }
 
 	template<typename vType>
-	void setData(int width, int height, int channel, vType *data, bool *coverage = 0);
-	bool* getCoverageFromData(int *activePixels = NULL);
+	void setData(int width, int height, int channels, vType *data, bool *coverage = 0);
+	int getDataSize() { return channels; }
 	void* getDataPointer(void) { return boxData; }		
 	bool getDataValue(int x, int y, double *v);
 	virtual bool getDataValue(int, QVariant *) { return false; }
@@ -61,10 +61,10 @@ protected:
 	void clear();
 	double getBoundary(int _channel, double val, void *data, bool max = false);
 	int mapFromValue(FBMapping mapping, double f, int c);
-	double getData(void *data, int offset);
+	double getData(const void *data, int offset);
 
 	template<typename vType>
-	inline double getDataTyped(void *data, int index);
+	inline double getDataTyped(const void *data, int index);
 
 	template<typename vType>
 	void setType();
@@ -88,8 +88,8 @@ protected:
 
 	int width;
 	int height;
-	int channel;
-	int channelLen;
+	int channels;
+	int channelsLen;
 	QRect minMaxArea;
 };
 

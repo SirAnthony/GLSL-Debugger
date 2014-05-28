@@ -16,12 +16,17 @@ public:
 	~ShSourceDock();
 
 	void setShaders(const char *shaders[3]);
-	void getSource(const char *shaders[3]);
+	void getSource(const char *shaders[3]);	
 
 signals:
 	
 public slots:
-	virtual void cleanDock(EShLanguage type);
+	virtual void cleanDock(EShLanguage);
+	void updateControls(bool);
+	void updateHighlight(EShLanguage, DbgRsRange &);
+
+protected:
+	void getEdit(EShLanguage);
 
 private:
 	QString shaderText[3];

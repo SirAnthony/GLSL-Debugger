@@ -23,7 +23,11 @@ public:
 
 	bool getCoverageValue(int index)
 	{ return coverage ? coverage[index] : false; }
+	int getCoverageFromData(bool *coverage, const bool *old = NULL,
+							bool *_changed = NULL);
 
+	virtual int getDataSize() = 0;
+	virtual const void* getDataPointer() = 0;
 	virtual bool getDataValue(int, QVariant *) = 0;
 	virtual bool getDataValue(int x, int, QVariant *v)
 	{ return getDataValue(x, v); }
@@ -41,11 +45,10 @@ signals:
 	void dataDeleted();
 
 protected:
+	virtual double getData(void *data, int offset) = 0;
+
 	bool *boxDataMap;
 	bool *coverage;
 };
 
 #endif // DATABOX_H
-
-
-

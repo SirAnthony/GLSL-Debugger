@@ -1628,6 +1628,7 @@ bool MainWindow::getDebugImage(DbgCgOptions option, ShChangeableList *cl,
 	return true;
 }
 
+/*
 void MainWindow::updateWatchItemData(OldShVarItem *watchItem)
 {
 	ShChangeableList cl;
@@ -1720,7 +1721,7 @@ void MainWindow::updateWatchItemData(OldShVarItem *watchItem)
 	freeShChangeable(&watchItemCgbl);
 }
 
-/*
+
 static void invalidateWatchItemData(OldShVarItem *item)
 {
 	if (item->getPixelBoxPointer()) {
@@ -2318,6 +2319,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 
 	/* TODO free debug result */
 }
+
 
 pcErrorCode MainWindow::recordCall()
 {

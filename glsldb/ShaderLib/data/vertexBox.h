@@ -19,33 +19,17 @@ public:
 			int primitives, bool *coverage = 0);
 
 	void addVertexBox(VertexBox *f);
-
-	bool* getCoverageFromData(bool *oldCoverage, bool *coverageChanged);
-
 	float getDataValue(int index)
-	{
-		return boxData ? boxData[index] : 0.0;
-	}
-	const float* getDataPointer(void)
-	{
-		return boxData;
-	}
+	{ return boxData ? boxData[index] : 0.0; }
 
+	int getDataSize() { return verticesCount; }
+	const float* getDataPointer() { return boxData; }
 	bool getDataValue(int numVertex, float *v);
 	virtual bool getDataValue(int numVertex, QVariant *v);
 
-	int getNumElementsPerVertex(void)
-	{
-		return numElementsPerVertex;
-	}
-	int getNumVertices(void)
-	{
-		return verticesCount;
-	}
-	int getNumPrimitives(void)
-	{
-		return primitivesCount;
-	}
+	int getNumElementsPerVertex(void) { return numElementsPerVertex; }
+	int getNumVertices(void) { return verticesCount; }
+	int getNumPrimitives(void) { return primitivesCount; }
 
 	void invalidateData();
 
@@ -59,6 +43,7 @@ public:
 	virtual double getAbsMax(int element = -1);
 
 private:
+	double getData(const void *data, int offset);
 	void calcMinMax();
 
 	float *boxData;

@@ -49,37 +49,92 @@ void ShSourceDock::getSource(const char *shaders[])
 	}
 }
 
+/*
+ * Remove debug markers from code display
+ */
 void ShSourceDock::cleanDock(EShLanguage type)
 {
-	/* remove debug markers from code display */
 	QTextDocument *document = NULL;
-	QTextEdit *edit = NULL;
+	QTextEdit *edit = getEdit(type);
+	if (!edit || !(document = edit->document()))
+		return;
+
+	QTextCharFormat highlight;
+	QTextCursor cursor(document);
+
+	cursor.setPosition(0, QTextCursor::MoveAnchor);
+	cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor, 1);
+	highlight.setBackground(Qt::white);
+	cursor.mergeCharFormat(highlight);
+}
+
+void ShSourceDock::updateControls(bool enabled)
+{
+	ui->tbStep->setEnabled(enabled);
+	ui->tbJumpOver->setEnabled(enabled);
+}
+
+/*
+ * Update highlight of source views
+ */
+void ShSourceDock::updateHighlight(EShLanguage type, DbgRsRange &range)
+{
+	QTextDocument *document = NULL;
+	QTextEdit *edit = getEdit(type);
+	if (!edit || !(document = edit->document()))
+		return;
+
+	/* Mark actual debug position */
+	QTextCharFormat highlight;
+	QTextCursor cursor(document);
+	cursor.setPosition(0, QTextCursor::MoveAnchor);
+	cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor, 1);
+	highlight.setBackground(Qt::white);
+	cursor.mergeCharFormat(highlight);
+
+	/* Highlight the actual statement */
+	cursor.setPosition(0, QTextCursor::MoveAnchor);
+	cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, range.left.line - 1);
+	cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, range.left.colum - 1);
+	cursor.setPosition(0, QTextCursor::KeepAnchor);
+	cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, range.right.line - 1);
+	cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, range.right.colum);
+	highlight.setBackground(Qt::yellow);
+	cursor.mergeCharFormat(highlight);
+
+	/* Ensure the highlighted line is visible */
+	QTextCursor cursorVisible = edit->textCursor();
+	cursorVisible.setPosition(0, QTextCursor::MoveAnchor);
+	cursorVisible.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor,
+							   std::max(range.left.line - 3, 0));
+	edit->setTextCursor(cursorVisible);
+	edit->ensureCursorVisible();
+	cursorVisible.setPosition(0, QTextCursor::KeepAnchor);
+	cursorVisible.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor,
+							   range.right.line + 1);
+	edit->setTextCursor(cursorVisible);
+	edit->ensureCursorVisible();
+
+	/* Unselect visible cursor */
+	QTextCursor cursorSet = edit->textCursor();
+	cursorSet.setPosition(0, QTextCursor::MoveAnchor);
+	cursorSet.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, range.left.line - 1);
+	edit->setTextCursor(cursorSet);
+	qApp->processEvents();
+}
+
+void ShSourceDock::getEdit(EShLanguage type)
+{
 	switch (type) {
 	case EShLangVertex:
-		edit = ui->teVertex;
-		break;
+		return ui->teVertex;
 	case EShLangGeometry:
-		edit = ui->teGeometry;
-		break;
+		return ui->teGeometry;
 	case EShLangFragment:
-		edit = ui->teFragment;
-		break;
+		return ui->teFragment;
 	default:
-		dbgPrint(DBGLVL_INTERNAL_WARNING, "Wrong type passed to cleanDock.");
-		break;
-	}
-
-	if (edit)
-		document = edit->document();
-
-	if (document && edit) {
-		QTextCharFormat highlight;
-		QTextCursor cursor(document);
-
-		cursor.setPosition(0, QTextCursor::MoveAnchor);
-		cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor, 1);
-		highlight.setBackground(Qt::white);
-		cursor.mergeCharFormat(highlight);
+		dbgPrint(DBGLVL_INTERNAL_WARNING, "Wrong type passed to getEdit.");
+		return NULL;
 	}
 }
 
