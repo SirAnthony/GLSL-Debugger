@@ -2,7 +2,7 @@
 #define SHVARITEM_H
 
 #include <QStandardItem>
-#include "ShaderLang.h"
+#include "shdatamanager.h"
 
 typedef enum {
 	SHV_NONE,
@@ -59,9 +59,9 @@ public:
 
 	QVariant data(int role = DF_FIRST) const;
 	void setData(const QVariant &value, int role = DF_FIRST);
-	void setCurrentValue(int pixels[2], EShLanguage type);
+	void setCurrentValue(int pixels[2], ShaderMode type);
 
-	bool updateWatchData(EShLanguage type);
+	bool updateWatchData(ShaderMode type);
 	void invalidateWatchData();
 	void resetValue();
 

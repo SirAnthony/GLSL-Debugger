@@ -15,7 +15,7 @@ public:
 	~ShVarDock();
 
 public slots:
-	virtual void cleanDock(EShLanguage) {}
+	virtual void cleanDock(ShaderMode) {}
 
 private:
 	template<class T>

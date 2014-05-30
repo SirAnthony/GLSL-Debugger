@@ -2,9 +2,8 @@
 #include "shvaritem.h"
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
-#include "shdatamanager.h"
 #include "utils/dbgprint.h"
-#include "QMessageBox"
+#include <QMessageBox>
 
 
 ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
@@ -187,20 +186,20 @@ void ShVarItem::setData(const QVariant &value, int role)
 	}
 }
 
-void ShVarItem::setCurrentValue(int pixels[2], EShLanguage type)
+void ShVarItem::setCurrentValue(int pixels[2], ShaderMode type)
 {
-	if (!watched || pixels[0] < 0 || (type == EShLangFragment && pixels[1] < 0)) {
+	if (!watched || pixels[0] < 0 || (type == smFragment && pixels[1] < 0)) {
 		this->selected = QVariant();
 		return;
 	}
 
 	QVariant value("?");
 	DataBox* box = NULL;
-	if (type == EShLangVertex)
+	if (type == smVertex)
 		box = this->vertexBox.value<VertexBox*>();
-	else if (type == EShLangGeometry)
+	else if (type == smGeometry)
 		box = this->geometryBox.value<VertexBox*>();
-	else if (type == EShLangFragment)
+	else if (type == smFragment)
 		box = this->pixelBox.value<PixelBox*>();
 
 	if (box) {
@@ -214,7 +213,7 @@ void ShVarItem::setCurrentValue(int pixels[2], EShLanguage type)
 	this->selected = value;
 }
 
-bool ShVarItem::updateWatchData(EShLanguage type)
+bool ShVarItem::updateWatchData(ShaderMode type)
 {
 	int format = this->readbackFormat();
 	ShDataManager* manager = ShDataManager::get();
@@ -226,11 +225,11 @@ bool ShVarItem::updateWatchData(EShLanguage type)
 	VertexBox* geomData = NULL;
 	bool status = false;
 
-	if (type == EShLangFragment) {
+	if (type == smFragment) {
 		data = this->pixelBox.value<PixelBox*>();
-	} else if (type == EShLangVertex) {
+	} else if (type == smVertex) {
 		data = this->vertexBox.value<VertexBox*>();
-	} else if (type == EShLangGeometry) {
+	} else if (type == smGeometry) {
 		geomData = this->geometryBox.value<VertexBox*>();
 		dbgPrint(DBGLVL_INFO, "Get CHANGEABLE:");
 		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, geomData)) {

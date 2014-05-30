@@ -31,15 +31,15 @@ signals:
 
 public slots:
 	void updateGui(bool enable);
-	virtual void cleanDock(EShLanguage type);
-	void updateData(CoverageMapStatus cmstatus, EShLanguage type, bool force);
-	void resetData(EShLanguage type);
-	void updateCoverage(EShLanguage type, bool *coverage);
+	virtual void cleanDock(ShaderMode type);
+	void updateData(CoverageMapStatus cmstatus, ShaderMode type, bool force);
+	void resetData(ShaderMode type);
+	void updateCoverage(ShaderMode type, bool *coverage);
 	void selectionChanged();
 	void newItem(ShVarItem* item);	
 	void removeSelected();
 	void clearWatchList();
-	void updateSelection(int, int, QString &, EShLanguage);
+	void updateSelection(int, int, QString &, ShaderMode);
 
 	void newWindow();
 	void extendWindow();

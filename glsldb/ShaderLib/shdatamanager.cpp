@@ -7,6 +7,7 @@
 #include "watch/watchview.h"
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
+#include "dialogs/selection.h"
 #include "debuglib.h"
 #include "utils/dbgprint.h"
 #include "errorCodes.h"
@@ -25,6 +26,12 @@ const char *dbg_cg_names[DBG_CG_LAST] = {
 	"DBG_CG_GEOMETRY_CHANGEABLE", "DBG_CG_VERTEX_COUNT",
 	"DBG_CG_SELECTION_CONDITIONAL", "DBG_CG_SWITCH_CONDITIONAL",
 	"DBG_CG_LOOP_CONDITIONAL", "DBG_CG_CHANGEABLE"
+};
+
+static DBG_TARGETS dbg_pc_targets[smCount] = {
+	DBG_TARGET_VERTEX_SHADER,
+	DBG_TARGET_GEOMETRY_SHADER,
+	DBG_TARGET_FRAGMENT_SHADER
 };
 
 static void printDebugInfo(int option, int target, const char *shaders[3])
@@ -76,7 +83,7 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 	docks[type] = dock;
 	dock->setModel(model);
 
-	connect(this, SIGNAL(cleanDocks(EShLanguage)), dock, SLOT(cleanDock(EShLanguage)));
+	connect(this, SIGNAL(cleanDocks(ShaderMode)), dock, SLOT(cleanDock(ShaderMode)));
 	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));	
 
 	if (type == dmDTWatch) {
@@ -85,23 +92,23 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 				windows, SLOT(createWindow(QList<ShVarItem*>&,ShWindowManager::WindowType)));
 		connect(wdock, SIGNAL(extendWindow(QList<ShVarItem*>,int)),
 				windows, SLOT(extendWindow(QList<ShVarItem*>,ShWindowManager::WindowType)));
-		connect(this, SIGNAL(updateSelection(int,int,QString&,EShLanguage)),
-				wdock, SLOT(updateSelection(int,int,QString&,EShLanguage)));
+		connect(this, SIGNAL(updateSelection(int,int,QString&,ShaderMode)),
+				wdock, SLOT(updateSelection(int,int,QString&,ShaderMode)));
 	} else if (type == dmDTSource) {
 		ShSourceDock* sdock = dynamic_cast<ShSourceDock *>(dock);
 		connect(this, SIGNAL(updateStepControls(bool)), sdock, SLOT(updateControls(bool)));
-		connect(this, SIGNAL(updateSourceHighlight(EShLanguage,DbgRsRange&)),
-				sdock, SLOT(updateHighlight(EShLanguage,DbgRsRange&)));
+		connect(this, SIGNAL(updateSourceHighlight(ShaderMode,DbgRsRange&)),
+				sdock, SLOT(updateHighlight(ShaderMode,DbgRsRange&)));
 	}
 }
 
-static DataBox *create_databox(EShLanguage type)
+static DataBox *create_databox(ShaderMode type)
 {
 	switch (mode) {
-	case EShLangFragment:
+	case smFragment:
 		return new PixelBox;
-	case EShLangGeometry:
-	case EShLangVertex:
+	case smVertex:
+	case smGeometry:
 		return new VertexBox;
 	default:
 		return NULL;
@@ -175,7 +182,7 @@ void ShDataManager::step(int action, bool updateWatchData, bool updateCovermap)
 									&coverage, coverage, &changed);
 			updateWatchItemsCoverage(coverage);
 
-			if (mode == EShLangFragment) {
+			if (mode == smFragment) {
 				if (active == lastActive)
 					cmstatus = COVERAGEMAP_UNCHANGED;
 				else if (active > lastActive)
@@ -183,7 +190,7 @@ void ShDataManager::step(int action, bool updateWatchData, bool updateCovermap)
 				else
 					cmstatus = COVERAGEMAP_SHRINKED;
 				lastActive = active;
-			} else if (mode == EShLangGeometry || mode == EShLangVertex) {
+			} else if (mode == smGeometry || mode == smVertex) {
 				if (changed) {
 					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_GROWN");
 					cmstatus = COVERAGEMAP_GROWN;
@@ -220,36 +227,25 @@ void ShDataManager::step(int action, bool updateWatchData, bool updateCovermap)
 		emit updateSourceHighlight(shaderMode, dr->range);
 }
 
-bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
+bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangeableList *cl,
 								 int format, bool *coverage, DataBox *data)
-{
-	enum DBG_TARGETS target;
+{	
+	if (type < 0) {
+		dbgPrint(DBGLVL_ERROR, "ShDataManager::getDebugData called with error type.");
+		return false;
+	}
+
 	pcErrorCode error;
 	const char *shaders[3];
 	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, option);
 	static_cast<ShSourceDock*>(docks[dmDTSource])->getSource(shaders);
-
-	switch (type) {
-	case EShLangVertex:
-		shaders[0] = debugCode;
+	shaders[type] = debugCode;
+	if (type == smVertex)
 		shaders[1] = NULL;
-		target = DBG_TARGET_VERTEX_SHADER;
-		break;
-	case EShLangGeometry:
-		shaders[1] = debugCode;
-		target = DBG_TARGET_GEOMETRY_SHADER;
-		break;
-	case EShLangFragment:
-		shaders[2] = debugCode;
-		target = DBG_TARGET_FRAGMENT_SHADER;
-	default:
-		dbgPrint(DBGLVL_ERROR, "ShDataManager::getDebugData called with error type.");
-		free(debugCode);
-		return false;
-	}
 
+	DBG_TARGETS target = dbg_pc_targets[type];
 	printDebugInfo(option, target, shaders);
-	if (type == EShLangFragment)
+	if (type == smFragment)
 		error = static_cast<pcErrorCode>(retriveFragmentData(shaders, format,
 						option, coverage, dynamic_cast<PixelBox*>(data)));
 	else
@@ -264,7 +260,9 @@ bool ShDataManager::getDebugData(EShLanguage type, DbgCgOptions option, ShChange
 	return true;
 }
 
-bool ShDataManager::cleanShader(EShLanguage type)
+
+
+bool ShDataManager::cleanShader(ShaderMode type)
 {
 	pcErrorCode error = PCE_NONE;
 	emit cleanDocks(type);
@@ -276,10 +274,10 @@ bool ShDataManager::cleanShader(EShLanguage type)
 	}
 
 	switch (type) {
-	case EShLangGeometry:
+	case smGeometry:
 		//delete m_pGeoDataModel;
-	case EShLangVertex:
-	case EShLangFragment:
+	case smVertex:
+	case smFragment:
 		emit cleanModel();
 		while (!m_qLoopData.isEmpty())
 			delete m_qLoopData.pop();
@@ -293,19 +291,7 @@ bool ShDataManager::cleanShader(EShLanguage type)
 
 		dbgPrint(DBGLVL_INFO, "Restoring render target");
 		/* restore render target */
-		switch (type) {
-		case EShLangVertex:
-			error = pc->restoreRenderTarget(DBG_TARGET_VERTEX_SHADER);
-			break;
-		case EShLangGeometry:
-			error = pc->restoreRenderTarget(DBG_TARGET_GEOMETRY_SHADER);
-			break;
-		case EShLangFragment:
-			error = pc->restoreRenderTarget(DBG_TARGET_FRAGMENT_SHADER);
-			break;
-		default:
-			error = PCE_NONE;
-		}
+		error = pc->restoreRenderTarget(dbg_pc_targets[type]);
 		break;
 	default:
 		break;
@@ -329,7 +315,7 @@ const GeometryInfo &ShDataManager::getGeometryInfo() const
 	return geometry;
 }
 
-EShLanguage ShDataManager::getLang()
+ShaderMode ShDataManager::getMode()
 {
 	return shaderMode;
 }
@@ -348,22 +334,22 @@ void ShDataManager::selectionChanged(int x, int y)
 	selectedPixel[1] = y;
 
 	QString text("Error");
-	EShLanguage mode;
+	ShaderMode mode;
 	if (type == ShWindowManager::wtVertex) {
-		mode = EShLangVertex;
+		mode = smVertex;
 		text = "Vertex " + QString::number(x);
 	} else if (type == ShWindowManager::wtGeometry) {
-		mode = EShLangGeometry;
+		mode = smGeometry;
 		text = "Primitive " + QString::number(x);
 	} else if (type == ShWindowManager::wtFragment) {
-		mode = EShLangFragment;
+		mode = smFragment;
 		text = "Pixel " + QString::number(x) + ", " + QString::number(y);
 	}
 
 	emit updateSelection(x, y, text, mode);
 }
 
-void ShDataManager::updateDialogs(DbgRsTargetPosition position, int loop_iter,
+void ShDataManager::updateDialogs(int position, int loop_iter,
 								  bool update_covermap, bool update_gui)
 {
 	DataBox* dataBox = NULL;
@@ -373,7 +359,7 @@ void ShDataManager::updateDialogs(DbgRsTargetPosition position, int loop_iter,
 		return;
 
 	bool retrive = true;
-	if (position == DBG_RS_POSITION_LOOP_CHOOSE && shaderMode == EShLangFragment)
+	if (position == DBG_RS_POSITION_LOOP_CHOOSE && shaderMode == smFragment)
 		retrive = update_covermap;
 
 	if (retrive) {
@@ -389,7 +375,7 @@ void ShDataManager::updateDialogs(DbgRsTargetPosition position, int loop_iter,
 
 	QList<ShVarItem*> watchItems;
 	/* Create list of all watch item boxes */
-	if (model && shaderMode != EShLangFragment)
+	if (model && shaderMode != smFragment)
 		watchItems = model->getAllWatchItemPointers();
 
 
@@ -401,13 +387,13 @@ void ShDataManager::updateDialogs(DbgRsTargetPosition position, int loop_iter,
 		SelectionDialog dialog(shaderMode, dataBox, watchItems, geometry, ifelse, this);
 		switch (dialog.exec()) {
 		case SelectionDialog::SB_SKIP:
-			ShaderStep(DBG_BH_JUMP_OVER);
+			step(DBG_BH_JUMP_OVER);
 			break;
 		case SelectionDialog::SB_IF:
-			ShaderStep(DBG_BH_JUMP_INTO);
+			step(DBG_BH_JUMP_INTO);
 			break;
 		case SelectionDialog::SB_ELSE:
-			ShaderStep(DBG_BH_FOLLOW_ELSE);
+			step(DBG_BH_FOLLOW_ELSE);
 			break;
 		}
 	}
@@ -467,7 +453,7 @@ void ShDataManager::updateDialogs(DbgRsTargetPosition position, int loop_iter,
 	}
 }
 
-bool ShDataManager::processError(int error, EShLanguage type)
+bool ShDataManager::processError(int error, ShaderMode type)
 {
 	emit setErrorStatus(error);
 	if (error == PCE_NONE)

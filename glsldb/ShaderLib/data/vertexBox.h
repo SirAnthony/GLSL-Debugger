@@ -23,7 +23,7 @@ public:
 	{ return boxData ? boxData[index] : 0.0; }
 
 	int getDataSize() { return verticesCount; }
-	const float* getDataPointer() { return boxData; }
+	const void* getDataPointer() { return boxData; }
 	bool getDataValue(int numVertex, float *v);
 	virtual bool getDataValue(int numVertex, QVariant *v);
 

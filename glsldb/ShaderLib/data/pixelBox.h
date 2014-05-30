@@ -28,12 +28,12 @@ public:
 	virtual ~PixelBox();
 	int getWidth(void) { return width; }
 	int getHeight(void) { return height; }
-	int getChannel(void) { return channels; }
+	int getChannels(void) { return channels; }
 
 	template<typename vType>
 	void setData(int width, int height, int channels, vType *data, bool *coverage = 0);
 	int getDataSize() { return channels; }
-	void* getDataPointer(void) { return boxData; }		
+	const void* getDataPointer(void) { return boxData; }
 	bool getDataValue(int x, int y, double *v);
 	virtual bool getDataValue(int, QVariant *) { return false; }
 	virtual bool getDataValue(int x, int y, QVariant *v);

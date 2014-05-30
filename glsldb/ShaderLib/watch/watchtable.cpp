@@ -185,7 +185,7 @@ void WatchTable::updateDataCurrent(float *data, int *count, int dataStride,
 		VertexBox *srcData, RangeMap range, float min, float max)
 {
 	float *pData = data;
-	const float *pSourceData = srcData->getDataPointer();
+	const float *pSourceData = static_cast<const float*>(srcData->getDataPointer());
 	const bool *pSourceCov = srcData->getCoveragePointer();
 	const bool *pSourceMap = srcData->getDataMapPointer();
 	int verticles = srcData->getNumVertices();

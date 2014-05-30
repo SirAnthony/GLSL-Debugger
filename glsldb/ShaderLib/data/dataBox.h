@@ -23,7 +23,7 @@ public:
 
 	bool getCoverageValue(int index)
 	{ return coverage ? coverage[index] : false; }
-	int getCoverageFromData(bool *coverage, const bool *old = NULL,
+	int getCoverageFromData(bool **coverage, const bool *old = NULL,
 							bool *_changed = NULL);
 
 	virtual int getDataSize() = 0;
@@ -45,7 +45,7 @@ signals:
 	void dataDeleted();
 
 protected:
-	virtual double getData(void *data, int offset) = 0;
+	virtual double getData(const void *data, int offset) = 0;
 
 	bool *boxDataMap;
 	bool *coverage;

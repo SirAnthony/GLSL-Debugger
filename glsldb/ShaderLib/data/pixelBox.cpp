@@ -73,24 +73,6 @@ void PixelBox::setMinMaxArea(const QRect& minMaxArea)
 	emit minMaxAreaChanged();
 }
 
-bool* PixelBox::getCoverageFromData(int *_activePixels)
-{
-	bool *cov = new bool[width * height];
-	int active = 0;
-
-	for (int i = 0; i < width * height; i++) {
-		if (getData(boxData, i * channels) > 0.5f) {
-			cov[i] = true;
-			active++;
-		} else {
-			cov[i] = false;
-		}
-	}
-	if (_activePixels)
-		*_activePixels = active;
-	return cov;
-}
-
 bool PixelBox::getDataValue(int x, int y, double *v)
 {
 	int pos = y * width + x;

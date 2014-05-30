@@ -4,6 +4,8 @@
 #include "shdockwidget.h"
 #include "ShaderLang.h"
 
+class QTextEdit;
+
 namespace Ui {
 	class ShSourceDock;
 }
@@ -15,21 +17,19 @@ public:
 	explicit ShSourceDock(QWidget *parent = 0);
 	~ShSourceDock();
 
-	void setShaders(const char *shaders[3]);
-	void getSource(const char *shaders[3]);	
+	void setShaders(const char *shaders[smCount]);
+	void getSource(const char *shaders[smCount]);
 
 signals:
 	
 public slots:
-	virtual void cleanDock(EShLanguage);
+	virtual void cleanDock(ShaderMode);
 	void updateControls(bool);
-	void updateHighlight(EShLanguage, DbgRsRange &);
-
-protected:
-	void getEdit(EShLanguage);
+	void updateHighlight(ShaderMode, DbgRsRange &);
 
 private:
-	QString shaderText[3];
+	QTextEdit* editWidgets[smCount];
+	QString shaderText[smCount];
 	Ui::ShSourceDock *ui;
 };
 

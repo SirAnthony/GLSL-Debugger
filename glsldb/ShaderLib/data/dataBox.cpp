@@ -5,7 +5,7 @@
 int DataBox::getCoverageFromData(bool **src, const bool *old, bool *changed)
 {
 	if (!src)
-		return;
+		return 0;
 
 	int size = getDataSize();
 	const void *data = getDataPointer();

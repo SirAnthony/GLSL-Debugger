@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>dSelection</class>
- <widget class="QDialog" name="dSelection">
+ <class>ShSelection</class>
+ <widget class="QDialog" name="ShSelection">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -39,63 +39,15 @@
     </widget>
    </item>
    <item>
-    <layout class="QGridLayout">
+    <layout class="QGridLayout" name="girdLayout">
      <property name="margin">
       <number>0</number>
      </property>
      <property name="spacing">
       <number>0</number>
      </property>
-     <item row="0" column="0">
-      <layout class="QHBoxLayout">
-       <property name="spacing">
-        <number>2</number>
-       </property>
-       <property name="margin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QLabel" name="lActive">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Active:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="lActiveCount">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>100</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>324876</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
      <item row="0" column="1">
-      <layout class="QHBoxLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <property name="spacing">
         <number>2</number>
        </property>
@@ -142,10 +94,10 @@
        </item>
       </layout>
      </item>
-     <item row="1" column="1">
-      <widget class="QPushButton" name="pbIf">
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pbElse">
        <property name="text">
-        <string>If</string>
+        <string>Else</string>
        </property>
       </widget>
      </item>
@@ -156,15 +108,79 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="pbElse">
+     <item row="0" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <property name="spacing">
+        <number>2</number>
+       </property>
+       <property name="margin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="lActive">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Active:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lActiveCount">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>324876</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="2" column="1">
+      <spacer name="spacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>2</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="pbIf">
        <property name="text">
-        <string>Else</string>
+        <string>If</string>
        </property>
       </widget>
      </item>
      <item row="0" column="2">
-      <layout class="QHBoxLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="spacing">
         <number>2</number>
        </property>
@@ -210,22 +226,6 @@
         </widget>
        </item>
       </layout>
-     </item>
-     <item row="2" column="1">
-      <spacer>
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeType">
-        <enum>QSizePolicy::Fixed</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>2</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>

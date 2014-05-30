@@ -31,8 +31,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
-#ifndef _COLORS_QT_H
-#define _COLORS_QT_H
+#ifndef COLORS_QT_H
+#define COLORS_QT_H
 
 #include <QtGui/QColor>
 
@@ -40,5 +40,5 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DBG_RED    (QColor(213, 12, 12))
 #define DBG_ORANGE (QColor(247, 149, 55))
 
-#endif
+#endif /* COLORS_QT_H */
 

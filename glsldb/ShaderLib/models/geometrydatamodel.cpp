@@ -138,8 +138,8 @@ GeometryDataModel::GeometryDataModel(int inPrimitiveType,
 	coverage = initialCoverage;
 	rootItem = new GeometryTreeItem("ROOT", -1, &currentData);
 
-	const float *vcMap = vertexCountMap->getDataPointer();
-	const float *primMap = primitiveMap->getDataPointer();
+	const float *vcMap = static_cast<const float*>(vertexCountMap->getDataPointer());
+	const float *primMap = static_cast<const float*>(primitiveMap->getDataPointer());
 
 	int generated = 0;
 	int numVertices = primitiveMap->getNumVertices();

@@ -20,6 +20,15 @@ struct GeometryInfo {
 	VertexBox* count;
 };
 
+enum ShaderMode {
+	smError = -1,
+	smVertex,
+	smGeometry,
+	smFragment,
+	smCount
+	// Count is not actual count of elements in enum, but count of valid modes
+};
+
 
 class ShDataManager : public QObject
 {
@@ -45,30 +54,30 @@ public:
 	void registerDock(ShDockWidget*, DockType);
 
 	void step(int action, bool updateData = true, bool updateCovermap = true);
-	bool getDebugData(EShLanguage type, DbgCgOptions option, ShChangeableList *cl,
+	bool getDebugData(ShaderMode type, DbgCgOptions option, ShChangeableList *cl,
 					  int format, bool *coverage, DataBox *data);
-	bool cleanShader(EShLanguage type);
+	bool cleanShader(ShaderMode type);
 	void getPixels(int (*)[2]);
 	bool hasActiveWindow();
 	const GeometryInfo &getGeometryInfo() const;
-	EShLanguage getLang();
+	ShaderMode getMode();
 
 signals:
-	void cleanDocks(EShLanguage);
+	void cleanDocks(ShaderMode);
 	void cleanModel();
 	void setErrorStatus(int);
 	void setRunLevel(int);
 	void killProgram(int);
-	void updateSelection(int, int, QString &, EShLanguage);
-	void updateSourceHighlight(EShLanguage, DbgRsRange &);
+	void updateSelection(int, int, QString &, ShaderMode);
+	void updateSourceHighlight(ShaderMode, DbgRsRange &);
 	void updateStepControls(bool);	
 
 public slots:
 	void selectionChanged(int, int);
 
 protected:
-	void updateDialogs(DbgRsTargetPosition, int, bool, bool);
-	bool processError(int, EShLanguage type);
+	void updateDialogs(int, int, bool, bool);
+	bool processError(int, ShaderMode type);
 	int retriveVertexData(const char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
 	int retriveFragmentData(const char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
 
@@ -76,7 +85,7 @@ private:
 	ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent = 0);
 	ShVarModel* model;
 	ShWindowManager* windows;
-	EShLanguage shaderMode;
+	ShaderMode shaderMode;
 	int selectedPixel[2];
 	GeometryInfo geometry;
 	ShVariableList* shVariables;

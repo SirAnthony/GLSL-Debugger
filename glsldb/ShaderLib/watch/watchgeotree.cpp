@@ -201,7 +201,7 @@ float WatchGeoTree::getDataMin(int column)
 	case DATA_VERTEX: {
 		float min = FLT_MAX;
 		VertexBox *vb = _model->getDataColumnVertexData(column);
-		const float *pData = vb->getDataPointer();
+		const float *pData = static_cast<const float*>(vb->getDataPointer());
 		const bool *pDataMap = vb->getDataMapPointer();
 
 		for (int i = 0; i < vb->getNumVertices(); i++) {
@@ -226,7 +226,7 @@ float WatchGeoTree::getDataMax(int column)
 		float max = -FLT_MAX;
 		VertexBox *vb = _model->getDataColumnVertexData(column);
 
-		const float *pData = vb->getDataPointer();
+		const float *pData = static_cast<const float*>(vb->getDataPointer());
 		const bool *pDataMap = vb->getDataMapPointer();
 
 		for (int i = 0; i < vb->getNumVertices(); i++) {
@@ -251,7 +251,7 @@ float WatchGeoTree::getDataAbsMin(int column)
 	case DATA_VERTEX: {
 		float min = FLT_MAX;
 		VertexBox *vb = _model->getDataColumnVertexData(column);
-		const float *pData = vb->getDataPointer();
+		const float *pData = static_cast<const float*>(vb->getDataPointer());
 		const bool *pDataMap = vb->getDataMapPointer();
 
 		for (int i = 0; i < vb->getNumVertices(); i++) {
@@ -276,7 +276,7 @@ float WatchGeoTree::getDataAbsMax(int column)
 	case DATA_VERTEX: {
 		float max = 0.0;
 		VertexBox *vb = _model->getDataColumnVertexData(column);
-		const float *pData = vb->getDataPointer();
+		const float *pData = static_cast<const float*>(vb->getDataPointer());
 		const bool *pDataMap = vb->getDataMapPointer();
 		for (int i = 0; i < vb->getNumVertices(); i++) {
 			if (*pDataMap && pData[1] > 0.0f && max < fabs(pData[0]))
@@ -333,7 +333,7 @@ void WatchGeoTree::updateDataCurrent(float *data, int *count, int dataStride,
 		VertexBox *srcData, RangeMap range, float min, float max)
 {
 	float *pData = data;
-	const float *pSourceData = srcData->getDataPointer();
+	const float *pSourceData = static_cast<const float*>(srcData->getDataPointer());
 	const bool *pCov = srcData->getCoveragePointer();
 	const bool *pMap = srcData->getDataMapPointer();
 	int verticles = srcData->getNumVertices();

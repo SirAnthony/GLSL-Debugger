@@ -132,7 +132,7 @@ void VertexBox::addVertexBox(VertexBox *f)
 
 	float *pDstData = boxData;
 	bool *pDstDataMap = boxDataMap;
-	const float *pSrcData = f->getDataPointer();
+	const float *pSrcData = static_cast<const float*>(f->getDataPointer());
 	const bool *pSrcDataMap = f->getDataMapPointer();
 
 	for (int i = 0; i < verticesCount; i++) {

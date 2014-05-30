@@ -49,12 +49,12 @@ void ShWatchDock::updateGui(bool enable)
 	ui->WatchWindowAdd->setEnabled(enable && window_active);
 }
 
-void ShWatchDock::cleanDock(EShLanguage)
+void ShWatchDock::cleanDock(ShaderMode)
 {
 	ui->SelectionPos->setText("No Selection");
 }
 
-void ShWatchDock::updateData(CoverageMapStatus cmstatus, EShLanguage type, bool force)
+void ShWatchDock::updateData(CoverageMapStatus cmstatus, ShaderMode type, bool force)
 {
 	foreach (ShVarItem* item, watchItems) {
 		bool changed = item->data(DF_CHANGED).toBool();
@@ -78,7 +78,7 @@ void ShWatchDock::updateData(CoverageMapStatus cmstatus, EShLanguage type, bool 
 		} else if (cmstatus == COVERAGEMAP_GROWN) {
 			/* If covermap grows larger, more readbacks could become possible */
 			if (scope & ShVarItem::AtScope || builtin) {
-				if (type == EShLangFragment) {
+				if (type == smFragment) {
 					if (!item->pixelDataAvaliable())
 						updated = item->updateWatchData(type);
 				} else {
@@ -100,7 +100,7 @@ void ShWatchDock::updateData(CoverageMapStatus cmstatus, EShLanguage type, bool 
 	this->model->valuesChanged();
 }
 
-void ShWatchDock::resetData(EShLanguage type)
+void ShWatchDock::resetData(ShaderMode type)
 {
 	if (watchItems.empty())
 		return;
@@ -119,7 +119,7 @@ void ShWatchDock::resetData(EShLanguage type)
 	model->valuesChanged();
 }
 
-void ShWatchDock::updateCoverage(EShLanguage type, bool *coverage)
+void ShWatchDock::updateCoverage(ShaderMode type, bool *coverage)
 {
 	if (watchItems.empty())
 		return;
@@ -128,11 +128,11 @@ void ShWatchDock::updateCoverage(EShLanguage type, bool *coverage)
 	ShDataManager::get()->getPixels(&pixels);
 	foreach (ShVarItem* item, watchItems) {
 		varDataFields field = DF_FIRST;
-		if (type == EShLangVertex)
+		if (type == smFragment)
 			field = DF_DATA_PIXELBOX;
-		else if (type == EShLangVertex)
+		else if (type == smVertex)
 			field = DF_DATA_VERTEXBOX;
-		else if (type == EShLangGeometry)
+		else if (type == smGeometry)
 			field = DF_DATA_GEOMETRYBOX;
 
 		if (field == DF_FIRST)
@@ -182,7 +182,7 @@ void ShWatchDock::clearWatchList()
 	watchItems.clear();
 }
 
-void ShWatchDock::updateSelection(int x, int y, QString &text, EShLanguage type)
+void ShWatchDock::updateSelection(int x, int y, QString &text, ShaderMode type)
 {
 	int pixels[2] = {x, y};
 	ui->SelectionPos->setText(text);
@@ -213,12 +213,12 @@ void ShWatchDock::extendWindow()
 int ShWatchDock::getWindowType()
 {
 	ShWindowManager::WindowType type = ShWindowManager::wtNone;
-	EShLanguage lang = ShDataManager::get()->getLang();
-	if (lang == EShLangFragment)
+	ShaderMode lang = ShDataManager::get()->getMode();
+	if (lang == smFragment)
 		type = ShWindowManager::wtFragment;
-	else if (lang == EShLangVertex)
+	else if (lang == smVertex)
 		type = ShWindowManager::wtVertex;
-	else if (lang == EShLangGeometry)
+	else if (lang == smGeometry)
 		type = ShWindowManager::wtGeometry;
 	return type;
 }
