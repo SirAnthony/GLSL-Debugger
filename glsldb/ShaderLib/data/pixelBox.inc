@@ -16,11 +16,11 @@ inline double PixelBox::getDataTyped(const void *data, int index)
 template<typename vType>
 void PixelBox::calcMinMax(QRect area)
 {	
-	vType *pBoxDataMin = boxDataMin;
-	vType *pBoxDataMax = boxDataMax;
-	vType *pBoxDataMinAbs = boxDataMinAbs;
-	vType *pBoxDataMaxAbs = boxDataMaxAbs;
-	vType *pBoxData = boxData;
+	vType *pBoxDataMin = static_cast<vType *>(boxDataMin);
+	vType *pBoxDataMax = static_cast<vType *>(boxDataMax);
+	vType *pBoxDataMinAbs = static_cast<vType *>(boxDataMinAbs);
+	vType *pBoxDataMaxAbs = static_cast<vType *>(boxDataMaxAbs);
+	vType *pBoxData = static_cast<vType *>(boxData);
 
 	int left, right, top, bottom;
 	for (int c = 0; c < channels; c++) {
@@ -81,7 +81,7 @@ void PixelBox::setData(int _width, int _height, int _channels,
 
 	channelsLen = channels * sizeof(vType);
 	boxData = malloc(width * height * channelsLen);
-	boxDataMap = malloc(width * height * sizeof(bool));
+	boxDataMap = (bool *)malloc(width * height * sizeof(bool));
 
 	/* Initially use all given data */
 	if (_data)

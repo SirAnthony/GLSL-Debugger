@@ -124,3 +124,16 @@ void ShSourceDock::updateHighlight(ShaderMode type, DbgRsRange &range)
 	edit->setTextCursor(cursorSet);
 	qApp->processEvents();
 }
+
+void ShSourceDock::getOptions(FragmentTestOptions *opts)
+{
+	if (!opts)
+		return;
+	memcpy(opts, &options, sizeof(FragmentTestOptions));
+}
+
+void ShSourceDock::showOptions()
+{
+	FragmentTestDialog dialog(options);
+	dialog.exec();
+}

@@ -2,6 +2,7 @@
 #define SHSOURCEDOCK_H
 
 #include "shdockwidget.h"
+#include "dialogs/fragmenttest.h"
 #include "ShaderLang.h"
 
 class QTextEdit;
@@ -17,7 +18,7 @@ public:
 	explicit ShSourceDock(QWidget *parent = 0);
 	~ShSourceDock();
 
-	void setShaders(const char *shaders[smCount]);
+	void setShaders(const char *shaders[smCount]);	
 	void getSource(const char *shaders[smCount]);
 
 signals:
@@ -26,9 +27,14 @@ public slots:
 	virtual void cleanDock(ShaderMode);
 	void updateControls(bool);
 	void updateHighlight(ShaderMode, DbgRsRange &);
+	void getOptions(FragmentTestOptions *);
+
+protected slots:
+	void showOptions();
 
 private:
-	QTextEdit* editWidgets[smCount];
+	FragmentTestOptions options;
+	QTextEdit *editWidgets[smCount];
 	QString shaderText[smCount];
 	Ui::ShSourceDock *ui;
 };

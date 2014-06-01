@@ -551,12 +551,14 @@ int ShDataManager::retriveFragmentData(const char *shaders[], int format, int op
 	case DBG_CG_SELECTION_CONDITIONAL:
 	case DBG_CG_SWITCH_CONDITIONAL:
 	case DBG_CG_LOOP_CONDITIONAL:
-	case DBG_CG_CHANGEABLE:
-		error = pc->initializeRenderBuffer(false, m_pftDialog->copyAlpha(),
-				m_pftDialog->copyDepth(), m_pftDialog->copyStencil(), 0.0, 0.0,
-				0.0, m_pftDialog->alphaValue(), m_pftDialog->depthValue(),
-				m_pftDialog->stencilValue());
+	case DBG_CG_CHANGEABLE: {
+		FragmentTestOptions opts;
+		emit getOptions(&opts);
+		error = pc->initializeRenderBuffer(opts.copyRGB, opts.copyAlpha,
+				opts.copyDepth, opts.copyStencil, opts.redValue, opts.greenValue,
+				opts.blueValue, opts.alphaValue, opts.depthValue, opts.stencilValue);
 		break;
+	}
 	default:
 		dbgPrint(DBGLVL_ERROR, "Unhandled DbgCgCoption %i", option);
 		error = PCE_UNKNOWN_ERROR;
@@ -568,20 +570,20 @@ int ShDataManager::retriveFragmentData(const char *shaders[], int format, int op
 
 	int width, height;
 	void *imageData;
-	error = pc->shaderStepFragment(shaders, channels, rbFormat, &width, &height, &imageData);
+	error = pc->shaderStepFragment(shaders, channels, format, &width, &height, &imageData);
 
 	if (error != PCE_NONE)
 		return error;
 
 	switch (format) {
 	case GL_FLOAT:
-		box->setData<float>(width, height, channels, imageData, coverage);
+		box->setData<float>(width, height, channels, (float *)imageData, coverage);
 		break;
 	case GL_INT:
-		box->setData<int>(width, height, channels, imageData, coverage);
+		box->setData<int>(width, height, channels, (int *)imageData, coverage);
 		break;
 	case GL_UNSIGNED_INT:
-		box->setData<unsigned int>(width, height, channels, imageData, coverage);
+		box->setData<unsigned int>(width, height, channels, (unsigned *)imageData, coverage);
 		break;
 	default:
 		dbgPrint(DBGLVL_ERROR, "Invalid image data format");

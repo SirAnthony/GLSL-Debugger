@@ -121,7 +121,7 @@ private slots:
 	void on_tbShaderReset_clicked();
 	void on_tbShaderStep_clicked();
 	void on_tbShaderStepOver_clicked();
-	void on_tbShaderFragmentOptions_clicked();
+//	void on_tbShaderFragmentOptions_clicked();
 
 	/* watch */
 	//void on_tbWatchWindow_clicked();
@@ -142,8 +142,8 @@ private slots:
 //	void newSelectedVertex(int n);
 //	void newSelectedPrimitive(int dataIdx);
 	// void changedActiveWindow(QWidget *w);
-	void ShaderStep(int action, bool updateData = true, bool updateCovermap =
-			true);
+//	void ShaderStep(int action, bool updateData = true, bool updateCovermap =
+//			true);
 
 	void singleStep();
 
@@ -156,7 +156,7 @@ private:
 	void setStatusBarText(QString);
 	//void setShaderCodeText(char *shaders[3]);
 	void leaveDBGState();
-	void cleanupDBGShader();
+//	void cleanupDBGShader();
 //	bool getDebugImage(DbgCgOptions option, ShChangeableList *cl, int rbFormat,
 //			bool *coverage, PixelBox **fbData);
 //	bool getDebugVertexData(DbgCgOptions option, ShChangeableList *cl,
@@ -230,10 +230,10 @@ private:
 	TBuiltInResource m_dShResources;
 	ShVariableList m_dShVariableList;
 
-	OldShVarModel *m_pShVarModel;
+//	OldShVarModel *m_pShVarModel;
 	//QStack<LoopData*> m_qLoopData;
 
-	char *m_pShaders[3];
+//	char *m_pShaders[3];
 	bool m_bHaveValidShaderCode;
 
 	struct {
@@ -241,18 +241,18 @@ private:
 		int count;
 	} m_serializedUniforms;
 
-	int m_primitiveMode;
-	VertexBox *m_pGeometryMap;
-	VertexBox *m_pVertexCount;
+//	int m_primitiveMode;
+//	VertexBox *m_pGeometryMap;
+//	VertexBox *m_pVertexCount;
 	//GeoShaderDataModel *m_pGeoDataModel;
 
-	bool *m_pCoverage;
+//	bool *m_pCoverage;
 
-	enum CoverageMapStatus {
-		COVERAGEMAP_UNCHANGED,
-		COVERAGEMAP_GROWN,
-		COVERAGEMAP_SHRINKED
-	};
+//	enum CoverageMapStatus {
+//		COVERAGEMAP_UNCHANGED,
+//		COVERAGEMAP_GROWN,
+//		COVERAGEMAP_SHRINKED
+//	};
 	// void updateWatchListData(CoverageMapStatus cmstatus, bool forceUpdate);
 	// void updateWatchItemsCoverage(bool *coverage);
 	// void resetWatchListData(void);
@@ -268,7 +268,7 @@ private:
 //			QModelIndexList &list);
 //	void addToWatchWindowFragment(WatchView *watchView, QModelIndexList &list);
 
-	int m_selectedPixel[2];
+//	int m_selectedPixel[2];
 
 	/* MRU program. */
 	bool loadMruProgram(QString& outProgram, QString& outArguments,

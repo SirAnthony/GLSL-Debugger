@@ -1856,7 +1856,7 @@ pcErrorCode ProgramControl::endReplay()
 	return dbgCommandEndReplay();
 }
 
-pcErrorCode ProgramControl::shaderStepFragment(char *shaders[3],
+pcErrorCode ProgramControl::shaderStepFragment(const char *shaders[3],
 		int numComponents, int format, int *width, int *heigh, void **image)
 {
 	pcErrorCode error;

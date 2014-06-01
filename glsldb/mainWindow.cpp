@@ -138,7 +138,7 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	pc = new ProgramControl(pname);
 
 	m_pCurrentCall = NULL;
-	m_pShVarModel = NULL;
+//	m_pShVarModel = NULL;
 
 	if (dbgProgArgs.size())
 		setRunLevel(RL_SETUP);
@@ -170,24 +170,24 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	twGlStatistics->insertTab(0, taGlCalls, QString("GL Calls"));
 	twGlStatistics->insertTab(1, taGlExt, QString("GL Extensions"));
 
-	for (i = 0; i < 3; i++) {
-		m_pShaders[i] = NULL;
-	}
+//	for (i = 0; i < 3; i++) {
+//		m_pShaders[i] = NULL;
+//	}
 	m_bHaveValidShaderCode = false;
 
 	m_serializedUniforms.pData = NULL;
 	m_serializedUniforms.count = 0;
 
-	m_primitiveMode = GL_NONE;
-
-	m_pGeometryMap = NULL;
-	m_pVertexCount = NULL;
+//	m_primitiveMode = GL_NONE;
+//
+//	m_pGeometryMap = NULL;
+//	m_pVertexCount = NULL;
 	//m_pGeoDataModel = NULL;
 
-	m_pCoverage = NULL;
-
-	m_selectedPixel[0] = -1;
-	m_selectedPixel[1] = -1;
+//	m_pCoverage = NULL;
+//
+//	m_selectedPixel[0] = -1;
+//	m_selectedPixel[1] = -1;
 	lWatchSelectionPos->setText("No Selection");
 
 #ifdef _WIN32
@@ -223,16 +223,16 @@ MainWindow::~MainWindow()
 	delete m_pWglCallPfst;
 	delete m_pWglExtPfst;
 
-	delete[] m_pCoverage;
-	delete m_pGeometryMap;
-	delete m_pVertexCount;
+//	delete[] m_pCoverage;
+//	delete m_pGeometryMap;
+//	delete m_pVertexCount;
 	//delete m_pGeoDataModel;
 
 	delete m_pCurrentCall;
 
-	for (int i = 0; i < 3; i++) {
-		delete[] m_pShaders[i];
-	}
+//	for (int i = 0; i < 3; i++) {
+//		delete[] m_pShaders[i];
+//	}
 
 	delete[] m_serializedUniforms.pData;
 	m_serializedUniforms.pData = NULL;
@@ -556,10 +556,10 @@ pcErrorCode MainWindow::getNextCall()
 		/* current call is a drawcall and we don't have valid shader code;
 		 * call debug function that reads back the shader code
 		 */
-		for (int i = 0; i < 3; i++) {
-			delete[] m_pShaders[i];
-			m_pShaders[i] = NULL;
-		}
+//		for (int i = 0; i < 3; i++) {
+//			delete[] m_pShaders[i];
+//			m_pShaders[i] = NULL;
+//		}
 		delete[] m_serializedUniforms.pData;
 		m_serializedUniforms.pData = NULL;
 		m_serializedUniforms.count = 0;
@@ -1350,7 +1350,7 @@ void MainWindow::on_tbSave_clicked()
 
 	delete sDialog;
 }
-
+/*
 bool MainWindow::getDebugVertexData(DbgCgOptions option, ShChangeableList *cl,
 		bool *coverage, VertexBox *vdata)
 {
@@ -1628,7 +1628,7 @@ bool MainWindow::getDebugImage(DbgCgOptions option, ShChangeableList *cl,
 	return true;
 }
 
-/*
+
 void MainWindow::updateWatchItemData(OldShVarItem *watchItem)
 {
 	ShChangeableList cl;
@@ -1735,8 +1735,8 @@ static void invalidateWatchItemData(OldShVarItem *item)
 		item->getVertexBoxPointer()->invalidateData();
 	}
 }
-*/
-/*
+
+
 void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 		bool forceUpdate)
 {
@@ -1802,9 +1802,7 @@ void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
 	 update view
 	m_pShVarModel->currentValuesChanged();
 }
-*/
 
-/*
 void MainWindow::updateWatchItemsCoverage(bool *coverage)
 {
 	QList<OldShVarItem*> watchItems;
@@ -1836,6 +1834,7 @@ void MainWindow::updateWatchItemsCoverage(bool *coverage)
 */
 
 /*
+
 void MainWindow::resetWatchListData(void)
 {
 	QList<OldShVarItem*> watchItems;
@@ -1868,7 +1867,7 @@ void MainWindow::resetWatchListData(void)
 		m_pShVarModel->currentValuesChanged();
 	}
 }
-*/
+
 
 void MainWindow::ShaderStep(int action, bool updateWatchData,
 		bool updateCovermap)
@@ -1897,12 +1896,12 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 	if (dr) {
 		switch (dr->status) {
 		case DBG_RS_STATUS_OK: {
-			/* Update scope list and mark changed variables */
+			 Update scope list and mark changed variables
 			m_pShVarModel->setChangedAndScope(dr->cgbls, dr->scope,
 					dr->scopeStack);
 
 			if (currentRunLevel == RL_DBG_FRAGMENT_SHADER && updateCovermap) {
-				/* Read cover map */
+				 Read cover map
 				PixelBoxFloat *pCoverageBox = NULL;
 				if (!(getDebugImage(DBG_CG_COVERAGE, NULL, GL_FLOAT, NULL,
 						(PixelBox**) &pCoverageBox))) {
@@ -1911,7 +1910,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					return;
 				}
 
-				/* Retrieve covermap from CoverageBox */
+				 Retrieve covermap from CoverageBox
 				int nNewCoverageMap;
 				delete[] m_pCoverage;
 				m_pCoverage = pCoverageBox->getCoverageFromData(
@@ -1931,13 +1930,13 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 			} else if ((currentRunLevel == RL_DBG_GEOMETRY_SHADER
 					|| (currentRunLevel == RL_DBG_VERTEX_SHADER))
 					&& updateCovermap) {
-				/* Retrieve cover map (one render pass 'DBG_CG_COVERAGE') */
+				 Retrieve cover map (one render pass 'DBG_CG_COVERAGE')
 				VertexBox *pCoverageBox = new VertexBox(NULL);
 				if (!(getDebugVertexData(DBG_CG_COVERAGE, NULL, NULL,
 						pCoverageBox))) {
 					QMessageBox::warning(this, "Warning", "An error "
 							"occurred while reading vertex coverage.");
-					/* TODO: error handling */
+					 TODO: error handling
 					UT_NOTIFY(LV_WARN, "Error reading vertex coverage!");
 					delete pCoverageBox;
 					cleanupDBGShader();
@@ -1945,8 +1944,8 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					return;
 				}
 
-				/* Convert data to bool map: VertexBox -> bool
-				 * Check for change of covermap */
+				 Convert data to bool map: VertexBox -> bool
+				 * Check for change of covermap
 				bool *newCoverage;
 				bool coverageChanged;
 				newCoverage = pCoverageBox->getCoverageFromData(m_pCoverage,
@@ -1990,7 +1989,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 			tbShaderStepOver->setEnabled(false);
 		}
 
-		/* Process watch list */
+		 Process watch list
 		if (updateWatchData) {
 			UT_NOTIFY(LV_INFO,
 					"updateWatchData " << cmstatus << " emitVertex: " << dr->passedEmitVertex << " discard: " << dr->passedDiscard);
@@ -2000,7 +1999,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 
 		VertexBox vbCondition;
 
-		/* Process position dependent requests */
+		 Process position dependent requests
 		switch (dr->position) {
 		case DBG_RS_POSITION_SELECTION_IF_CHOOSE:
 		case DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE: {
@@ -2036,7 +2035,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					return;
 				}
 
-				/* Create list of all watch item boxes */
+				 Create list of all watch item boxes
 				QList<OldShVarItem*> watchItems;
 				if (m_pShVarModel) {
 					watchItems = m_pShVarModel->getAllWatchItemPointers();
@@ -2051,7 +2050,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 			}
 				break;
 			case RL_DBG_VERTEX_SHADER: {
-				/* Get condition for each vertex */
+				 Get condition for each vertex
 				if (getDebugVertexData(DBG_CG_SELECTION_CONDITIONAL, NULL,
 						m_pCoverage, &vbCondition)) {
 				} else {
@@ -2063,7 +2062,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					return;
 				}
 
-				/* Create list of all watch item boxes */
+				 Create list of all watch item boxes
 				QList<OldShVarItem*> watchItems;
 				if (m_pShVarModel) {
 					watchItems = m_pShVarModel->getAllWatchItemPointers();
@@ -2106,7 +2105,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				PixelBoxFloat *loopCondition = NULL;
 
 				if (updateCovermap) {
-					/* First get image of loop condition */
+					 First get image of loop condition
 					if (!getDebugImage(DBG_CG_LOOP_CONDITIONAL, NULL, GL_FLOAT,
 							m_pCoverage, (PixelBox**) &loopCondition)) {
 						QMessageBox::warning(this, "Warning",
@@ -2117,7 +2116,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					}
 				}
 
-				/* Add data to the loop storage */
+				 Add data to the loop storage
 				if (dr->loopIteration == 0) {
 					UT_NOTIFY(LV_INFO, "==> new loop encountered");
 					lData = new LoopData(loopCondition, this);
@@ -2132,7 +2131,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 									dr->loopIteration);
 						}
 					} else {
-						/* TODO error handling */
+						 TODO error handling
 						QMessageBox::warning(this, "Warning",
 								"An error occurred while trying to "
 										"get loop count data.");
@@ -2157,7 +2156,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					return;
 				}
 
-				/* Add data to the loop storage */
+				 Add data to the loop storage
 				if (dr->loopIteration == 0) {
 					UT_NOTIFY(LV_INFO, "==> new loop encountered\n");
 					lData = new LoopData(&loopCondition, this);
@@ -2172,7 +2171,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 									dr->loopIteration);
 						}
 					} else {
-						/* TODO error handling */
+						 TODO error handling
 						QMessageBox::warning(this, "Warning",
 								"An error occurred while trying to "
 										"get the loop data.");
@@ -2191,7 +2190,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 					lDialog = new LoopDialog(lData, this);
 					break;
 				case RL_DBG_GEOMETRY_SHADER: {
-					/* Create list of all watch item boxes */
+					 Create list of all watch item boxes
 					QList<OldShVarItem*> watchItems;
 					if (m_pShVarModel) {
 						watchItems = m_pShVarModel->getAllWatchItemPointers();
@@ -2202,7 +2201,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				}
 					break;
 				case RL_DBG_VERTEX_SHADER: {
-					/* Create list of all watch item boxes */
+					 Create list of all watch item boxes
 					QList<OldShVarItem*> watchItems;
 					if (m_pShVarModel) {
 						watchItems = m_pShVarModel->getAllWatchItemPointers();
@@ -2226,7 +2225,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 						ShaderStep (DBG_BH_JUMP_OVER);
 						break;
 					case LoopDialog::SA_JUMP:
-						/* Force update of all changed items */
+						 Force update of all changed items
 						updateWatchListData(COVERAGEMAP_GROWN, false);
 						ShaderStep(DBG_BH_JUMP_INTO);
 						break;
@@ -2243,7 +2242,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 			break;
 		}
 
-		/* Update GUI shader text windows */
+		 Update GUI shader text windows
 		if (updateGUI) {
 			QTextDocument *document = NULL;
 			QTextEdit *edit = NULL;
@@ -2266,7 +2265,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 						"stepping.");
 			}
 
-			/* Mark actual debug position */
+			 Mark actual debug position
 			if (document && edit) {
 				QTextCharFormat highlight;
 				QTextCursor cursor(document);
@@ -2277,7 +2276,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				highlight.setBackground(Qt::white);
 				cursor.mergeCharFormat(highlight);
 
-				/* Highlight the actual statement */
+				 Highlight the actual statement
 				cursor.setPosition(0, QTextCursor::MoveAnchor);
 				cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor,
 						dr->range.left.line - 1);
@@ -2291,7 +2290,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				highlight.setBackground(Qt::yellow);
 				cursor.mergeCharFormat(highlight);
 
-				/* Ensure the highlighted line is visible */
+				 Ensure the highlighted line is visible
 				QTextCursor cursorVisible = edit->textCursor();
 				cursorVisible.setPosition(0, QTextCursor::MoveAnchor);
 				cursorVisible.movePosition(QTextCursor::Down,
@@ -2304,7 +2303,7 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 				edit->setTextCursor(cursorVisible);
 				edit->ensureCursorVisible();
 
-				/* Unselect visible cursor */
+				 Unselect visible cursor
 				QTextCursor cursorSet = edit->textCursor();
 				cursorSet.setPosition(0, QTextCursor::MoveAnchor);
 				cursorSet.movePosition(QTextCursor::Down,
@@ -2314,12 +2313,12 @@ void MainWindow::ShaderStep(int action, bool updateWatchData,
 			}
 		}
 	} else {
-		/* TODO: error */
+		 TODO: error
 	}
 
-	/* TODO free debug result */
+	 TODO free debug result
 }
-
+*/
 
 pcErrorCode MainWindow::recordCall()
 {
@@ -2632,10 +2631,12 @@ void MainWindow::on_tbShaderStepOver_clicked()
 	ShaderStep (DBG_BH_FOLLOW_ELSE);
 }
 
+/*
 void MainWindow::on_tbShaderFragmentOptions_clicked()
 {
 	m_pftDialog->show();
 }
+*/
 
 void MainWindow::on_twShader_currentChanged(int selection)
 {
@@ -3073,6 +3074,7 @@ void MainWindow::leaveDBGState()
 	}
 }
 
+/*
 void MainWindow::cleanupDBGShader()
 {
 	QList<OldShVarItem*> watchItems;
@@ -3080,7 +3082,7 @@ void MainWindow::cleanupDBGShader()
 
 	pcErrorCode error = PCE_NONE;
 
-	/* remove debug markers from code display */
+	 remove debug markers from code display
 	QTextDocument *document = NULL;
 	QTextEdit *edit = NULL;
 	switch (currentRunLevel) {
@@ -3121,7 +3123,7 @@ void MainWindow::cleanupDBGShader()
 		}
 
 		if (m_pShVarModel) {
-			/* free data boxes */
+			 free data boxes
 			watchItems = m_pShVarModel->getAllWatchItemPointers();
 			for (i = 0; i < watchItems.count(); i++) {
 				PixelBox *fb;
@@ -3140,13 +3142,13 @@ void MainWindow::cleanupDBGShader()
 				}
 			}
 
-			/* Watchview feedback for selection tracking */
+			 Watchview feedback for selection tracking
 			disconnect(tvWatchList->selectionModel(),
 					SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
 					this,
 					SLOT(watchSelectionChanged(const QItemSelection &, const QItemSelection &)));
 
-			/* reset shader debuging */
+			 reset shader debuging
 			m_pShVarModel->detach(tvShVarAll);
 			m_pShVarModel->detach(tvShVarBuiltIn);
 			m_pShVarModel->detach(tvShVarScope);
@@ -3167,7 +3169,7 @@ void MainWindow::cleanupDBGShader()
 		}
 
 		UT_NOTIFY(LV_INFO, "restore render target");
-		/* restore render target */
+		 restore render target
 		switch (currentRunLevel) {
 		case RL_DBG_VERTEX_SHADER:
 			error = pc->restoreRenderTarget(DBG_TARGET_VERTEX_SHADER);
@@ -3198,6 +3200,7 @@ void MainWindow::cleanupDBGShader()
 		break;
 	}
 }
+*/
 
 void MainWindow::setRunLevel(int rl)
 {

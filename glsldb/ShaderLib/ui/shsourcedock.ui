@@ -278,5 +278,25 @@
  <resources>
   <include location="../../glslDevil.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>tbOptions</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSourceDock</receiver>
+   <slot>showOptions()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>150</x>
+     <y>45</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>163</x>
+     <y>4</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>showOptions()</slot>
+ </slots>
 </ui>

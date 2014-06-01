@@ -15,6 +15,7 @@ class ShWindowManager;
 class ShVarModel;
 class ShVarItem;
 class QMainWindow;
+class FragmentTestOptions;
 
 struct GeometryInfo {
 	int primitiveMode;
@@ -84,6 +85,7 @@ signals:
 	void updateWatchCoverage(ShaderMode, bool *);
 	void updateWatchData(ShaderMode, CoverageMapStatus, bool *, bool);
 	void getWatchItems(QSet<ShVarItem *> &);
+	void getOptions(FragmentTestOptions *);
 
 public slots:
 	void step(int action, bool update_watch = true, bool update_covermap = true);

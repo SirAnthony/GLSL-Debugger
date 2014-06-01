@@ -107,7 +107,7 @@ public:
 	pcErrorCode saveActiveShader(void);
 	pcErrorCode restoreActiveShader(void);
 
-	pcErrorCode shaderStepFragment(char *shaders[3], int numComponents,
+	pcErrorCode shaderStepFragment(const char *shaders[], int numComponents,
 			int format, int *width, int *heigh, void **image);
 	pcErrorCode shaderStepVertex(const char *shaders[3], int target,
 			int primitiveMode, int forcePointPrimitiveMode,
