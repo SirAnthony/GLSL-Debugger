@@ -109,7 +109,7 @@ public:
 
 	pcErrorCode shaderStepFragment(char *shaders[3], int numComponents,
 			int format, int *width, int *heigh, void **image);
-	pcErrorCode shaderStepVertex(char *shaders[3], int target,
+	pcErrorCode shaderStepVertex(const char *shaders[3], int target,
 			int primitiveMode, int forcePointPrimitiveMode,
 			int numFloatsPerVertex, int *numPrimitives, int *numVertices,
 			float **vertexData);

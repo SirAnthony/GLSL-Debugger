@@ -71,7 +71,7 @@ template<typename vType>
 void PixelBox::setData(int _width, int _height, int _channels,
 							vType *_data, bool *_coverage)
 {
-	clear();
+	deleteData();
 	width = _width;
 	height = _height;
 	channels = _channels;

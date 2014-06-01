@@ -10,11 +10,7 @@ namespace Ui {
 	class ShWatchDock;
 }
 
-enum CoverageMapStatus {
-	COVERAGEMAP_UNCHANGED,
-	COVERAGEMAP_GROWN,
-	COVERAGEMAP_SHRINKED
-};
+
 
 class ShWatchDock : public ShDockWidget
 {
@@ -30,16 +26,17 @@ signals:
 	void extendWindow(const QList<ShVarItem*>&, int);
 
 public slots:
-	void updateGui(bool enable);
-	virtual void cleanDock(ShaderMode type);
-	void updateData(CoverageMapStatus cmstatus, ShaderMode type, bool force);
-	void resetData(ShaderMode type);
-	void updateCoverage(ShaderMode type, bool *coverage);
+	void updateGui(bool);
+	virtual void cleanDock(ShaderMode);
+	void updateData(ShaderMode, CoverageMapStatus, bool *, bool);
+	void resetData(ShaderMode, bool *);
+	void updateCoverage(ShaderMode, bool *);
 	void selectionChanged();
-	void newItem(ShVarItem* item);	
+	void newItem(ShVarItem *);
 	void removeSelected();
 	void clearWatchList();
 	void updateSelection(int, int, QString &, ShaderMode);
+	void getWatchItems(QSet<ShVarItem *> &);
 
 	void newWindow();
 	void extendWindow();
@@ -47,7 +44,7 @@ public slots:
 protected:	
 	int getWindowType();
 	int getItems(QList<ShVarItem *> &);
-	QModelIndexList filterSelection(const QModelIndexList& input);
+	QModelIndexList filterSelection(const QModelIndexList &);
 
 private:
 	QSet<ShVarItem *> watchItems;

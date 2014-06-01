@@ -20,26 +20,35 @@ VertexBox::VertexBox(QObject *parent) :
 	boxDataMaxAbs = NULL;
 }
 
-VertexBox::~VertexBox()
+VertexBox::VertexBox(VertexBox *src, QObject *parent)
+	: DataBox(parent)
 {
-	emit dataDeleted();
-	delete[] boxData;
-	delete[] boxDataMap;
-	delete[] boxDataMin;
-	delete[] boxDataMax;
-	delete[] boxDataMinAbs;
-	delete[] boxDataMaxAbs;
+	numElementsPerVertex = 0;
+	verticesCount = 0;
+	primitivesCount = 0;
+	coverage = NULL;
+	boxData = NULL;
+	boxDataMap = NULL;	
+	boxDataMin = NULL;
+	boxDataMax = NULL;
+	boxDataMinAbs = NULL;
+	boxDataMaxAbs = NULL;
+
+	copyFrom(src);
 }
 
-void VertexBox::copyFrom(VertexBox *src)
+VertexBox::~VertexBox()
 {
-	delete[] boxData;
-	delete[] boxDataMap;
-	delete[] boxDataMin;
-	delete[] boxDataMax;
-	delete[] boxDataMinAbs;
-	delete[] boxDataMaxAbs;
+	deleteData(true);
+}
 
+void VertexBox::copyFrom(DataBox *box)
+{
+	VertexBox *src = dynamic_cast<VertexBox *>(box);
+	if (!src)
+		return;
+
+	deleteData();
 	numElementsPerVertex = src->numElementsPerVertex;
 	verticesCount = src->verticesCount;
 	primitivesCount = src->primitivesCount;
@@ -65,21 +74,15 @@ void VertexBox::copyFrom(VertexBox *src)
 	memcpy(boxDataMaxAbs, src->boxDataMaxAbs,
 			numElementsPerVertex * sizeof(float));
 
+	emit dataChanged();
 }
 
 void VertexBox::setData(float *data, int elementsPerVertex,
 		int vertices, int primitives, bool *_coverage)
 {
-	if (verticesCount > 0) {
-		delete[] boxData;
-		delete[] boxDataMap;
-		delete[] boxDataMin;
-		delete[] boxDataMax;
-		delete[] boxDataMinAbs;
-		delete[] boxDataMaxAbs;
-		boxData = NULL;
-		boxDataMap = NULL;
-	}
+	if (verticesCount > 0)
+		deleteData();
+
 	if (vertices > 0 && data) {
 		boxData = new float[vertices * elementsPerVertex];
 		boxDataMap = new bool[vertices];
@@ -102,17 +105,6 @@ void VertexBox::setData(float *data, int elementsPerVertex,
 		boxDataMinAbs = new float[numElementsPerVertex];
 		boxDataMaxAbs = new float[numElementsPerVertex];
 		calcMinMax();
-	} else {
-		boxData = NULL;
-		boxDataMap = NULL;
-		coverage = NULL;
-		numElementsPerVertex = 0;
-		verticesCount = 0;
-		primitivesCount = 0;
-		boxDataMin = NULL;
-		boxDataMax = NULL;
-		boxDataMinAbs = NULL;
-		boxDataMaxAbs = NULL;
 	}
 
 	dbgPrint(DBGLVL_INFO,
@@ -152,32 +144,26 @@ void VertexBox::addVertexBox(VertexBox *f)
 	emit dataChanged();
 }
 
-void VertexBox::calcMinMax()
+bool VertexBox::getDataValue(int numVertex, float *v)
 {
-	for (int c = 0; c < numElementsPerVertex; c++) {
-		boxDataMin[c] = FLT_MAX;
-		boxDataMax[c] = -FLT_MAX;
-		boxDataMinAbs[c] = FLT_MAX;
-		boxDataMaxAbs[c] = 0.0f;
-	}
-
-	float *pData = boxData;
 	bool *pCoverage = coverage ? coverage : boxDataMap;
-
-	for (int v = 0; v < verticesCount; v++, pCoverage++) {
-		for (int c = 0; c < numElementsPerVertex; c++, pData++) {
-			if (!*pCoverage)
-				continue;
-			if (*pData < boxDataMin[c])
-				boxDataMin[c] = *pData;
-			if (boxDataMax[c] < *pData)
-				boxDataMax[c] = *pData;
-			if (fabs(*pData) < boxDataMinAbs[c])
-				boxDataMinAbs[c] = fabs(*pData);
-			if (boxDataMaxAbs[c] < fabs(*pData))
-				boxDataMaxAbs[c] = fabs(*pData);
-		}
+	if (pCoverage && boxData && pCoverage[numVertex * numElementsPerVertex]) {
+		for (int i = 0; i < numElementsPerVertex; i++)
+			v[i] = boxData[numElementsPerVertex * numVertex + i];
+		return true;
 	}
+	return false;
+}
+
+bool VertexBox::getDataValue(int numVertex, QVariant *v)
+{
+	bool *pCoverage = coverage ? coverage : boxDataMap;
+	if (pCoverage && boxData && pCoverage[numVertex * numElementsPerVertex]) {
+		for (int i = 0; i < numElementsPerVertex; i++)
+			v[i] = boxData[numElementsPerVertex * numVertex + i];
+		return true;
+	}
+	return false;
 }
 
 void VertexBox::invalidateData()
@@ -243,24 +229,53 @@ double VertexBox::getData(const void *data, int offset)
 	return pData[offset];
 }
 
-bool VertexBox::getDataValue(int numVertex, float *v)
+void VertexBox::deleteData(bool signal)
 {
-	bool *pCoverage = coverage ? coverage : boxDataMap;
-	if (pCoverage && boxData && pCoverage[numVertex * numElementsPerVertex]) {
-		for (int i = 0; i < numElementsPerVertex; i++)
-			v[i] = boxData[numElementsPerVertex * numVertex + i];
-		return true;
-	}
-	return false;
+	if (signal)
+		emit dataDeleted();
+
+	numElementsPerVertex = 0;
+	verticesCount = 0;
+	primitivesCount = 0;
+
+	if (boxData)
+		delete[] boxData, boxData = NULL;
+	if (boxDataMap)
+		delete[] boxDataMap, boxDataMap = NULL;
+	if (boxDataMin)
+		delete[] boxDataMin, boxDataMin = NULL;
+	if (boxDataMax)
+		delete[] boxDataMax, boxDataMax = NULL;
+	if (boxDataMinAbs)
+		delete[] boxDataMinAbs, boxDataMinAbs = NULL;
+	if (boxDataMaxAbs)
+		delete[] boxDataMaxAbs, boxDataMaxAbs = NULL;
 }
 
-bool VertexBox::getDataValue(int numVertex, QVariant *v)
+void VertexBox::calcMinMax()
 {
-	bool *pCoverage = coverage ? coverage : boxDataMap;
-	if (pCoverage && boxData && pCoverage[numVertex * numElementsPerVertex]) {
-		for (int i = 0; i < numElementsPerVertex; i++)
-			v[i] = boxData[numElementsPerVertex * numVertex + i];
-		return true;
+	for (int c = 0; c < numElementsPerVertex; c++) {
+		boxDataMin[c] = FLT_MAX;
+		boxDataMax[c] = -FLT_MAX;
+		boxDataMinAbs[c] = FLT_MAX;
+		boxDataMaxAbs[c] = 0.0f;
 	}
-	return false;
+
+	float *pData = boxData;
+	bool *pCoverage = coverage ? coverage : boxDataMap;
+
+	for (int v = 0; v < verticesCount; v++, pCoverage++) {
+		for (int c = 0; c < numElementsPerVertex; c++, pData++) {
+			if (!*pCoverage)
+				continue;
+			if (*pData < boxDataMin[c])
+				boxDataMin[c] = *pData;
+			if (boxDataMax[c] < *pData)
+				boxDataMax[c] = *pData;
+			if (fabs(*pData) < boxDataMinAbs[c])
+				boxDataMinAbs[c] = fabs(*pData);
+			if (boxDataMaxAbs[c] < fabs(*pData))
+				boxDataMaxAbs[c] = fabs(*pData);
+		}
+	}
 }

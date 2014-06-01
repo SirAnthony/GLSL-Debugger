@@ -8,6 +8,7 @@
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
 #include "dialogs/selection.h"
+#include "dialogs/loop.h"
 #include "debuglib.h"
 #include "utils/dbgprint.h"
 #include "errorCodes.h"
@@ -48,26 +49,23 @@ static void printDebugInfo(int option, int target, const char *shaders[3])
 }
 
 
-ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent) :
+ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, int &geoOut,
+							 QObject *parent) :
 	QObject(parent), selectedPixel {-1, -1},
+	geometry { GL_NONE, geoOut, NULL, NULL },
 	shVariables(NULL), compiler(NULL), pc(_pc), coverage(NULL)
 {
-	geometry.primitiveMode = GL_NONE;
-	geometry.outputType = resources.geoOutputType;
-	geometry.map = NULL;
-	geometry.count = NULL;
-
 	model = new ShVarModel();
 	windows = new ShWindowManager(window);
 	window->setCentralWidget(windows);
-
 }
 
-ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc, QObject *parent)
+ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc,
+									 int &geoOut, QObject *parent)
 {
 	if (instance)
 		delete instance;
-	instance = new ShDataManager(window, pc, parent);
+	instance = new ShDataManager(window, pc, geoOut, parent);
 	return instance;
 }
 
@@ -94,6 +92,12 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 				windows, SLOT(extendWindow(QList<ShVarItem*>,ShWindowManager::WindowType)));
 		connect(this, SIGNAL(updateSelection(int,int,QString&,ShaderMode)),
 				wdock, SLOT(updateSelection(int,int,QString&,ShaderMode)));
+		connect(this, SIGNAL(updateWatchCoverage(ShaderMode,bool*)),
+				wdock, SLOT(updateCoverage(ShaderMode,bool*)));
+		connect(this, SIGNAL(updateWatchData(ShaderMode,CoverageMapStatus,bool*,bool)),
+				wdock, SLOT(updateData(ShaderMode,CoverageMapStatus,bool*,bool)));
+		connect(this, SIGNAL(getWatchItems(QSet<ShVarItem*>&)),
+				wdock, SLOT(getWatchItems(QSet<ShVarItem*>&)));
 	} else if (type == dmDTSource) {
 		ShSourceDock* sdock = dynamic_cast<ShSourceDock *>(dock);
 		connect(this, SIGNAL(updateStepControls(bool)), sdock, SLOT(updateControls(bool)));
@@ -102,7 +106,7 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 	}
 }
 
-static DataBox *create_databox(ShaderMode type)
+static DataBox *create_databox(ShaderMode mode)
 {
 	switch (mode) {
 	case smFragment:
@@ -128,103 +132,6 @@ static DbgCgOptions position_options(DbgRsTargetPosition position)
 	default:
 		return DBG_CG_ORIGINAL_SRC;
 	}
-}
-
-
-void ShDataManager::step(int action, bool updateWatchData, bool updateCovermap)
-{
-	bool updateGUI = true;
-	switch (action) {
-	case DBG_BH_RESET:
-	case DBG_BH_JUMP_INTO:
-	case DBG_BH_FOLLOW_ELSE:
-	case DBG_BH_JUMP_OVER:
-		updateGUI = true;
-		break;
-	case DBG_BH_LOOP_NEXT_ITER:
-		updateGUI = false;
-		break;
-	}
-
-	DbgResult *dr = NULL;
-	int debugOptions = EDebugOpIntermediate;
-	CoverageMapStatus cmstatus = COVERAGEMAP_UNCHANGED;
-	dr = ShDebugJumpToNext(compiler, debugOptions, action);
-
-	// Fuck this
-	static int lastActive = 0;
-
-	if (!dr) {
-		dbgPrint(DBGLVL_ERROR, "An error occured at shader step.");
-		return;
-	}
-
-	if (dr->status == DBG_RS_STATUS_OK) {
-		/* Update scope list and mark changed variables */
-		model->setChangedAndScope(dr->cgbls, dr->scope, dr->scopeStack);
-
-		if (updateCovermap) {
-			DataBox* coverageBox = create_databox(shaderMode);
-
-			/* Retrieve cover map (one render pass 'DBG_CG_COVERAGE') */
-			if (!getDebugData(shaderMode, DBG_CG_COVERAGE, NULL,
-							  GL_FLOAT, NULL, coverageBox)) {
-				dbgPrint(DBGLVL_ERROR, "An error occurred while reading coverage.");
-				if (coverageBox)
-					delete coverageBox;
-				cleanShader(shaderMode);
-				emit setRunLevel(RL_DBG_RESTART);
-				return;
-			}
-
-			bool changed;
-			int active = coverageBox->getCoverageFromData(
-									&coverage, coverage, &changed);
-			updateWatchItemsCoverage(coverage);
-
-			if (mode == smFragment) {
-				if (active == lastActive)
-					cmstatus = COVERAGEMAP_UNCHANGED;
-				else if (active > lastActive)
-					cmstatus = COVERAGEMAP_GROWN;
-				else
-					cmstatus = COVERAGEMAP_SHRINKED;
-				lastActive = active;
-			} else if (mode == smGeometry || mode == smVertex) {
-				if (changed) {
-					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_GROWN");
-					cmstatus = COVERAGEMAP_GROWN;
-				} else {
-					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_UNCHANGED");
-					cmstatus = COVERAGEMAP_UNCHANGED;
-				}
-			}
-
-			if (coverageBox)
-				delete coverageBox;
-		}
-	} else if (dr->status == DBG_RS_STATUS_FINISHED) {
-		emit updateStepControls(false);
-	} else {
-		dbgPrint(DBGLVL_ERROR, "An unhandled debug result (%d) occurred.", dr->status);
-		return;
-	}
-
-	if (dr->position == DBG_RS_POSITION_DUMMY)
-		emit updateStepControls(false);
-
-
-	/* Process watch list */
-	if (updateWatchData) {
-		dbgPrint(DBGLVL_INFO, "updateWatchData %d emitVertex: %d, discard: %d",
-				 cmstatus, dr->passedEmitVertex, dr->passedDiscard);
-		updateWatchListData(cmstatus, dr->passedEmitVertex || dr->passedDiscard);
-	}
-
-	updateDialogs(dr->position, dr->loopIteration, updateCovermap, updateGUI);
-
-	if (updateGUI)
-		emit updateSourceHighlight(shaderMode, dr->range);
 }
 
 bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangeableList *cl,
@@ -279,8 +186,8 @@ bool ShDataManager::cleanShader(ShaderMode type)
 	case smVertex:
 	case smFragment:
 		emit cleanModel();
-		while (!m_qLoopData.isEmpty())
-			delete m_qLoopData.pop();
+		while (loopsData.isEmpty())
+			delete loopsData.pop();
 
 		if (compiler) {
 			ShDestruct(compiler);
@@ -300,9 +207,10 @@ bool ShDataManager::cleanShader(ShaderMode type)
 	return processError(error, type);
 }
 
-void ShDataManager::getPixels(int *p[2])
+void ShDataManager::getPixels(int p[2])
 {
-	*p = selectedPixel;
+	p[0] = selectedPixel[0];
+	p[1] = selectedPixel[1];
 }
 
 bool ShDataManager::hasActiveWindow()
@@ -318,6 +226,103 @@ const GeometryInfo &ShDataManager::getGeometryInfo() const
 ShaderMode ShDataManager::getMode()
 {
 	return shaderMode;
+}
+
+
+void ShDataManager::step(int action, bool update_watch, bool update_covermap)
+{
+	bool updateGUI = true;
+	switch (action) {
+	case DBG_BH_RESET:
+	case DBG_BH_JUMP_INTO:
+	case DBG_BH_FOLLOW_ELSE:
+	case DBG_BH_JUMP_OVER:
+		updateGUI = true;
+		break;
+	case DBG_BH_LOOP_NEXT_ITER:
+		updateGUI = false;
+		break;
+	}
+
+	DbgResult *dr = NULL;
+	int debugOptions = EDebugOpIntermediate;
+	CoverageMapStatus cmstatus = COVERAGEMAP_UNCHANGED;
+	dr = ShDebugJumpToNext(compiler, debugOptions, action);
+
+	// Fuck this
+	static int lastActive = 0;
+
+	if (!dr) {
+		dbgPrint(DBGLVL_ERROR, "An error occured at shader step.");
+		return;
+	}
+
+	if (dr->status == DBG_RS_STATUS_OK) {
+		/* Update scope list and mark changed variables */
+		model->setChangedAndScope(dr->cgbls, dr->scope, dr->scopeStack);
+
+		if (update_covermap) {
+			DataBox* coverageBox = create_databox(shaderMode);
+
+			/* Retrieve cover map (one render pass 'DBG_CG_COVERAGE') */
+			if (!getDebugData(shaderMode, DBG_CG_COVERAGE, NULL,
+							  GL_FLOAT, NULL, coverageBox)) {
+				dbgPrint(DBGLVL_ERROR, "An error occurred while reading coverage.");
+				if (coverageBox)
+					delete coverageBox;
+				cleanShader(shaderMode);
+				emit setRunLevel(RL_DBG_RESTART);
+				return;
+			}
+
+			bool changed;
+			int active = coverageBox->getCoverageFromData(&coverage, coverage, &changed);
+			emit updateWatchCoverage(shaderMode, coverage);
+
+			if (shaderMode == smFragment) {
+				if (active == lastActive)
+					cmstatus = COVERAGEMAP_UNCHANGED;
+				else if (active > lastActive)
+					cmstatus = COVERAGEMAP_GROWN;
+				else
+					cmstatus = COVERAGEMAP_SHRINKED;
+				lastActive = active;
+			} else if (shaderMode == smGeometry || shaderMode == smVertex) {
+				if (changed) {
+					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_GROWN");
+					cmstatus = COVERAGEMAP_GROWN;
+				} else {
+					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_UNCHANGED");
+					cmstatus = COVERAGEMAP_UNCHANGED;
+				}
+			}
+
+			if (coverageBox)
+				delete coverageBox;
+		}
+	} else if (dr->status == DBG_RS_STATUS_FINISHED) {
+		emit updateStepControls(false);
+	} else {
+		dbgPrint(DBGLVL_ERROR, "An unhandled debug result (%d) occurred.", dr->status);
+		return;
+	}
+
+	if (dr->position == DBG_RS_POSITION_DUMMY)
+		emit updateStepControls(false);
+
+
+	/* Process watch list */
+	if (update_watch) {
+		dbgPrint(DBGLVL_INFO, "updateWatchData %d emitVertex: %d, discard: %d",
+				 cmstatus, dr->passedEmitVertex, dr->passedDiscard);
+		emit updateWatchData(shaderMode, cmstatus, coverage,
+						dr->passedEmitVertex || dr->passedDiscard);
+	}
+
+	updateDialogs(dr->position, dr->loopIteration, update_covermap, updateGUI);
+
+	if (updateGUI)
+		emit updateSourceHighlight(shaderMode, dr->range);
 }
 
 void ShDataManager::selectionChanged(int x, int y)
@@ -353,7 +358,7 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 								  bool update_covermap, bool update_gui)
 {
 	DataBox* dataBox = NULL;
-	DbgCgOptions options = position_options(position);
+	DbgCgOptions options = position_options(static_cast<DbgRsTargetPosition>(position));
 
 	if (options == DBG_CG_ORIGINAL_SRC)
 		return;
@@ -373,18 +378,17 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 		}
 	}
 
-	QList<ShVarItem*> watchItems;
+	QSet<ShVarItem *> watchItems;
 	/* Create list of all watch item boxes */
-	if (model && shaderMode != smFragment)
-		watchItems = model->getAllWatchItemPointers();
-
+	if (shaderMode != smFragment)
+		emit getWatchItems(watchItems);
 
 	/* Process position dependent requests */
 	switch (position) {
 	case DBG_RS_POSITION_SELECTION_IF_CHOOSE:
 	case DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE: {
-		bool ifelse = dr->position == DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE;
-		SelectionDialog dialog(shaderMode, dataBox, watchItems, geometry, ifelse, this);
+		bool ifelse = position == DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE;
+		SelectionDialog dialog(shaderMode, dataBox, watchItems, geometry, ifelse, windows);
 		switch (dialog.exec()) {
 		case SelectionDialog::SB_SKIP:
 			step(DBG_BH_JUMP_OVER);
@@ -407,19 +411,19 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 		/* Add data to the loop storage */
 		if (loop_iter == 0) {
 			dbgPrint(DBGLVL_INFO, "==> new loop encountered");
-			lData = new LoopData(dataBox, this);
-			m_qLoopData.push(lData);
+			lData = new LoopData(shaderMode, dataBox, this);
+			loopsData.push(lData);
 		} else {
 			dbgPrint(DBGLVL_INFO, "==> known loop at %d", loop_iter);
-			if (!m_qLoopData.isEmpty()) {
-				lData = m_qLoopData.top();
-				if (updateCovermap)
-					lData->addLoopIteration(dataBox, loop_iter);
+			if (!loopsData.isEmpty()) {
+				lData = loopsData.top();
+				if (update_covermap)
+					lData->addLoopIteration(shaderMode, dataBox, loop_iter);
 			} else {
 				/* TODO error handling */
 				dbgPrint(DBGLVL_ERROR, "An error occurred while trying to "
 						 "get loop count data.");
-				ShaderStep(DBG_BH_JUMP_OVER);
+				step(DBG_BH_JUMP_OVER);
 				delete dataBox;
 				return;
 			}
@@ -427,21 +431,20 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 		delete dataBox;
 
 		if (update_gui) {
-			LoopDialog lDialog(lData, watchItems, geometry, this);
-			connect(&lDialog, SIGNAL(doShaderStep(int, bool, bool)),
-					this, SLOT(ShaderStep(int, bool, bool)));
+			LoopDialog lDialog(shaderMode, lData, watchItems, geometry, windows);
+			connect(&lDialog, SIGNAL(doStep(int, bool, bool)), this, SLOT(step(int,bool,bool)));
 
 			switch (lDialog.exec()) {
 			case LoopDialog::SA_NEXT:
-				ShaderStep(DBG_BH_LOOP_NEXT_ITER);
+				step(DBG_BH_LOOP_NEXT_ITER);
 				break;
 			case LoopDialog::SA_BREAK:
-				ShaderStep (DBG_BH_JUMP_OVER);
+				step (DBG_BH_JUMP_OVER);
 				break;
 			case LoopDialog::SA_JUMP:
 				/* Force update of all changed items */
-				updateWatchListData(COVERAGEMAP_GROWN, false);
-				ShaderStep(DBG_BH_JUMP_INTO);
+				emit updateWatchData(shaderMode, COVERAGEMAP_GROWN, coverage, false);
+				step(DBG_BH_JUMP_INTO);
 				break;
 			}
 			disconnect(&lDialog, 0, 0, 0);
@@ -456,11 +459,12 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 bool ShDataManager::processError(int error, ShaderMode type)
 {
 	emit setErrorStatus(error);
-	if (error == PCE_NONE)
+	pcErrorCode code = static_cast<pcErrorCode>(error);
+	if (code == PCE_NONE)
 		return true;
 
-	dbgPrint(DBGLVL_WARNING, "Error occured: " << getErrorDescription(error));
-	if (isErrorCritical(error)) {
+	dbgPrint(DBGLVL_WARNING, "Error occured: %s", getErrorDescription(code));
+	if (isErrorCritical(code)) {
 		dbgPrint(DBGLVL_ERROR, "Error is critical.");
 		cleanShader(type);
 		setRunLevel(RL_SETUP);

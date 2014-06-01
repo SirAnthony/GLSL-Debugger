@@ -12,6 +12,8 @@ public:
 		: QObject(parent), boxDataMap(dataMap), coverage(cov) {}
 	~DataBox() {}
 
+	virtual void copyFrom(DataBox *) = 0;
+
 	/* get min/max data values per element, channel == -1 means all elements */
 	virtual double getMin(int element = -1) = 0;
 	virtual double getMax(int element = -1) = 0;
@@ -26,7 +28,8 @@ public:
 	int getCoverageFromData(bool **coverage, const bool *old = NULL,
 							bool *_changed = NULL);
 
-	virtual int getDataSize() = 0;
+	virtual int getSize() = 0;
+	virtual int getDataSize() = 0;	
 	virtual const void* getDataPointer() = 0;
 	virtual bool getDataValue(int, QVariant *) = 0;
 	virtual bool getDataValue(int x, int, QVariant *v)

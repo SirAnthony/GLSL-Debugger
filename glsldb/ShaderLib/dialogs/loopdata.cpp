@@ -1,265 +1,183 @@
-/******************************************************************************
 
-Copyright (C) 2006-2009 Institute for Visualization and Interactive Systems
-(VIS), Universität Stuttgart.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-  * Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright notice, this
-	list of conditions and the following disclaimer in the documentation and/or
-	other materials provided with the distribution.
-
-  * Neither the name of the name of VIS, Universität Stuttgart nor the names
-	of its contributors may be used to endorse or promote products derived from
-	this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*******************************************************************************/
-
-#include "loopData.qt.h"
+#include "loopdata.h"
 #include "colors.qt.h"
+#include "data/dataBox.h"
+#include "data/vertexBox.h"
+#include "data/pixelBox.h"
+#include "utils/dbgprint.h"
 #include <QtGui/QColor>
 
-LoopData::LoopData(PixelBoxFloat *condition, QObject *parent) :
+LoopData::LoopData(ShaderMode mode, DataBox *condition, QObject *parent) :
 		QObject(parent)
 {
-	m_pActualVData = NULL;
+	vertexData = NULL;
+	fragmentData = NULL;
 
-	m_qModel.setHorizontalHeaderItem(0, new QStandardItem("iteration"));
-	m_qModel.setHorizontalHeaderItem(1, new QStandardItem("active"));
-	m_qModel.setHorizontalHeaderItem(2, new QStandardItem("done"));
-	m_qModel.setHorizontalHeaderItem(3, new QStandardItem("out"));
+	_model.setHorizontalHeaderItem(0, new QStandardItem("iteration"));
+	_model.setHorizontalHeaderItem(1, new QStandardItem("active"));
+	_model.setHorizontalHeaderItem(2, new QStandardItem("done"));
+	_model.setHorizontalHeaderItem(3, new QStandardItem("out"));
 
-	m_nIteration = 0;
-	if (condition->getWidth() * condition->getHeight()) {
-		m_pInitialCoverage = new bool[condition->getWidth()
-				* condition->getHeight()];
-		memcpy(m_pInitialCoverage, condition->getCoveragePointer(),
-				condition->getWidth() * condition->getHeight() * sizeof(bool));
+	int size = condition->getSize();
+	if (size) {
+		initialCoverage = new bool[size];
+		memcpy(initialCoverage, condition->getCoveragePointer(), size * sizeof(bool));
 	}
-	m_pActualFData = new PixelBoxFloat(condition);
-	updateStatistic();
-}
 
-LoopData::LoopData(VertexBox *condition, QObject *parent) :
-		QObject(parent)
-{
-	m_pActualFData = NULL;
-
-	m_qModel.setHorizontalHeaderItem(0, new QStandardItem("iteration"));
-	m_qModel.setHorizontalHeaderItem(1, new QStandardItem("active"));
-	m_qModel.setHorizontalHeaderItem(2, new QStandardItem("done"));
-	m_qModel.setHorizontalHeaderItem(3, new QStandardItem("out"));
-
-	m_nIteration = 0;
-	if (condition->getNumVertices()) {
-		m_pInitialCoverage = new bool[condition->getNumVertices()];
-		memcpy(m_pInitialCoverage, condition->getCoveragePointer(),
-				condition->getNumVertices() * sizeof(bool));
-	}
-	m_pActualVData = new VertexBox();
-	m_pActualVData->copyFrom(condition);
-	updateStatistic();
+	addLoopIteration(mode, condition, 0);
 }
 
 LoopData::~LoopData()
 {
-	delete[] m_pInitialCoverage;
-	delete m_pActualFData;
-	delete m_pActualVData;
+	delete[] initialCoverage;
+	if (fragmentData)
+		delete fragmentData;
+	if (vertexData)
+		delete vertexData;
 }
 
-void LoopData::addLoopIteration(PixelBoxFloat *condition, int iteration)
+void LoopData::addLoopIteration(ShaderMode mode, DataBox *condition, int iter)
 {
-	delete m_pActualFData;
-	m_nIteration = iteration;
-	m_pActualFData = new PixelBoxFloat(condition);
+	iteration = iter;
+	DataBox *box = initializeBox(mode);
+	box->copyFrom(condition);
 	updateStatistic();
 }
 
-void LoopData::addLoopIteration(VertexBox *condition, int iteration)
+void LoopData::updateStatistic()
 {
-	m_nIteration = iteration;
-	m_pActualVData->copyFrom(condition);
-	updateStatistic();
-}
+	int width = getWidth();
+	int height = getHeight();
+	int channels = fragmentData ? fragmentData->getChannels() : (vertexData ? 1 : 0);
+	const float *condition = getActualCondition();
+	const bool *coverage = getActualCoverage();
 
-void LoopData::updateStatistic(void)
-{
-	int x, y, c;
-	int width;
-	int height;
-	int channel;
-	float *pConditionData;
-	bool *pConditionCover;
-	bool *pInitialCover;
-
-	if (m_pActualFData) {
-		width = m_pActualFData->getWidth();
-		height = m_pActualFData->getHeight();
-		channel = m_pActualFData->getChannel();
-		pConditionData = m_pActualFData->getDataPointer();
-		pConditionCover = m_pActualFData->getCoveragePointer();
-		pInitialCover = m_pInitialCoverage;
-	} else if (m_pActualVData) {
-		width = 1;
-		height = m_pActualVData->getNumVertices();
-		channel = 1;
-		pConditionData = m_pActualVData->getDataPointer();
-		pConditionCover = m_pActualVData->getCoveragePointer();
-		pInitialCover = m_pInitialCoverage;
-	} else {
-		fprintf(stderr, "E! LoopData features vertex and fragment data\n");
+	if (!condition){
+		dbgPrint(DBGLVL_ERROR, "LoopData features vertex and fragment data");
 		exit(1);
 	}
 
-	int nActive = 0;
-	int nDone = 0;
-	int nOut = 0;
+	totalValues = 0;
+	activeValues = 0;
+	doneValues = 0;
+	outValues = 0;
 
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
-			if (*pInitialCover) {
-				if (*pConditionCover) {
-					if (*pConditionData > 0.75f) {
-						nActive++;
-					} else {
-						nDone++;
-					}
-				} else {
-					nOut++;
-				}
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			int offset = x * y;
+			if (!initialCoverage[offset])
+				continue;
+
+			if (coverage[offset]) {
+				if (condition[offset * channels] > 0.75f)
+					activeValues++;
+				else
+					doneValues++;
+			} else {
+				outValues++;
 			}
-			for (c = 0; c < channel; c++) {
-				pConditionData++;
-			}
-			pInitialCover++;
-			pConditionCover++;
 		}
 	}
 
-	m_nTotal = nActive + nDone + nOut;
-	m_nActive = nActive;
-	m_nDone = nDone;
-	m_nOut = nOut;
+	totalValues = activeValues + doneValues + outValues;
 
 	QList<QStandardItem*> rowData;
-	rowData << new QStandardItem(QVariant(m_nIteration).toString());
-	rowData << new QStandardItem(QVariant(nActive).toString());
-	rowData << new QStandardItem(QVariant(nDone).toString());
-	rowData << new QStandardItem(QVariant(nOut).toString());
-	m_qModel.appendRow(rowData);
+	rowData << new QStandardItem(QVariant(iteration).toString());
+	rowData << new QStandardItem(QVariant(activeValues).toString());
+	rowData << new QStandardItem(QVariant(doneValues).toString());
+	rowData << new QStandardItem(QVariant(outValues).toString());
+	_model.appendRow(rowData);
 }
 
-bool* LoopData::getActualCoverage(void)
+const bool* LoopData::getActualCoverage()
 {
-	if (m_pActualFData) {
-		return m_pActualFData->getCoveragePointer();
-	}
-
-	if (m_pActualVData) {
-		return m_pActualVData->getCoveragePointer();
-	}
-
+	if (fragmentData)
+		return fragmentData->getCoveragePointer();
+	if (vertexData)
+		return vertexData->getCoveragePointer();
 	return NULL;
 }
 
-float* LoopData::getActualCondition(void)
+const float* LoopData::getActualCondition()
 {
-	if (m_pActualFData) {
-		return m_pActualFData->getDataPointer();
-	}
-
-	if (m_pActualVData) {
-		return m_pActualVData->getDataPointer();
-	}
-
+	if (fragmentData)
+		return static_cast<const float *>(fragmentData->getDataPointer());
+	if (vertexData)
+		return static_cast<const float *>(vertexData->getDataPointer());
 	return NULL;
 }
 
-int LoopData::getWidth(void)
+int LoopData::getWidth()
 {
-	if (m_pActualFData) {
-		return m_pActualFData->getWidth();
-	}
-
-	if (m_pActualVData) {
+	if (fragmentData)
+		return fragmentData->getWidth();
+	if (vertexData)
 		return 1;
-	}
-
 	return 0;
 }
 
-int LoopData::getHeight(void)
+int LoopData::getHeight()
 {
-	if (m_pActualFData) {
-		return m_pActualFData->getHeight();
-	}
-	if (m_pActualVData) {
-		return m_pActualVData->getNumVertices();
-	}
-
+	if (fragmentData)
+		return fragmentData->getHeight();
+	if (vertexData)
+		return vertexData->getNumVertices();
 	return 0;
 }
 
-QImage LoopData::getImage(void)
+QImage LoopData::getImage()
 {
-	int x, y, c;
-	int width = m_pActualFData->getWidth();
-	int height = m_pActualFData->getHeight();
-	int channel = m_pActualFData->getChannel();
-
+	int width = getWidth();
+	int height = getHeight();
 	QImage image(width, height, QImage::Format_RGB32);
 
-	float *pConditionData = m_pActualFData->getDataPointer();
-	bool *pConditionCover = m_pActualFData->getCoveragePointer();
-	bool *pInitialCover = m_pInitialCoverage;
+	if (!fragmentData)
+		return image;
 
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
-			if (*pInitialCover) {
+	int channels = fragmentData->getChannels();
+	const float *condition = getActualCondition();
+	const bool *coverage = getActualCoverage();
+
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			int offset = x * y;
+			QColor color;
+			if (initialCoverage[offset]) {
 				/* initial data available */
-				if (*pConditionCover) {
+				if (coverage[offset]) {
 					/* actual data available */
-					if (*pConditionData > 0.75f) {
-						image.setPixel(x, y, DBG_GREEN.rgb());
-					} else {
-						image.setPixel(x, y, DBG_RED.rgb());
-					}
+					if (condition[offset * channels] > 0.75f)
+						color = DBG_GREEN;
+					else
+						color = DBG_RED;
 				} else {
 					/* loop was left earlier at this pixel */
-					image.setPixel(x, y, DBG_ORANGE.rgb());
+					color = DBG_ORANGE;
 				}
 			} else {
 				/* no initial data, print checkerboard */
-				if (((x / 8) % 2) == ((y / 8) % 2)) {
-					image.setPixel(x, y, QColor(255, 255, 255).rgb());
-				} else {
-					image.setPixel(x, y, QColor(204, 204, 204).rgb());
-				}
+				color = DBG_COLOR_BY_POS(x, y);
 			}
-			for (c = 0; c < channel; c++) {
-				pConditionData++;
-			}
-			pInitialCover++;
-			pConditionCover++;
+
+			image.setPixel(x, y, color.rgb());
 		}
 	}
+
 	return image;
+}
+
+DataBox *LoopData::initializeBox(ShaderMode mode)
+{
+	DataBox *target = NULL;
+	if (mode == smFragment) {
+		if (!fragmentData)
+			fragmentData = new PixelBox();
+		target = fragmentData;
+	} else if (mode == smVertex || mode == smGeometry) {
+		if (vertexData)
+			vertexData = new VertexBox();
+		target = vertexData;
+	}
+	return target;
 }
 

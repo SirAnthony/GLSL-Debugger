@@ -38,6 +38,33 @@ PixelBox::PixelBox(QObject *parent) :
 PixelBox::PixelBox(PixelBox *src) :
 		DataBox(src->parent())
 {
+	width = 0;
+	height = 0;
+	channels = 0;
+	coverage = NULL;
+	boxData = NULL;
+	boxDataMap = NULL;
+	boxDataMin = NULL;
+	boxDataMax = NULL;
+	boxDataMinAbs = NULL;
+	boxDataMaxAbs = NULL;
+
+	copyFrom(src);
+}
+
+PixelBox::~PixelBox()
+{
+	deleteData(true);
+}
+
+void PixelBox::copyFrom(DataBox *box)
+{
+	PixelBox* src = dynamic_cast<PixelBox *>(box);
+	if (!src)
+		return;
+
+	deleteData();
+
 	width = src->width;
 	height = src->height;
 	channels = src->channels;
@@ -60,11 +87,8 @@ PixelBox::PixelBox(PixelBox *src) :
 	memcpy(boxDataMax, src->boxDataMax, channelsLen);
 	memcpy(boxDataMinAbs, src->boxDataMinAbs, channelsLen);
 	memcpy(boxDataMaxAbs, src->boxDataMaxAbs, channelsLen);
-}
 
-PixelBox::~PixelBox()
-{
-	clear();
+	emit dataChanged();
 }
 
 void PixelBox::setMinMaxArea(const QRect& minMaxArea)
@@ -212,7 +236,7 @@ void PixelBox::invalidateData()
 }
 
 
-void PixelBox::clear()
+void PixelBox::deleteData(bool signal)
 {
 	if (boxData)
 		free(boxData);
@@ -232,7 +256,13 @@ void PixelBox::clear()
 	boxDataMax = NULL;
 	boxDataMinAbs = NULL;
 	boxDataMaxAbs = NULL;
-	emit dataDeleted();
+
+	width = 0;
+	height = 0;
+	channels = 0;
+
+	if (signal)
+		emit dataDeleted();
 }
 
 double PixelBox::getBoundary(int current_channel, double bval, void *data, bool max)

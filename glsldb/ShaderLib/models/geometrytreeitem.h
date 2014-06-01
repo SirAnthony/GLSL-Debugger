@@ -2,12 +2,11 @@
 #ifndef GEOMETRYTREEITEM_H
 #define GEOMETRYTREEITEM_H
 
-#include <QtCore/QList>
-#include <QtCore/QVariant>
+#include <QList>
+#include <QVariant>
 #include <QStandardItem>
 
 class VertexBox;
-
 
 class GeometryTreeItem : public QStandardItem {
 public:
@@ -21,9 +20,7 @@ public:
 
 	int getDataIndex() const;
 	virtual bool isVertexItem() const
-	{
-		return false;
-	}
+	{ return false; }
 
 protected:
 	QString itemName;
@@ -34,7 +31,7 @@ protected:
 class GeometryTreeInPrimitive: public GeometryTreeItem {
 public:
 	GeometryTreeInPrimitive(QString name, int dataIdx, QList<VertexBox*> *data,
-			VertexBox *condition, bool *initialCondition);
+			VertexBox *condition, const bool *initial);
 
 	virtual int columnCount() const;
 	virtual QVariant data(int column) const;
@@ -43,7 +40,7 @@ public:
 
 protected:
 	VertexBox *condition;
-	bool *initialCondition;
+	const bool *coverage;
 };
 
 class GeometryTreeOutPrimitive: public GeometryTreeItem {
@@ -61,9 +58,7 @@ public:
 	virtual QVariant data(int column) const;
 	virtual Qt::ItemFlags flags(int column) const;
 	virtual bool isVertexItem() const
-	{
-		return true;
-	}
+	{ return true; }
 };
 
 #endif /* GEOMETRYTREEITEM_H */

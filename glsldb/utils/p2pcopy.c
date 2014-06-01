@@ -131,7 +131,7 @@ void cpyToProcess(DWORD pid, void *dst, void *src, size_t size) {
 	CloseHandle(procHandle);
 }
 #else /* _WIN32 */
-void cpyToProcess(pid_t pid, void *dst, void *src, size_t size)
+void cpyToProcess(pid_t pid, void *dst, const void *src, size_t size)
 {
 	ALIGNED_DATA start, *buffer;
 	size_t count;

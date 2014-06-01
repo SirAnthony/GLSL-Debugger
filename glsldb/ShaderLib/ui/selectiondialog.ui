@@ -36,6 +36,14 @@
      <property name="frameShadow">
       <enum>QFrame::Plain</enum>
      </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <property name="margin">
+       <number>0</number>
+      </property>
+      <property name="spacing">
+       <number>0</number>
+      </property>
+     </layout>
     </widget>
    </item>
    <item>
@@ -232,5 +240,59 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pbSkip</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSelection</receiver>
+   <slot>skipClick()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>86</x>
+     <y>582</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pbIf</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSelection</receiver>
+   <slot>ifClick()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>257</x>
+     <y>582</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pbElse</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSelection</receiver>
+   <slot>elseClick()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>429</x>
+     <y>582</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>ifClick()</slot>
+  <slot>elseClick()</slot>
+  <slot>skipClick()</slot>
+ </slots>
 </ui>

@@ -54,7 +54,8 @@ void ShWatchDock::cleanDock(ShaderMode)
 	ui->SelectionPos->setText("No Selection");
 }
 
-void ShWatchDock::updateData(CoverageMapStatus cmstatus, ShaderMode type, bool force)
+void ShWatchDock::updateData(ShaderMode type, CoverageMapStatus cmstatus,
+							 bool *coverage, bool force)
 {
 	foreach (ShVarItem* item, watchItems) {
 		bool changed = item->data(DF_CHANGED).toBool();
@@ -68,11 +69,11 @@ void ShWatchDock::updateData(CoverageMapStatus cmstatus, ShaderMode type, bool f
 
 		if (force) {
 			if (scope & ShVarItem::AtScope || builtin)
-				updated = item->updateWatchData(type);
+				updated = item->updateWatchData(type, coverage);
 			else
 				item->invalidateWatchData();
 		} else if (scope & ShVarItem::NewInScope || (changed && scope & ShVarItem::AtScope)) {
-			updated = item->updateWatchData(type);
+			updated = item->updateWatchData(type, coverage);
 		} else if (scope & ShVarItem::LeftScope) {
 			item->invalidateWatchData();
 		} else if (cmstatus == COVERAGEMAP_GROWN) {
@@ -80,9 +81,9 @@ void ShWatchDock::updateData(CoverageMapStatus cmstatus, ShaderMode type, bool f
 			if (scope & ShVarItem::AtScope || builtin) {
 				if (type == smFragment) {
 					if (!item->pixelDataAvaliable())
-						updated = item->updateWatchData(type);
+						updated = item->updateWatchData(type, coverage);
 				} else {
-					updated = item->updateWatchData(type);
+					updated = item->updateWatchData(type, coverage);
 				}
 			} else {
 				item->invalidateWatchData();
@@ -100,7 +101,7 @@ void ShWatchDock::updateData(CoverageMapStatus cmstatus, ShaderMode type, bool f
 	this->model->valuesChanged();
 }
 
-void ShWatchDock::resetData(ShaderMode type)
+void ShWatchDock::resetData(ShaderMode type, bool *coverage)
 {
 	if (watchItems.empty())
 		return;
@@ -108,7 +109,7 @@ void ShWatchDock::resetData(ShaderMode type)
 	foreach (ShVarItem* item, watchItems) {
 		ShVarItem::Scope scope = (ShVarItem::Scope)item->data(DF_SCOPE).toInt();
 		if ((scope & ShVarItem::IsInScope) || item->data(DF_BUILTIN).toBool()) {
-			if (!item->updateWatchData(type))
+			if (!item->updateWatchData(type, coverage))
 				return;
 		} else {
 			item->invalidateWatchData();
@@ -125,7 +126,7 @@ void ShWatchDock::updateCoverage(ShaderMode type, bool *coverage)
 		return;
 
 	int pixels[2];
-	ShDataManager::get()->getPixels(&pixels);
+	ShDataManager::get()->getPixels(pixels);
 	foreach (ShVarItem* item, watchItems) {
 		varDataFields field = DF_FIRST;
 		if (type == smFragment)
@@ -188,6 +189,11 @@ void ShWatchDock::updateSelection(int x, int y, QString &text, ShaderMode type)
 	ui->SelectionPos->setText(text);
 	foreach (ShVarItem* item, watchItems)
 		item->setCurrentValue(pixels, type);
+}
+
+void ShWatchDock::getWatchItems(QSet<ShVarItem *> &set)
+{
+	set.unite(watchItems);
 }
 
 void ShWatchDock::newWindow()

@@ -2,6 +2,7 @@
 #include "geometrydatamodel.h"
 #include "geometrytreeitem.h"
 #include "data/vertexBox.h"
+#include "models/shvaritem.h"
 #include "utils/dbgprint.h"
 #include <QtOpenGL>
 
@@ -122,32 +123,30 @@ int GeometryDataModel::generateVerticles(const float *data, int offset, int coun
 	return generated;
 }
 
-GeometryDataModel::GeometryDataModel(int inPrimitiveType,
-		int outPrimitiveType, VertexBox *primitiveMap,
-		VertexBox *vertexCountMap, VertexBox *_condition, bool *initialCoverage,
-		QObject *parent) :
+GeometryDataModel::GeometryDataModel(const GeometryInfo &geometry, VertexBox *_condition,
+		const bool *initial, QObject *parent) :
 		QAbstractItemModel(parent)
 {
-	inPrimitive = inPrimitiveType;
-	outPrimitive = outPrimitiveType;
+	inPrimitive = geometry.primitiveMode;
+	outPrimitive = geometry.outputType;
 	numSubInPrimitives = 0;
 	numOutPrimitives = 0;
 	numOutVertices = 0;
 	numInPrimitives = 0;
 	condition = _condition;
-	coverage = initialCoverage;
+	coverage = initial;
 	rootItem = new GeometryTreeItem("ROOT", -1, &currentData);
 
-	const float *vcMap = static_cast<const float*>(vertexCountMap->getDataPointer());
-	const float *primMap = static_cast<const float*>(primitiveMap->getDataPointer());
+	const float *vcMap = static_cast<const float*>(geometry.count->getDataPointer());
+	const float *primMap = static_cast<const float*>(geometry.map->getDataPointer());
 
 	int generated = 0;
-	int numVertices = primitiveMap->getNumVertices();
-	int inPrimitives = vertexCountMap->getNumVertices();
+	int numVertices = geometry.map->getNumVertices();
+	int inPrimitives = geometry.count->getNumVertices();
 
 	// FIXME: WTF IS THIS? So much loops made me cry.
 	//        This must be rewritten somehow
-	bool basic = isBasicPrimitive(inPrimitiveType);
+	bool basic = isBasicPrimitive(geometry.primitiveMode);
 	QList<VertexBox*>* cdata = basic ? &currentData : NULL;
 	for (int i = 0; i < inPrimitives;) {
 		int primitiveIdIn = vcMap[DATA_STRIDE * i + 2];
@@ -186,10 +185,20 @@ GeometryDataModel::~GeometryDataModel()
 	delete rootItem;
 }
 
-bool GeometryDataModel::addData(VertexBox *current, VertexBox* vertex,
-		QString &name)
+bool GeometryDataModel::addItem(ShVarItem *item)
 {
-	if (currentData.contains(current))
+	QString name = item->data(DF_FULLNAME).toString();
+	VertexBox* vertex = static_cast<VertexBox *>(
+				item->data(DF_DATA_VERTEXBOX).value<void *>());
+	VertexBox* current = static_cast<VertexBox *>(
+				item->data(DF_DATA_GEOMETRYBOX).value<void *>());
+
+	return addData(current, vertex, name);
+}
+
+bool GeometryDataModel::addData(VertexBox *current, VertexBox *vertex, QString &name)
+{
+	if (!current || currentData.contains(current))
 		return false;
 
 	currentData.append(current);
@@ -200,6 +209,7 @@ bool GeometryDataModel::addData(VertexBox *current, VertexBox* vertex,
 	updateData();
 	return true;
 }
+
 
 #define STRINGFY_CASE(val) case val: return #val;
 

@@ -26,14 +26,19 @@ public:
 	PixelBox(QObject *parent = 0);
 	PixelBox(PixelBox *src);
 	virtual ~PixelBox();
+
+	void copyFrom(DataBox *);
+
 	int getWidth(void) { return width; }
 	int getHeight(void) { return height; }
 	int getChannels(void) { return channels; }
 
 	template<typename vType>
 	void setData(int width, int height, int channels, vType *data, bool *coverage = 0);
-	int getDataSize() { return channels; }
-	const void* getDataPointer(void) { return boxData; }
+	int getSize() { return width * height; }
+	int getDataSize() { return channels; }	
+
+	const void* getDataPointer() { return boxData; }
 	bool getDataValue(int x, int y, double *v);
 	virtual bool getDataValue(int, QVariant *) { return false; }
 	virtual bool getDataValue(int x, int y, QVariant *v);
@@ -58,7 +63,7 @@ public slots:
 	void setMinMaxArea(const QRect& minMaxArea);
 
 protected:
-	void clear();
+	void deleteData(bool signal = false);
 	double getBoundary(int _channel, double val, void *data, bool max = false);
 	int mapFromValue(FBMapping mapping, double f, int c);
 	double getData(const void *data, int offset);

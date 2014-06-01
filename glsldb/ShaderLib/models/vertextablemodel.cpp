@@ -1,6 +1,7 @@
 
 #include "colors.qt.h"
 #include "vertextablemodel.h"
+#include "shvaritem.h"
 
 VertexTableSortFilterProxyModel::VertexTableSortFilterProxyModel(QObject *parent) :
 		QSortFilterProxyModel(parent)
@@ -26,12 +27,11 @@ bool VertexTableSortFilterProxyModel::filterAcceptsRow(int row,
 
 
 
-
-VertexTableModel::VertexTableModel(QObject *parent) :
+VertexTableModel::VertexTableModel(VertexBox *cond, const bool *cover, QObject *parent) :
 		QAbstractTableModel(parent)
 {
-	boxCondition = NULL;
-	coverage = NULL;
+	boxCondition = cond;
+	coverage = cover;
 }
 
 VertexTableModel::~VertexTableModel()
@@ -40,23 +40,26 @@ VertexTableModel::~VertexTableModel()
 	names.clear();
 }
 
-bool VertexTableModel::addVertexBox(VertexBox *vb, QString &name)
+bool VertexTableModel::addItem(ShVarItem *item)
 {
-	foreach (VertexBox* data, boxData)
-		if (data == vb)
-			return false;
-	boxData.append(vb);
-	names.append(name);
-	connect(vb, SIGNAL(dataDeleted()), this, SLOT(detachData()));
-	connect(vb, SIGNAL(dataChanged()), this, SLOT(updateData()));
-	reset();
-	return true;
+	QString name = item->data(DF_FULLNAME).toString();
+	VertexBox* vbox = static_cast<VertexBox *>(
+				item->data(DF_DATA_VERTEXBOX).value<void *>());
+	return addData(vbox, name);
 }
 
-void VertexTableModel::setCondition(VertexBox *condition, bool *initialCoverage)
+bool VertexTableModel::addData(VertexBox *vertex, QString &name)
 {
-	boxCondition = condition;
-	coverage = initialCoverage;
+	if (!vertex || boxData.contains(vertex))
+		return false;
+
+	boxData.append(vertex);
+	names.append(name);
+	connect(vertex, SIGNAL(dataDeleted()), this, SLOT(detachData()));
+	connect(vertex, SIGNAL(dataChanged()), this, SLOT(updateData()));
+	reset();
+
+	return true;
 }
 
 int VertexTableModel::rowCount(const QModelIndex &) const

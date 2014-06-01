@@ -5,6 +5,7 @@
 #include <QtCore/QAbstractTableModel>
 #include <QtGui/QSortFilterProxyModel>
 #include "data/vertexBox.h"
+#include "shtabledatamodel.h"
 
 class VertexTableSortFilterProxyModel: public QSortFilterProxyModel {
 Q_OBJECT
@@ -24,15 +25,15 @@ private:
 
 
 
-class VertexTableModel: public QAbstractTableModel {
+class VertexTableModel: public QAbstractTableModel, public ShTableDataModel {
 Q_OBJECT
 
 public:
-	VertexTableModel(QObject *parent = 0);
+	VertexTableModel(VertexBox *, const bool *cov = NULL, QObject *parent = 0);
 	~VertexTableModel();
 
-	bool addVertexBox(VertexBox *vb, QString &name);
-	void setCondition(VertexBox *condition, bool *initialCoverage = NULL);
+	virtual bool addItem(ShVarItem *);
+	bool addData(VertexBox *vertex, QString& name);
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
@@ -59,7 +60,7 @@ private:
 	QList<VertexBox *> boxData;
 	QList<QString> names;
 	VertexBox *boxCondition;
-	bool *coverage;
+	const bool *coverage;
 };
 
 #endif /* VERTEX_TABLE_MODEL_H */

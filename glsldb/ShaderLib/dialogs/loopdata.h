@@ -1,132 +1,75 @@
-/******************************************************************************
 
-Copyright (C) 2006-2009 Institute for Visualization and Interactive Systems
-(VIS), Universität Stuttgart.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-  * Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright notice, this
-	list of conditions and the following disclaimer in the documentation and/or
-	other materials provided with the distribution.
-
-  * Neither the name of the name of VIS, Universität Stuttgart nor the names
-	of its contributors may be used to endorse or promote products derived from
-	this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*******************************************************************************/
-
-#ifndef _LOOP_DATA_QT_H_
-#define _LOOP_DATA_QT_H_
+#ifndef LOOPDATA_H
+#define LOOPDATA_H
 
 #include <QtGui/QStandardItemModel>
-#include <QtGui/QStandardItem>
 #include <QtCore/QObject>
 #include <QtGui/QImage>
-#include "pixelBox.qt.h"
-#include "vertexBox.qt.h"
+#include "shdatamanager.h"
+
 
 #define MAX_LOOP_ITERATIONS 255
+
 
 class LoopData: public QObject {
 Q_OBJECT
 
 public:
-	LoopData(PixelBoxFloat *condition, QObject *parent = 0);
-	LoopData(VertexBox *condition, QObject *parent = 0);
+	LoopData(ShaderMode mode, DataBox *condition, QObject *parent = 0);
 	~LoopData();
 
-	void addLoopIteration(PixelBoxFloat *condition, int iteration);
-	void addLoopIteration(VertexBox *condition, int iteration);
+	void addLoopIteration(ShaderMode mode, DataBox *condition, int iteration);
 
 	QStandardItemModel* getModel(void)
-	{
-		return &m_qModel;
-	}
+	{ return &_model; }
 
-	bool* getInitialCoverage(void)
-	{
-		return m_pInitialCoverage;
-	}
-	bool* getActualCoverage(void);
-	float* getActualCondition(void);
+	const bool* getInitialCoverage(void)
+	{ return initialCoverage; }
+	const bool* getActualCoverage(void);
+	const float* getActualCondition(void);
 
-	PixelBoxFloat* getActualPixelBox(void)
-	{
-		return m_pActualFData;
-	}
+	PixelBox* getActualPixelBox(void)
+	{ return fragmentData; }
 	VertexBox* getActualVertexBox(void)
-	{
-		return m_pActualVData;
-	}
+	{ return vertexData; }
 
 	int getTotal(void)
-	{
-		return m_nTotal;
-	}
+	{ return totalValues; }
 	int getActive(void)
-	{
-		return m_nActive;
-	}
+	{ return activeValues; }
 	int getDone(void)
-	{
-		return m_nDone;
-	}
+	{ return doneValues; }
 	int getOut(void)
-	{
-		return m_nOut;
-	}
+	{ return outValues; }
 
 	int getWidth(void);
 	int getHeight(void);
 	int getIteration(void)
-	{
-		return m_nIteration;
-	}
+	{ return iteration; }
 
 	QImage getImage(void);
 
 	bool isFragmentLoop(void)
-	{
-		return (m_pActualFData != NULL);
-	}
+	{ return (fragmentData != NULL); }
 	bool isVertexLoop(void)
-	{
-		return (m_pActualVData != NULL);
-	}
-
-private slots:
+	{ return (vertexData != NULL); }
 
 private:
+	DataBox *initializeBox(ShaderMode mode);
 	void updateStatistic(void);
 
-	int m_nIteration;
-	bool *m_pInitialCoverage;
-	PixelBoxFloat *m_pActualFData;
-	VertexBox *m_pActualVData;
+	int iteration;
+	bool *initialCoverage;
+	PixelBox *fragmentData;
+	VertexBox *vertexData;
 
-	int m_nTotal;
-	int m_nActive;
-	int m_nDone;
-	int m_nOut;
+	int totalValues;
+	int activeValues;
+	int doneValues;
+	int outValues;
 
-	QStandardItemModel m_qModel;
+	QStandardItemModel _model;
 };
 
-#endif
+#endif /* LOOPDATA_H */
 

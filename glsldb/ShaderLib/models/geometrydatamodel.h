@@ -2,10 +2,12 @@
 #ifndef GEOMETRYDATAMODEL_H
 #define GEOMETRYDATAMODEL_H
 
-#include <QAbstractItemModel>
 #include <QSortFilterProxyModel>
 #include <QModelIndex>
 #include <QVariant>
+#include <QAbstractItemModel>
+#include "shdatamanager.h"
+#include "shtabledatamodel.h"
 
 
 class VertexBox;
@@ -32,14 +34,16 @@ private:
 
 
 
-class GeometryDataModel: public QAbstractItemModel {
+class GeometryDataModel: public QAbstractItemModel, public ShTableDataModel {
 Q_OBJECT
 
 public:
-	GeometryDataModel(int inPrimitive, int outPrimitiveType,
-			VertexBox *primitiveMap, VertexBox *vertexCount,
-			VertexBox *condition, bool *initialCoverage, QObject *parent = 0);
+	GeometryDataModel(const GeometryInfo &geometry, VertexBox *condition,
+					  const bool *initial = NULL, QObject *parent = 0);
 	~GeometryDataModel();
+
+	virtual bool addItem(ShVarItem *);
+	bool addData(VertexBox *current, VertexBox *vertex, QString &name);
 
 	QVariant data(const QModelIndex &index, int role) const;
 	Qt::ItemFlags flags(const QModelIndex &index) const;
@@ -50,10 +54,7 @@ public:
 	QModelIndex parent(const QModelIndex &index) const;
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
-
 	bool noOutputPrims(const QModelIndex &index) const;
-
-	bool addData(VertexBox *currentData, VertexBox* vertexData, QString &name);
 
 	static QString primitiveString(int type);
 	static bool isBasicPrimitive(int primType);
@@ -94,7 +95,7 @@ private:
 	int numOutPrimitives;
 	int numOutVertices;
 	VertexBox *condition;
-	bool *coverage;
+	const bool *coverage;
 	QList<VertexBox*> currentData;
 	QList<VertexBox*> vertexData;
 	QList<QString> dataNames;

@@ -11,7 +11,7 @@
 #include "models/geometrydatamodel.h"
 #include "utils/dbgprint.h"
 
-WatchGeoTree::WatchGeoTree(GeometryInfo *info, QWidget *parent) :
+WatchGeoTree::WatchGeoTree(const GeometryInfo &info, QWidget *parent) :
 		WatchView(parent)
 {
 	/* Setup GUI */
@@ -19,8 +19,7 @@ WatchGeoTree::WatchGeoTree(GeometryInfo *info, QWidget *parent) :
 	ui->fMapping->setVisible(false);
 	type = ShWindowManager::wtGeometry;
 
-	_model = new GeometryDataModel(info->primitiveMode, info->outputType,
-			info->map, info->count, NULL, NULL, this);
+	_model = new GeometryDataModel(info, NULL, NULL, this);
 	modelFilter = new GeometryDataSortFilterProxyModel(this);
 	modelFilter->setSourceModel(_model);
 	modelFilter->setDynamicSortFilter(true);
@@ -42,7 +41,7 @@ WatchGeoTree::WatchGeoTree(GeometryInfo *info, QWidget *parent) :
 	for (int i = 0; i < GT_WIDGETS_COUNT; ++i)
 		connectWidget(widgets[i]);
 
-	updateDataInfo(info->primitiveMode, info->outputType);
+	updateDataInfo(info.primitiveMode, info.outputType);
 
 	dataSelection = DATA_CURRENT;
 	initScatter(std::max(_model->getNumInPrimitives(), _model->getNumOutVertices()));

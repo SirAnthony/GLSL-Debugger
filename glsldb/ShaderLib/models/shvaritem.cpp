@@ -3,7 +3,7 @@
 #include "data/vertexBox.h"
 #include "data/pixelBox.h"
 #include "utils/dbgprint.h"
-#include <QMessageBox>
+#include <QtOpenGL>
 
 
 ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
@@ -25,9 +25,9 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
 	this->selectable = !(var->type == SH_SAMPLER);
 
 	this->watched = false;
-	this->vertexBox.setValue(new VertexBox);
-	this->geometryBox.setValue(new VertexBox);
-	this->pixelBox.setValue(new PixelBox);
+	this->vertexBox = new VertexBox;
+	this->geometryBox = new VertexBox;
+	this->pixelBox = new PixelBox;
 	this->selected = QVariant();
 	this->uniform_value = QVariant();
 
@@ -82,21 +82,12 @@ ShVarItem::ShVarItem(ShVariable* var, bool recursive) :
 
 ShVarItem::~ShVarItem()
 {
-	VertexBox* vb = this->vertexBox.value<VertexBox*>();
-	VertexBox* gb = this->geometryBox.value<VertexBox*>();
-	PixelBox* pb = this->pixelBox.value<PixelBox*>();
-	if (vb) {
-		this->vertexBox.setValue(NULL);
-		delete vb;
-	}
-	if (gb) {
-		this->geometryBox.setValue(NULL);
-		delete gb;
-	}
-	if (pb) {
-		this->pixelBox.setValue(NULL);
-		delete pb;
-	}
+	if (vertexBox)
+		delete vertexBox, vertexBox = NULL;
+	if (geometryBox)
+		delete geometryBox, geometryBox = NULL;
+	if (pixelBox)
+		delete pixelBox, pixelBox = NULL;
 }
 
 ShChangeable* ShVarItem::getChangeable()
@@ -120,6 +111,13 @@ void ShVarItem::setChangeable(ShChangeableType t, int idxc, int idxr)
 	this->changeable = t;
 	this->changeableIndex[0] = idxc;
 	this->changeableIndex[1] = idxr;
+}
+
+static inline QVariant to_qvariant(void *box)
+{
+	QVariant v;
+	v.setValue(box);
+	return v;
 }
 
 QVariant ShVarItem::data(int role) const
@@ -155,16 +153,18 @@ QVariant ShVarItem::data(int role) const
 	case DF_CGBL_INDEX_B:
 		return this->changeableIndex[1];
 	case DF_DATA_PIXELBOX:
-		return this->pixelBox;
+		return to_qvariant(this->pixelBox);
 	case DF_DATA_GEOMETRYBOX:
-		return this->geometryBox;
+		return to_qvariant(this->geometryBox);
 	case DF_DATA_VERTEXBOX:
-		return this->vertexBox;
+		return to_qvariant(this->vertexBox);
 	case DF_DEBUG_SELECTED_VALUE:
 		return this->selected;
 	default:
 		break;
 	}
+
+	return QVariant();
 }
 
 void ShVarItem::setData(const QVariant &value, int role)
@@ -186,7 +186,7 @@ void ShVarItem::setData(const QVariant &value, int role)
 	}
 }
 
-void ShVarItem::setCurrentValue(int pixels[2], ShaderMode type)
+void ShVarItem::setCurrentValue(const int pixels[2], ShaderMode type)
 {
 	if (!watched || pixels[0] < 0 || (type == smFragment && pixels[1] < 0)) {
 		this->selected = QVariant();
@@ -196,11 +196,11 @@ void ShVarItem::setCurrentValue(int pixels[2], ShaderMode type)
 	QVariant value("?");
 	DataBox* box = NULL;
 	if (type == smVertex)
-		box = this->vertexBox.value<VertexBox*>();
+		box = vertexBox;
 	else if (type == smGeometry)
-		box = this->geometryBox.value<VertexBox*>();
+		box = geometryBox;
 	else if (type == smFragment)
-		box = this->pixelBox.value<PixelBox*>();
+		box = pixelBox;
 
 	if (box) {
 		// FIXME: This is definitionally must not work
@@ -213,7 +213,7 @@ void ShVarItem::setCurrentValue(int pixels[2], ShaderMode type)
 	this->selected = value;
 }
 
-bool ShVarItem::updateWatchData(ShaderMode type)
+bool ShVarItem::updateWatchData(ShaderMode type, bool *coverage)
 {
 	int format = this->readbackFormat();
 	ShDataManager* manager = ShDataManager::get();
@@ -226,28 +226,30 @@ bool ShVarItem::updateWatchData(ShaderMode type)
 	bool status = false;
 
 	if (type == smFragment) {
-		data = this->pixelBox.value<PixelBox*>();
+		data = pixelBox;
 	} else if (type == smVertex) {
-		data = this->vertexBox.value<VertexBox*>();
+		data = vertexBox;
 	} else if (type == smGeometry) {
-		geomData = this->geometryBox.value<VertexBox*>();
+		geomData = geometryBox;
 		dbgPrint(DBGLVL_INFO, "Get CHANGEABLE:");
-		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl, format, coverage, geomData)) {
+		if (manager->getDebugData(type, DBG_CG_CHANGEABLE, cl, format, coverage, geomData)) {
 			dbgPrint(DBGLVL_INFO, "Get GEOMETRY_CHANGABLE:");
 			data = new VertexBox;
 		}
 	}
 
-	if (data && manager->getDebugData(type, DBG_CG_CHANGEABLE, &cl,
+	if (data && manager->getDebugData(type, DBG_CG_CHANGEABLE, cl,
 									  format, coverage, data)) {
 		status = true;
-		this->setCurrentValue(manager->pixels(), type);
+		int pixels[2];
+		manager->getPixels(pixels);
+		this->setCurrentValue(pixels, type);
 		if (geomData) {
-			geomData->addVertexBox(data);
+			geomData->addVertexBox(dynamic_cast<VertexBox *>(data));
 			delete data;
 		}
 	} else {
-		QMessageBox::warning(this, "Warning", "The requested data could not be retrieved.");
+		dbgPrint(DBGLVL_WARNING, "The requested data could not be retrieved.");
 	}
 
 	freeShChangeable(&cgbl);
@@ -257,15 +259,12 @@ bool ShVarItem::updateWatchData(ShaderMode type)
 
 void ShVarItem::invalidateWatchData()
 {
-	VertexBox *vb = this->vertexBox.value<VertexBox*>();
-	VertexBox *gb = this->geometryBox.value<VertexBox*>();
-	PixelBox *pb = this->pixelBox.value<PixelBox*>();
-	if (vb)
-		vb->invalidateData();
-	if (gb)
-		gb->invalidateData();
-	if (pb) {
-		pb->invalidateData();
+	if (vertexBox)
+		vertexBox->invalidateData();
+	if (geometryBox)
+		geometryBox->invalidateData();
+	if (pixelBox) {
+		pixelBox->invalidateData();
 		resetValue();
 	}
 }
@@ -273,7 +272,7 @@ void ShVarItem::invalidateWatchData()
 void ShVarItem::resetValue()
 {
 	if (watched)
-		this->selected.setValue("?");
+		this->selected.setValue(QString("?"));
 	else
 		this->selected.setValue(QVariant());
 }
@@ -299,5 +298,5 @@ int ShVarItem::readbackFormat()
 
 bool ShVarItem::pixelDataAvaliable()
 {
-	return dynamic_cast<PixelBox*>(pixelBox)->isAllDataAvailable();
+	return pixelBox && pixelBox->isAllDataAvailable();
 }

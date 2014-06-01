@@ -22,7 +22,7 @@ WatchTable::WatchTable(QWidget *parent) :
 	ui->setupUi(this);
 	ui->fMapping->setVisible(false);
 	type = ShWindowManager::wtVertex;
-	_model = new VertexTableModel(this);
+	_model = new VertexTableModel(NULL, NULL, this);
 	_modelFilter = new VertexTableSortFilterProxyModel(this);
 	_modelFilter->setSourceModel(_model);
 	_modelFilter->setDynamicSortFilter(true);
@@ -52,8 +52,6 @@ WatchTable::~WatchTable()
 	delete[] scatterColorsAndSizes;
 }
 
-
-
 void WatchTable::updateView(bool force)
 {
 	UNUSED_ARG(force)
@@ -76,7 +74,7 @@ void WatchTable::attachData(DataBox *box, QString &name)
 	if (!vb)
 		return;
 
-	if (_model->addVertexBox(vb, name)) {
+	if (_model->addData(vb, name)) {
 		initScatter(vb->getNumVertices());
 		int idx = _model->columnCount() - 1;
 		QString name = _model->getDataColumnName(idx);

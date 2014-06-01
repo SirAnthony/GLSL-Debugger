@@ -231,7 +231,7 @@ private:
 	ShVariableList m_dShVariableList;
 
 	OldShVarModel *m_pShVarModel;
-	QStack<LoopData*> m_qLoopData;
+	//QStack<LoopData*> m_qLoopData;
 
 	char *m_pShaders[3];
 	bool m_bHaveValidShaderCode;

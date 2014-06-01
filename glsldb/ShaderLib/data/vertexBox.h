@@ -10,10 +10,11 @@ class VertexBox: public DataBox {
 Q_OBJECT
 
 public:
-	VertexBox(QObject *i_qParent = 0);
+	VertexBox(QObject *parent = 0);
+	VertexBox(VertexBox* src, QObject *parent = 0);
 	~VertexBox();
 
-	void copyFrom(VertexBox* src);
+	void copyFrom(DataBox* src);
 
 	void setData(float *data, int elementsPerVertex, int vertices,
 			int primitives, bool *coverage = 0);
@@ -22,6 +23,7 @@ public:
 	float getDataValue(int index)
 	{ return boxData ? boxData[index] : 0.0; }
 
+	int getSize() { return verticesCount; }
 	int getDataSize() { return verticesCount; }
 	const void* getDataPointer() { return boxData; }
 	bool getDataValue(int numVertex, float *v);
@@ -44,6 +46,7 @@ public:
 
 private:
 	double getData(const void *data, int offset);
+	void deleteData(bool signal = false);
 	void calcMinMax();
 
 	float *boxData;

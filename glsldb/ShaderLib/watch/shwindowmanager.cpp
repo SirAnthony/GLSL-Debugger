@@ -53,13 +53,13 @@ void ShWindowManager::createWindow(const QList<ShVarItem*> &list, enum WindowTyp
 	}
 
 	ShDataManager *manager = ShDataManager::get();
-	GeometryInfo geometry = manager->getGeometryInfo();
+	const GeometryInfo &geometry = manager->getGeometryInfo();
 
 	WatchView *window;
 	if (type == wtVertex) {
 		window = new WatchTable(this);
 	} else if (type == wtGeometry) {
-		window = new WatchGeoTree(&geometry, this);
+		window = new WatchGeoTree(geometry, this);
 	} else if (type == wtFragment) {
 		WatchVector* vector = new WatchVector(this);
 		window = vector;

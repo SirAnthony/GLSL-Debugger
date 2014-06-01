@@ -59,7 +59,7 @@ UTILSLOCAL void cpyFromProcess(pid_t pid, void *dst, void *src, size_t size);
 #ifdef _WIN32
 void cpyToProcess(DWORD pid, void *dst, void *src, size_t size);
 #else /* _WIN32 */
-UTILSLOCAL void cpyToProcess(pid_t pid, void *dst, void *src, size_t size);
+UTILSLOCAL void cpyToProcess(pid_t pid, void *dst, const void *src, size_t size);
 #endif /* _WIN32 */
 
 #endif

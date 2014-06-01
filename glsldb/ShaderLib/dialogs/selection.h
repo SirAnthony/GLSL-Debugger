@@ -3,7 +3,7 @@
 #define SELECTIONDIALOG_H
 
 #include <QDialog>
-#include <QList>
+#include <QSet>
 #include "shdatamanager.h"
 
 class ShVarItem;
@@ -20,7 +20,7 @@ class SelectionDialog: public QDialog {
 Q_OBJECT
 
 public:
-	SelectionDialog(ShaderMode, DataBox *, QList<ShVarItem*> &,
+	SelectionDialog(ShaderMode, DataBox *, QSet<ShVarItem*> &,
 					GeometryInfo &, bool, QWidget *);
 
 	typedef enum {
@@ -34,12 +34,12 @@ public:
 protected:
 	void checkCounter();
 	bool calculateVertex(VertexBox *);
-	QWidget *vertexWidget(VertexBox *, QList<ShVarItem*> &);
-	QWidget *geometryWidget(VertexBox *, QList<ShVarItem*> &, GeometryInfo &);
+	QWidget *vertexWidget(VertexBox *, QSet<ShVarItem*> &);
+	QWidget *geometryWidget(VertexBox *, QSet<ShVarItem*> &, GeometryInfo &);
 	QWidget *fragmentWidget(PixelBox *);
 	void displayStatistics(void);
 
-private slots:
+protected slots:
 	void skipClick();
 	void ifClick();
 	void elseClick();

@@ -1900,7 +1900,7 @@ pcErrorCode ProgramControl::shaderStepFragment(char *shaders[3],
 	return error;
 }
 
-pcErrorCode ProgramControl::shaderStepVertex(char *shaders[3], int target,
+pcErrorCode ProgramControl::shaderStepVertex(const char *shaders[3], int target,
 		int primitiveMode, int forcePointPrimitiveMode, int numFloatsPerVertex,
 		int *numPrimitives, int *numVertices, float **vertexData)
 {

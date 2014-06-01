@@ -26,7 +26,7 @@ class WatchGeoTree: public WatchView
 Q_OBJECT
 
 public:
-	WatchGeoTree(GeometryInfo *info, QWidget *parent = 0);
+	WatchGeoTree(const GeometryInfo &info, QWidget *parent = 0);
 	~WatchGeoTree();
 
 	virtual void updateView(bool force);

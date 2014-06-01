@@ -59,9 +59,9 @@ public:
 
 	QVariant data(int role = DF_FIRST) const;
 	void setData(const QVariant &value, int role = DF_FIRST);
-	void setCurrentValue(int pixels[2], ShaderMode type);
+	void setCurrentValue(const int pixels[], ShaderMode type);
 
-	bool updateWatchData(ShaderMode type);
+	bool updateWatchData(ShaderMode type, bool *coverage);
 	void invalidateWatchData();
 	void resetValue();
 
@@ -84,9 +84,9 @@ protected:
 	int changeableIndex[2];
 	enum Scope scope;
 
-	QVariant vertexBox;
-	QVariant geometryBox;
-	QVariant pixelBox;
+	VertexBox *vertexBox;
+	VertexBox *geometryBox;
+	PixelBox *pixelBox;
 	QVariant selected;
 	QVariant uniform_value;
 };

@@ -48,11 +48,11 @@ Qt::ItemFlags GeometryTreeItem::flags(int) const
 
 
 GeometryTreeInPrimitive::GeometryTreeInPrimitive(QString name, int idx,
-		QList<VertexBox*> *data, VertexBox *cond, bool *initCond) :
+		QList<VertexBox*> *data, VertexBox *cond, const bool *initial) :
 		GeometryTreeItem(name, idx, data)
 {
 	condition = cond;
-	initialCondition = initCond;
+	coverage = initial;
 }
 
 int GeometryTreeInPrimitive::columnCount() const
@@ -79,8 +79,8 @@ QVariant GeometryTreeInPrimitive::data(int column) const
 	VertexBox* data = NULL;
 	if (condition) {
 		float dval = condition->getDataValue(dataIdx);
-		if (initialCondition && column == 1) {
-			if (initialCondition[dataIdx]) {
+		if (coverage && column == 1) {
+			if (coverage[dataIdx]) {
 				if (condition->getCoverageValue(dataIdx)) {
 					if (dval > 0.75f)
 						return QString("active");
@@ -121,8 +121,8 @@ QVariant GeometryTreeInPrimitive::displayColor(int) const
 {
 	if (condition) {
 		float dval = condition->getDataValue(dataIdx);
-		if (initialCondition) {
-			if (initialCondition[dataIdx]) {
+		if (coverage) {
+			if (coverage[dataIdx]) {
 				if (condition->getCoverageValue(dataIdx)) {
 					if (dval > 0.75f)
 						return DBG_GREEN;
