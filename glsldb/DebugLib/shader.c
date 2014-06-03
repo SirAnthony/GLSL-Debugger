@@ -278,6 +278,7 @@ static GLenum shaderTypeSize(GLenum type)
 			return 0;
 	}
 }
+
 static GLenum uniformBaseType(ActiveUniform *v)
 {
 	switch (v->type) {
@@ -1181,7 +1182,7 @@ static void freeShaderProgram(ShaderProgram *shader)
 	shader->programHandle = 0;
 }
 
-static int getShaderResources(ShaderProgram *shader, struct TBuiltInResource *resources)
+static int getShaderResources(ShaderProgram *shader, struct ShBuiltInResource *resources)
 {
 	ORIG_GL(glGetIntegerv)(GL_MAX_LIGHTS, &resources->maxLights);
 	ORIG_GL(glGetIntegerv)(GL_MAX_CLIP_PLANES, &resources->maxClipPlanes);
@@ -1306,7 +1307,7 @@ void getShaderCode(void)
 {
     char** source[3] = {NULL, NULL, NULL};
     char*  shaderSource[3] = {NULL, NULL, NULL};
-	struct TBuiltInResource *shaderResources = NULL;
+	struct ShBuiltInResource *shaderResources = NULL;
 	GLint numUniforms = 0;
 	char* serializedUniforms = NULL;
 	GLint serializedUniformsSize = 0;
@@ -1407,7 +1408,7 @@ void getShaderCode(void)
 	freeShaderProgram(&shader);
 
 	/* query shader resources */
-	if (!(shaderResources = malloc(sizeof(struct TBuiltInResource)))) {
+	if (!(shaderResources = malloc(sizeof(struct ShBuiltInResource)))) {
 		for (i = 0; i < 3; i++) {
 			free(shaderSource[i]);
 		}

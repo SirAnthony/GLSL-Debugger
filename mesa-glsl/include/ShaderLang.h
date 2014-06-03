@@ -31,8 +31,8 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef _COMPILER_INTERFACE_INCLUDED_
-#define _COMPILER_INTERFACE_INCLUDED_
+#ifndef COMPILER_INTERFACE_INCLUDED
+#define COMPILER_INTERFACE_INCLUDED
 
 #include "ResourceLimits.h"
 
@@ -88,16 +88,6 @@ typedef enum {
 	EShExUnpackFragment,
 	EShExFragment
 } EShExecutable;
-
-//
-// Optimization level for the compiler.
-//
-typedef enum {
-	EShOptNoGeneration,
-	EShOptNone,
-	EShOptSimple,       // Optimizations that can be done quickly
-	EShOptFull,         // Optimizations that will take more time
-} EShOptimizationLevel;
 
 /*
  //
@@ -384,7 +374,7 @@ SH_IMPORT_EXPORT void freeShVariableList(ShVariableList *vl);
 // ShHandle, so it can answer future queries.
 //
 SH_IMPORT_EXPORT int ShCompile(const ShHandle, const char* const shaderStrings[],
-		const int numStrings, const EShOptimizationLevel, const TBuiltInResource *resources,
+		const int numStrings, const ShBuiltInResource *resources,
 		int debugOptions, ShVariableList *vl);
 
 //
@@ -402,9 +392,6 @@ SH_IMPORT_EXPORT char* ShDebugGetProg(const ShHandle, ShChangeableList *cgbl,
 // Similar to ShCompile, but accepts an opaque handle to an
 // intermediate language structure.
 //
-SH_IMPORT_EXPORT int ShCompileIntermediate(ShHandle compiler, ShHandle intermediate,
-		const EShOptimizationLevel, int debuggable           // boolean
-		);
 
 SH_IMPORT_EXPORT int ShLink(const ShHandle,               // linker object
 		const ShHandle h[],           // compiler objects to link together
@@ -453,4 +440,4 @@ enum TDebugOptions {
 }
 #endif
 
-#endif // _COMPILER_INTERFACE_INCLUDED_
+#endif // COMPILER_INTERFACE_INCLUDED

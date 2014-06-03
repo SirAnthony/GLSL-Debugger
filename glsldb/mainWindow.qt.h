@@ -67,6 +67,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtCore/QStack>
 
 class QWorkspace;
+class ShDataManager;
 
 class MainWindow: public QMainWindow, public Ui::MainWindow {
 Q_OBJECT
@@ -77,6 +78,7 @@ public:
 
 signals:
 	void changeRunLevel(int);
+	void updateShaders(int&, bool&);
 
 private slots:
 	/****************
@@ -117,10 +119,10 @@ private slots:
 
 	/* shader */
 	void on_twShader_currentChanged(int selection);
-	void on_tbShaderExecute_clicked();
-	void on_tbShaderReset_clicked();
-	void on_tbShaderStep_clicked();
-	void on_tbShaderStepOver_clicked();
+//	void on_tbShaderExecute_clicked();
+//	void on_tbShaderReset_clicked();
+//	void on_tbShaderStep_clicked();
+//	void on_tbShaderStepOver_clicked();
 //	void on_tbShaderFragmentOptions_clicked();
 
 	/* watch */
@@ -147,12 +149,15 @@ private slots:
 
 	void singleStep();
 
+	void saveQueries(int &error);
+	void recordDrawCall(int &error);
+	void killProgram(int hard);
+	void setErrorStatus(pcErrorCode);
+
 private:
 	void closeEvent(QCloseEvent *event);
 
-	void killProgram(int hard);
 
-	void setErrorStatus(pcErrorCode);
 	void setStatusBarText(QString);
 	//void setShaderCodeText(char *shaders[3]);
 	void leaveDBGState();
@@ -226,9 +231,11 @@ private:
 	GlCallStatistics *m_pWglCallPfst;
 	GlCallStatistics *m_pWglExtPfst;
 
-	ShHandle m_dShCompiler;
-	TBuiltInResource m_dShResources;
-	ShVariableList m_dShVariableList;
+//	ShHandle m_dShCompiler;
+	// ShBuiltInResource m_dShResources;
+//	ShVariableList m_dShVariableList;
+
+	ShDataManager *shaderManager;
 
 //	OldShVarModel *m_pShVarModel;
 	//QStack<LoopData*> m_qLoopData;
@@ -236,10 +243,10 @@ private:
 //	char *m_pShaders[3];
 	bool m_bHaveValidShaderCode;
 
-	struct {
-		char *pData;
-		int count;
-	} m_serializedUniforms;
+//	struct {
+//		char *pData;
+//		int count;
+//	} m_serializedUniforms;
 
 //	int m_primitiveMode;
 //	VertexBox *m_pGeometryMap;

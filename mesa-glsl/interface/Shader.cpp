@@ -30,7 +30,7 @@ int glsl_es = 0;
 int glsl_version = 330;
 
 
-static void initialize_context(struct gl_context *ctx, const TBuiltInResource* resources)
+static void initialize_context(struct gl_context *ctx, const ShBuiltInResource* resources)
 {
 	// FIXME: right api
 	initialize_context_to_defaults(ctx, API_OPENGL_COMPAT);
@@ -226,12 +226,9 @@ int __fastcall ShFinalize( )
 // success or failure.
 //
 int ShCompile(const ShHandle handle, const char* const shaderStrings[],
-		const int numStrings, const EShOptimizationLevel optLevel,
-		const TBuiltInResource* resources, int debugOptions, ShVariableList *vl)
+			  const int numStrings, const ShBuiltInResource* resources,
+			  int debugOptions, ShVariableList *vl)
 {
-	// TODO: Can we use something like in mesa?
-	UNUSED_ARG(optLevel)
-
 	if (handle == NULL)
 		return 0;
 

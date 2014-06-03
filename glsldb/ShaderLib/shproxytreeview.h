@@ -15,17 +15,18 @@ public:
 	{
 		baseModel = NULL;
 	}
-	ShTemplateTreeView(ShVarModel *model, QWidget *parent = 0) :
+	ShTemplateTreeView(ShVarModel *_model, QWidget *parent = 0) :
 		ShTreeView(parent)
 	{
 		baseModel = NULL;
-		setModel(model);
+		setModel(_model);
 	}
-	virtual void setModel(ShVarModel *model)
+	T* model() { return baseModel; }
+	virtual void setModel(ShVarModel *_model)
 	{
-		if (!model)
+		if (!_model)
 			return;
-		baseModel = new T(model);
+		baseModel = new T(_model);
 	}
 protected:
 	T* baseModel;

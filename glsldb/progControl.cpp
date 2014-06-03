@@ -1491,7 +1491,7 @@ FunctionCall* ProgramControl::getCurrentCall(void)
 }
 
 pcErrorCode ProgramControl::getShaderCode(char *shaders[3],
-		TBuiltInResource *resource, char **serializedUniforms, int *numUniforms)
+		ShBuiltInResource *resource, char **serializedUniforms, int *numUniforms)
 {
 	DbgRec *rec = getThreadRecord(_debuggeePID);
 	int i;
@@ -1553,7 +1553,7 @@ pcErrorCode ProgramControl::getShaderCode(char *shaders[3],
 
 		/* copy shader resource info */
 		cpyFromProcess(_debuggeePID, resource, addr[3],
-				sizeof(TBuiltInResource));
+				sizeof(ShBuiltInResource));
 
 		if (rec->items[7] > 0) {
 			*numUniforms = rec->items[7];

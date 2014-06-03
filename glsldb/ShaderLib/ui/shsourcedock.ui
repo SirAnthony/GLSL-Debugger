@@ -295,8 +295,76 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>tbJumpOver</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSourceDock</receiver>
+   <slot>stepOver()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>117</x>
+     <y>43</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>137</x>
+     <y>2</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tbStep</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSourceDock</receiver>
+   <slot>stepInto()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>90</x>
+     <y>40</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>104</x>
+     <y>2</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tbReset</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSourceDock</receiver>
+   <slot>resetShader()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>37</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>74</x>
+     <y>3</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tbExecute</sender>
+   <signal>clicked()</signal>
+   <receiver>ShSourceDock</receiver>
+   <slot>executeShader()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>16</x>
+     <y>48</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>33</x>
+     <y>1</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showOptions()</slot>
+  <slot>stepOver()</slot>
+  <slot>stepInto()</slot>
+  <slot>resetShader()</slot>
+  <slot>executeShader()</slot>
  </slots>
 </ui>

@@ -33,10 +33,10 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#ifndef _RESOURCE_LIMITS_INCLUDED_
-#define _RESOURCE_LIMITS_INCLUDED_
+#ifndef RESOURCE_LIMITS_INCLUDED
+#define RESOURCE_LIMITS_INCLUDED
 
-struct TBuiltInResource {
+struct ShBuiltInResource {
     int maxLights;
     int maxClipPlanes;
     int maxTextureUnits;
@@ -57,4 +57,4 @@ struct TBuiltInResource {
     int geoInputType;
     int geoOutputType;
 };
-#endif /* _RESOURCE_LIMITS_INCLUDED_ */
+#endif /* RESOURCE_LIMITS_INCLUDED */

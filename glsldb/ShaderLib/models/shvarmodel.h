@@ -4,6 +4,7 @@
 #include <QStandardItemModel>
 #include "shvaritem.h"
 #include "ShaderLang.h"
+#include "shuniforms.h"
 
 class ShVarModel : public QStandardItemModel
 {
@@ -19,6 +20,8 @@ public:
 	void setWatched(ShVarItem *item);
 	void unsetWatched(ShVarItem *item);
 
+	void setUniforms(const char *strings, int count);
+
 signals:
 	void addWatchItem(ShVarItem* item);
 
@@ -26,7 +29,9 @@ public slots:
 	void valuesChanged();
 	void valuesChanged(QModelIndex, QModelIndex);
 	void clear();
-	
+
+protected:
+	QList<ShUniform> uniforms;
 };
 
 #endif // SHVARMODEL_H

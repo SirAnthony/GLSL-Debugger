@@ -37,6 +37,7 @@ bool isErrorCritical(pcErrorCode error)
 {
 	switch (error) {
 	case PCE_NONE:
+	case PCE_RETURN:
 		/* gl errors */
 	case PCE_GL_INVALID_ENUM:
 	case PCE_GL_INVALID_VALUE:
@@ -78,6 +79,8 @@ const char* getErrorDescription(pcErrorCode error)
 	/* general debugger errors */
 	case PCE_NONE:
 		return "";
+	case PCE_RETURN:
+		return "Function returned";
 	case PCE_FORK:
 		return "Error forking child process";
 	case PCE_EXEC:

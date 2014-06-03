@@ -29,11 +29,22 @@ const char *dbg_cg_names[DBG_CG_LAST] = {
 	"DBG_CG_LOOP_CONDITIONAL", "DBG_CG_CHANGEABLE"
 };
 
-static DBG_TARGETS dbg_pc_targets[smCount] = {
+static const DBG_TARGETS dbg_pc_targets[smCount] = {
 	DBG_TARGET_VERTEX_SHADER,
 	DBG_TARGET_GEOMETRY_SHADER,
 	DBG_TARGET_FRAGMENT_SHADER
 };
+
+static const EShLanguage dbg_languages[smCount] = {
+	EShLangVertex, EShLangGeometry, EShLangFragment,
+};
+
+static const runLevel dbg_runlevels[smCount] = {
+	RL_DBG_VERTEX_SHADER,
+	RL_DBG_GEOMETRY_SHADER,
+	RL_DBG_FRAGMENT_SHADER
+};
+
 
 static void printDebugInfo(int option, int target, const char *shaders[3])
 {
@@ -49,15 +60,17 @@ static void printDebugInfo(int option, int target, const char *shaders[3])
 }
 
 
-ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, int &geoOut,
-							 QObject *parent) :
-	QObject(parent), selectedPixel {-1, -1},
-	geometry { GL_NONE, geoOut, NULL, NULL },
-	shVariables(NULL), compiler(NULL), pc(_pc), coverage(NULL)
+ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent) :
+	QObject(parent), shaderMode(smNoop), shadersAvaliable(false),
+	selectedPixel {-1, -1}, geometry { GL_NONE, GL_POINTS, NULL, NULL },
+	compiler(NULL), shVariables(NULL), pc(_pc), coverage(NULL)
 {
 	model = new ShVarModel();
+	connect(model, SIGNAL(addWatchItem(ShVarItem*)),
+			this, SLOT(updateWatched(ShVarItem*)));
+
 	windows = new ShWindowManager(window);
-	window->setCentralWidget(windows);
+	window->setCentralWidget(windows);	
 }
 
 ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc,
@@ -96,13 +109,22 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 				wdock, SLOT(updateCoverage(ShaderMode,bool*)));
 		connect(this, SIGNAL(updateWatchData(ShaderMode,CoverageMapStatus,bool*,bool)),
 				wdock, SLOT(updateData(ShaderMode,CoverageMapStatus,bool*,bool)));
+		connect(this, SIGNAL(resetWatchData(ShaderMode,bool*)),
+				wdock, SLOT(resetData(ShaderMode,bool*)));
 		connect(this, SIGNAL(getWatchItems(QSet<ShVarItem*>&)),
 				wdock, SLOT(getWatchItems(QSet<ShVarItem*>&)));
+		connect(model, SIGNAL(addWatchItem(ShVarItem*)),
+				wdock, SLOT(newItem(ShVarItem*)));
 	} else if (type == dmDTSource) {
 		ShSourceDock* sdock = dynamic_cast<ShSourceDock *>(dock);
 		connect(this, SIGNAL(updateStepControls(bool)), sdock, SLOT(updateControls(bool)));
 		connect(this, SIGNAL(updateSourceHighlight(ShaderMode,DbgRsRange&)),
 				sdock, SLOT(updateHighlight(ShaderMode,DbgRsRange&)));
+		connect(this, SIGNAL(setShaders(const char*[])),
+				sdock, SLOT(setShaders(const char*[])));
+		connect(sdock, SIGNAL(stepShader(int)), this, SLOT(step(int)));
+		connect(sdock, SIGNAL(resetShader()), this, SLOT(reset()));
+		connect(sdock, SIGNAL(executeShader(ShaderMode)), this, SLOT(execute(ShaderMode)));
 	}
 }
 
@@ -145,7 +167,13 @@ bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangea
 	pcErrorCode error;
 	const char *shaders[3];
 	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, option);
-	static_cast<ShSourceDock*>(docks[dmDTSource])->getSource(shaders);
+	ShSourceDock *sdock = dynamic_cast<ShSourceDock*>(docks[dmDTSource]);
+	if (!sdock) {
+		free(debugCode);
+		return false;
+	}
+
+	sdock->getSource(shaders);
 	shaders[type] = debugCode;
 	if (type == smVertex)
 		shaders[1] = NULL;
@@ -172,8 +200,9 @@ bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangea
 bool ShDataManager::cleanShader(ShaderMode type)
 {
 	pcErrorCode error = PCE_NONE;
-	emit cleanDocks(type);
+	shaderMode = smNoop;
 
+	emit cleanDocks(type);
 	selectedPixel[0] = selectedPixel[1] = -1;
 	if (coverage) {
 		delete[] coverage;
@@ -182,7 +211,6 @@ bool ShDataManager::cleanShader(ShaderMode type)
 
 	switch (type) {
 	case smGeometry:
-		//delete m_pGeoDataModel;
 	case smVertex:
 	case smFragment:
 		emit cleanModel();
@@ -228,6 +256,108 @@ ShaderMode ShDataManager::getMode()
 	return shaderMode;
 }
 
+bool ShDataManager::codeReady()
+{
+	return (currentRunLevel == RL_DBG_RESTART
+			|| currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE)
+			&& shadersAvaliable
+}
+
+ShBuiltInResource *ShDataManager::getResource()
+{
+	return &shResources;
+}
+
+void ShDataManager::execute(ShaderMode type)
+{	
+	if (shaderMode > 0) {
+		/* clean up debug run */
+		cleanShader(shaderMode);
+		emit setRunLevel(RL_DBG_RESTART);
+		return;
+	}
+
+	pcErrorCode error = PCE_NONE;
+	emit saveQueries(error);
+	if (!processError(error, type))
+		return;
+
+	/* setup debug render target */
+	switch (type) {
+	case smVertex:
+	case smGeometry:
+		error = pc->setDbgTarget(dbg_pc_targets[type], DBG_PFT_KEEP,
+								 DBG_PFT_KEEP, DBG_PFT_KEEP, DBG_PFT_KEEP);
+		break;
+	case smFragment: {
+		FragmentTestOptions opts;
+		emit getOptions(&opts);
+		error = pc->setDbgTarget(dbg_pc_targets[type],
+								 opts.alphaTest, opts.depthTest,
+								 opts.stencilTest, opts.blending);
+		break;
+	}
+	default:
+		dbgPrint(DBGLVL_ERROR, "Wrong shader type to execute");
+		error = PCE_DBG_INVALID_VALUE;
+		return;
+	}
+
+	if (!processError(error, type, true))
+		return;
+
+
+	emit recordDrawCall(error);
+	if (!processError(error, type))
+		return;
+
+	const char *shaders[3];
+	ShSourceDock *sdock = dynamic_cast<ShSourceDock*>(docks[dmDTSource]);
+	if (!sdock)
+		return;
+	sdock->getSource(shaders);
+	if (!sdock[type])
+		return;
+
+	emit setRunLevel(dbg_runlevels[type]);
+	shaderMode = type;
+
+	/* start building the parse tree for this shader */
+	int dbgopts = EDebugOpIntermediate;
+	compiler = ShConstructCompiler(dbg_languages[type], dbgopts);
+	if (!compiler) {
+		processError(PCE_UNKNOWN_ERROR, type);
+		return;
+	}
+
+	if (!ShCompile(compiler, &shaders[type], 1, &shResources, dbgopts, shVariables)) {
+		const char *err = ShGetInfoLog(compiler);
+		QMessageBox message;
+		message.setText("Error at shader compilation");
+		message.setDetailedText(err);
+		message.setIcon(QMessageBox::Critical);
+		message.setStandardButtons(QMessageBox::Ok);
+		message.exec();
+		cleanShader(type);
+		emit setRunLevel(RL_DBG_RESTART);
+		return;
+	}
+
+	/* update model */
+	model->clear();
+	model->appendRow(shVariables);
+
+	step(DBG_BH_JUMP_INTO);
+	updateGeometry(type);
+}
+
+void ShDataManager::reset()
+{
+	step(DBG_BH_RESET, true);
+	step(DBG_BH_JUMP_INTO);
+	emit updateStepControls(true);
+	emit resetWatchData(shaderMode, coverage);
+}
 
 void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 {
@@ -354,6 +484,53 @@ void ShDataManager::selectionChanged(int x, int y)
 	emit updateSelection(x, y, text, mode);
 }
 
+void ShDataManager::updateShaders(int &error, bool &code)
+{
+	/* call debug function that reads back the shader code */
+	char *uniforms;
+	int uniformsCount;
+	char *shaders[smCount];
+	for (int i = 0; i < smCount; i++)
+		shaders[i] = NULL;
+
+	error = pc->getShaderCode(shaders, &shResources, &uniforms, &uniformsCount);
+	if (error == PCE_NONE) {
+		/* show shader code(s) in tabs */
+		emit setShaders(shaders);
+		model->setUniforms(uniforms, uniformsCount);
+		shadersAvaliable = code = (shaders[0] || shaders[1] || shaders[2]);
+	}
+}
+
+void ShDataManager::updateWatched(ShVarItem *item)
+{
+	item->updateWatchData(shaderMode, coverage);
+}
+
+void ShDataManager::updateGeometry(ShaderMode type)
+{
+	if(type != smGeometry)
+		return;
+
+	geometry.inputType = shResources.geoInputType;
+	geometry.outputType = shResources.geoOutputType;
+
+	if (geometry.map)
+		delete geometry.map;
+	if (geometry.count)
+		delete geometry.count;
+	geometry.map = new VertexBox();
+	geometry.count = new VertexBox();
+	dbgPrint(DBGLVL_INFO, "Get GEOMETRY_MAP & VERTEX_COUNT:");
+	if (getDebugData(mode, DBG_CG_GEOMETRY_MAP, NULL, 0, NULL, geometry.map) &&
+			getDebugData(mode, DBG_CG_VERTEX_COUNT, NULL, 0, NULL, geometry.count)) {
+		/* TODO: build geometry model */
+	} else {
+		cleanShader(type);
+		emit setRunLevel(RL_DBG_RESTART);
+	}
+}
+
 void ShDataManager::updateDialogs(int position, int loop_iter,
 								  bool update_covermap, bool update_gui)
 {
@@ -456,10 +633,13 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 	}
 }
 
-bool ShDataManager::processError(int error, ShaderMode type)
+bool ShDataManager::processError(int error, ShaderMode type, bool restart)
 {
-	emit setErrorStatus(error);
 	pcErrorCode code = static_cast<pcErrorCode>(error);
+	if (code == PCE_RETURN)
+		return false;
+
+	emit setErrorStatus(error);
 	if (code == PCE_NONE)
 		return true;
 
@@ -467,8 +647,11 @@ bool ShDataManager::processError(int error, ShaderMode type)
 	if (isErrorCritical(code)) {
 		dbgPrint(DBGLVL_ERROR, "Error is critical.");
 		cleanShader(type);
-		setRunLevel(RL_SETUP);
-		killProgram(1);
+		emit setRunLevel(RL_SETUP);
+		emit killProgram(1);
+	} else if (restart) {
+		dbgPrint(DBGLVL_ERROR, "Restart required.");
+		emit setRunLevel(RL_DBG_RESTART);
 	}
 	return false;
 }

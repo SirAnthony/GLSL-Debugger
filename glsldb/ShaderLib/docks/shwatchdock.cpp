@@ -12,12 +12,14 @@ ShWatchDock::ShWatchDock(QWidget *parent) :
 {
 	ui->setupUi(this);
 	ui->tvWatchList->setModel(model);
+	QItemSelectionModel *selection = new QItemSelectionModel(ui->tvWatchList->model());
+	ui->tvWatchList->setSelectionModel(selection);
 
 	/* Track watch items */
 	connect(this->model, SIGNAL(newWatchItem(ShVarItem*)), SLOT(newItem(ShVarItem*)));
 	connect(ShDataManager::get(), SIGNAL(cleanModel()), this, SLOT(clearWatchList()));
 	connect(ui->WatchDelete, SIGNAL(clicked()), SLOT(removeSelected()));
-	connect(ui->tvWatchList->selectionModel(),
+	connect(selection,
 			SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
 			this, SLOT(selectionChanged()));
 

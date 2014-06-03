@@ -15,6 +15,8 @@ ShSourceDock::ShSourceDock(QWidget *parent) :
 {
 	ui->setupUi(this);
 	ShDataManager::get()->registerDock(this, ShDataManager::dmDTSource);
+
+	connect(ui->twShader, SIGNAL(currentChanged(int)), this, SLOT(currentChanged(int)));
 }
 
 ShSourceDock::~ShSourceDock()
@@ -22,10 +24,18 @@ ShSourceDock::~ShSourceDock()
 	delete ui;
 }
 
+void ShSourceDock::getSource(const char *shaders[])
+{
+	if (!shaders)
+		return;
+	for (int s = 0; s < 3; ++s)
+		shaders[s] = shaderText[s].toStdString().c_str();
+}
+
 void ShSourceDock::setShaders(const char *shaders[])
 {
 	for (int s = 0; s < smCount; ++s) {
-		shaderText[s] = QString(shaders && shaders[s] ? shaders[s] : "");
+		shaderText[s] = QString((shaders && shaders[s]) ? shaders[s] : "");
 		QTextDocument *doc = new QTextDocument(shaderText[s], editWidgets[s]);
 		editWidgets[s]->setDocument(doc);
 		if (!shaderText[s].isEmpty()) {
@@ -37,13 +47,21 @@ void ShSourceDock::setShaders(const char *shaders[])
 	}
 }
 
-void ShSourceDock::getSource(const char *shaders[])
+void ShSourceDock::executeShader()
 {
-	if (!shaders)
-		return;
-	for (int s = 0; s < 3; ++s) {
-		shaders[s] = shaderText[s].toStdString().c_str();
-	}
+	ShaderMode mode = static_cast<ShaderMode>(ui->twShader->currentIndex());
+	emit executeShader(mode);
+}
+
+void ShSourceDock::stepInto()
+{
+	emit stepShader(DBG_BH_JUMP_INTO);
+}
+
+void ShSourceDock::stepOver()
+{
+	// TODO: else is not step_over action
+	emit stepShader(DBG_BH_FOLLOW_ELSE);
 }
 
 /*
@@ -130,6 +148,37 @@ void ShSourceDock::getOptions(FragmentTestOptions *opts)
 	if (!opts)
 		return;
 	memcpy(opts, &options, sizeof(FragmentTestOptions));
+}
+
+void ShSourceDock::currentChanged(int index)
+{
+	ShDataManager *manager = ShDataManager::get();
+	ShaderMode mode = manager->getMode();
+
+	if (mode > 0) {
+		bool status = mode == index;
+		ui->tbExecute->setEnabled(status);
+		ui->tbReset->setEnabled(status);
+		ui->tbJumpOver->setEnabled(status);
+		ui->tbStep->setEnabled(status);
+		if (!status)
+			ui->tbOptions->setEnabled(false);
+	} else if (manager->codeReady()) {
+		ShBuiltInResource *resource = manager->getResource();
+		bool status = shaderText[mode].length();
+		if (mode == smVertex)
+			status = status && resource->transformFeedbackSupported;
+		else if (mode == smGeometry)
+			status = status && resource->geoShaderSupported &&
+					resource->transformFeedbackSupported;
+		else
+			status = status && resource->framebufferObjectsSupported;
+
+		ui->tbExecute->setEnabled(status);
+		ui->tbOptions->setEnabled(mode == smFragment && status);
+	} else {
+		ui->tbExecute->setEnabled(false);
+	}
 }
 
 void ShSourceDock::showOptions()

@@ -16,20 +16,27 @@ class ShSourceDock : public ShDockWidget
 	Q_OBJECT
 public:
 	explicit ShSourceDock(QWidget *parent = 0);
-	~ShSourceDock();
+	~ShSourceDock();	
 
-	void setShaders(const char *shaders[smCount]);	
 	void getSource(const char *shaders[smCount]);
 
 signals:
+	void stepShader(int);
+	void resetShader();
+	void executeShader(ShaderMode);
 	
 public slots:
+	void setShaders(const char *shaders[smCount]);
+	void executeShader();
+	void stepInto();
+	void stepOver();
 	virtual void cleanDock(ShaderMode);
 	void updateControls(bool);
 	void updateHighlight(ShaderMode, DbgRsRange &);
 	void getOptions(FragmentTestOptions *);
 
 protected slots:
+	void currentChanged(int);
 	void showOptions();
 
 private:

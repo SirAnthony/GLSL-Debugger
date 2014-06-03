@@ -77,6 +77,7 @@ target_link_libraries(glsldb
 	glenumerants
 	functionList
 	utils
+	shaderlib
 	${QT_LIBRARIES}
 	${OPENGL_LIBRARIES}
 	${GLEW_LIBRARIES}

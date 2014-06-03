@@ -101,7 +101,7 @@ public:
 	pcErrorCode replay(int target);
 	pcErrorCode endReplay(void);
 
-	pcErrorCode getShaderCode(char *shaders[3], TBuiltInResource *resource,
+	pcErrorCode getShaderCode(char *shaders[3], ShBuiltInResource *resource,
 			char **serializedUniforms, int *numUniforms);
 
 	pcErrorCode saveActiveShader(void);

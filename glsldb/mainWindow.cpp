@@ -52,16 +52,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mainWindow.qt.h"
 #include "editCallDialog.qt.h"
-#include "selectionDialog.qt.h"
 #include "dbgShaderView.qt.h"
-#include "watchTable.qt.h"
-#include "watchVector.qt.h"
-#include "watchGeoDataTree.qt.h"
 #include "compilerErrorDialog.qt.h"
 #include "attachToProcessDialog.qt.h"
 #include "aboutBox.qt.h"
+#include "ShaderLib/shdatamanager.h"
 
-#include "glslSyntaxHighlighter.qt.h"
 #include "runLevel.h"
 #include "debuglib.h"
 #include "utils/dbgprint.h"
@@ -80,6 +76,18 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 		dbgProgArgs(args)
 {
 	int i;
+	pc = new ProgramControl(pname);
+	shaderManager = ShDataManager::create(this, pc);
+	connect(shaderManager, SIGNAL(saveQueries(int&)), this, SLOT(saveQueries(int&)));
+	connect(shaderManager, SIGNAL(setRunLevel(int)), this, SLOT(setRunLevel(int)));
+	connect(shaderManager, SIGNAL(killProgram(int)), this, SLOT(killProgram(int)));
+	connect(shaderManager, SIGNAL(setErrorStatus(int)),
+			this, SLOT(setErrorStatus(pcErrorCode)));
+	connect(shaderManager, SIGNAL(recordDrawCall(int&)),
+			this, SLOT(recordDrawCall(int&)));
+	connect(this, SIGNAL(updateShaders(int&,bool&)),
+			shaderManager, SLOT(updateShaders(int&,bool&)));
+
 
 	/*** Setup GUI ****/
 	setupUi(this);
@@ -135,8 +143,6 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	/* per frgamnet operations */
 	m_pftDialog = new FragmentTestDialog(this);
 
-	pc = new ProgramControl(pname);
-
 	m_pCurrentCall = NULL;
 //	m_pShVarModel = NULL;
 
@@ -173,10 +179,10 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 //	for (i = 0; i < 3; i++) {
 //		m_pShaders[i] = NULL;
 //	}
-	m_bHaveValidShaderCode = false;
-
-	m_serializedUniforms.pData = NULL;
-	m_serializedUniforms.count = 0;
+//	m_bHaveValidShaderCode = false;
+//
+//	m_serializedUniforms.pData = NULL;
+//	m_serializedUniforms.count = 0;
 
 //	m_primitiveMode = GL_NONE;
 //
@@ -234,9 +240,9 @@ MainWindow::~MainWindow()
 //		delete[] m_pShaders[i];
 //	}
 
-	delete[] m_serializedUniforms.pData;
-	m_serializedUniforms.pData = NULL;
-	m_serializedUniforms.count = 0;
+//	delete[] m_serializedUniforms.pData;
+//	m_serializedUniforms.pData = NULL;
+//	m_serializedUniforms.count = 0;
 
 	/* clean up compiler stuff */
 	ShFinalize();
@@ -556,26 +562,31 @@ pcErrorCode MainWindow::getNextCall()
 		/* current call is a drawcall and we don't have valid shader code;
 		 * call debug function that reads back the shader code
 		 */
+		pcErrorCode error;
+		emit updateShaders(error, m_bHaveValidShaderCode);
+		if (isErrorCritical(error))
+			return error;
+
 //		for (int i = 0; i < 3; i++) {
 //			delete[] m_pShaders[i];
 //			m_pShaders[i] = NULL;
 //		}
-		delete[] m_serializedUniforms.pData;
-		m_serializedUniforms.pData = NULL;
-		m_serializedUniforms.count = 0;
+//		delete[] m_serializedUniforms.pData;
+//		m_serializedUniforms.pData = NULL;
+//		m_serializedUniforms.count = 0;
 
-		pcErrorCode error = pc->getShaderCode(m_pShaders, &m_dShResources,
-				&m_serializedUniforms.pData, &m_serializedUniforms.count);
-		if (error == PCE_NONE) {
-			/* show shader code(s) in tabs */
-			setShaderCodeText(m_pShaders);
-			if (m_pShaders[0] != NULL || m_pShaders[1] != NULL
-					|| m_pShaders[2] != NULL) {
-				m_bHaveValidShaderCode = true;
-			}
-		} else if (isErrorCritical(error)) {
-			return error;
-		}
+//		pcErrorCode error = pc->getShaderCode(m_pShaders, &m_dShResources,
+//				&m_serializedUniforms.pData, &m_serializedUniforms.count);
+//		if (error == PCE_NONE) {
+//			/* show shader code(s) in tabs */
+//			setShaderCodeText(m_pShaders);
+//			if (m_pShaders[0] != NULL || m_pShaders[1] != NULL
+//					|| m_pShaders[2] != NULL) {
+//				m_bHaveValidShaderCode = true;
+//			}
+//		} else if (isErrorCritical(error)) {
+//			return error;
+//		}
 	}
 	return PCE_NONE;
 }
@@ -802,34 +813,36 @@ pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 			}
 		} else {
 			/* call debug function that reads back the shader code */
-			for (int i = 0; i < 3; i++) {
-				delete[] m_pShaders[i];
-				m_pShaders[i] = NULL;
-			}
-			delete[] m_serializedUniforms.pData;
-			m_serializedUniforms.pData = NULL;
-			m_serializedUniforms.count = 0;
-			error = pc->getShaderCode(m_pShaders, &m_dShResources,
-					&m_serializedUniforms.pData, &m_serializedUniforms.count);
-			if (error == PCE_NONE) {
-				/* show shader code(s) in tabs */
-				setShaderCodeText(m_pShaders);
-				if (m_pShaders[0] != NULL || m_pShaders[1] != NULL
-						|| m_pShaders[2] != NULL) {
-					m_bHaveValidShaderCode = true;
-				} else {
-					m_bHaveValidShaderCode = false;
-				}
-			} else if (isErrorCritical(error)) {
+			emit updateShaders(error, m_bHaveValidShaderCode);
+			if (isErrorCritical(error))
 				return error;
-			}
+//			for (int i = 0; i < 3; i++) {
+//				delete[] m_pShaders[i];
+//				m_pShaders[i] = NULL;
+//			}
+//			delete[] m_serializedUniforms.pData;
+//			m_serializedUniforms.pData = NULL;
+//			m_serializedUniforms.count = 0;
+//			error = pc->getShaderCode(m_pShaders, &m_dShResources,
+//					&m_serializedUniforms.pData, &m_serializedUniforms.count);
+//			if (error == PCE_NONE) {
+//				/* show shader code(s) in tabs */
+//				setShaderCodeText(m_pShaders);
+//				if (m_pShaders[0] != NULL || m_pShaders[1] != NULL
+//						|| m_pShaders[2] != NULL) {
+//					m_bHaveValidShaderCode = true;
+//				} else {
+//					m_bHaveValidShaderCode = false;
+//				}
+//			} else if (isErrorCritical(error)) {
+//				return error;
+//			}
 		}
 	} else {
 		/* current call is a "normal" function call */
 		error = pc->callOrigFunc(fCall);
-		if (isErrorCritical(error)) {
+		if (isErrorCritical(error))
 			return error;
-		}
 	}
 	/* Readback image if requested by user */
 	if (tbBVCaptureAutomatic->isChecked()
@@ -911,6 +924,36 @@ void MainWindow::singleStep()
 		addGlTraceItem();
 	}
 
+}
+
+void MainWindow::saveQueries(int &error)
+{
+	if (currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE)
+		error = pc->saveAndInterruptQueries();
+	else
+		error = PCE_NONE;
+}
+
+void MainWindow::recordDrawCall(int &error)
+{
+	/* record stream, store currently active shader program,
+	 * and enter debug state only when shader is executed the first time
+	 * and not after restart.
+	 */
+	error = PCE_NONE;
+	if (currentRunLevel != RL_TRACE_EXECUTE_IS_DEBUGABLE)
+		return;
+
+	setRunLevel(RL_DBG_RECORD_DRAWCALL);
+	/* save active shader */
+	error = pc->saveActiveShader();
+	if (isErrorCritical(error))
+		return;
+
+	recordDrawCall();
+	/* has the user interrupted the recording? */
+	if (currentRunLevel != RL_DBG_RECORD_DRAWCALL)
+		error = PCE_RETURN;
 }
 
 void MainWindow::on_tbSkip_clicked()
@@ -2413,7 +2456,7 @@ void MainWindow::recordDrawCall()
 		}
 	}
 }
-
+/*
 void MainWindow::on_tbShaderExecute_clicked()
 {
 	int type = twShader->currentIndex();
@@ -2427,7 +2470,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 			|| currentRunLevel == RL_DBG_GEOMETRY_SHADER
 			|| currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
 
-		/* clean up debug run */
+		 clean up debug run
 		cleanupDBGShader();
 
 		setRunLevel(RL_DBG_RESTART);
@@ -2444,7 +2487,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 		}
 	}
 
-	/* setup debug render target */
+	 setup debug render target
 	switch (type) {
 	case 0:
 		error = pc->setDbgTarget(DBG_TARGET_VERTEX_SHADER, DBG_PFT_KEEP,
@@ -2473,13 +2516,13 @@ void MainWindow::on_tbShaderExecute_clicked()
 		}
 	}
 
-	/* record stream, store currently active shader program,
+	 record stream, store currently active shader program,
 	 * and enter debug state only when shader is executed the first time
 	 * and not after restart.
-	 */
+
 	if (currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE) {
 		setRunLevel(RL_DBG_RECORD_DRAWCALL);
-		/* save active shader */
+		 save active shader
 		error = pc->saveActiveShader();
 		setErrorStatus(error);
 		if (isErrorCritical(error)) {
@@ -2488,14 +2531,14 @@ void MainWindow::on_tbShaderExecute_clicked()
 			return;
 		}
 		recordDrawCall();
-		/* has the user interrupted the recording? */
+		 has the user interrupted the recording?
 		if (currentRunLevel != RL_DBG_RECORD_DRAWCALL) {
 			return;
 		}
 	}
 
 	switch (type) {
-	case 0: /* Vertex shaders */
+	case 0:  Vertex shaders
 		if (m_pShaders[0]) {
 			setRunLevel(RL_DBG_VERTEX_SHADER);
 			language = EShLangVertex;
@@ -2503,7 +2546,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 			return;
 		}
 		break;
-	case 1: /* Geometry shaders */
+	case 1:  Geometry shaders
 		if (m_pShaders[1]) {
 			language = EShLangGeometry;
 			setRunLevel(RL_DBG_GEOMETRY_SHADER);
@@ -2511,7 +2554,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 			return;
 		}
 		break;
-	case 2: /* Fragment shaders */
+	case 2:  Fragment shaders
 		if (m_pShaders[2]) {
 			language = EShLangFragment;
 			setRunLevel(RL_DBG_FRAGMENT_SHADER);
@@ -2523,7 +2566,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 		return;
 	}
 
-	/* start building the parse tree for this shader */
+	 start building the parse tree for this shader
 	m_dShCompiler = ShConstructCompiler(language, debugOptions);
 	if (m_dShCompiler == 0) {
 		setErrorStatus(PCE_UNKNOWN_ERROR);
@@ -2561,15 +2604,15 @@ void MainWindow::on_tbShaderExecute_clicked()
 
 	tvWatchList->setSelectionModel(selectionModel);
 
-	/* Watchview feedback for selection tracking */
+	 Watchview feedback for selection tracking
 	connect(tvWatchList->selectionModel(),
 			SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
 			this,
 			SLOT(watchSelectionChanged(const QItemSelection &, const QItemSelection &)));
 
-	/* set uniform values */
-	m_pShVarModel->setUniformValues(m_serializedUniforms.pData,
-			m_serializedUniforms.count);
+	 set uniform values
+//	m_pShVarModel->setUniformValues(m_serializedUniforms.pData,
+//			m_serializedUniforms.count);
 
 	ShaderStep (DBG_BH_JUMP_INTO);
 
@@ -2587,7 +2630,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 		UT_NOTIFY(LV_INFO, "Get GEOMETRY_MAP:");
 		if (getDebugVertexData(DBG_CG_GEOMETRY_MAP, NULL, NULL,
 				m_pGeometryMap)) {
-			/* TODO: build geometry model */
+			 TODO: build geometry model
 		} else {
 			cleanupDBGShader();
 			setRunLevel(RL_DBG_RESTART);
@@ -2596,7 +2639,7 @@ void MainWindow::on_tbShaderExecute_clicked()
 		UT_NOTIFY(LV_INFO, "Get VERTEX_COUNT:");
 		if (getDebugVertexData(DBG_CG_VERTEX_COUNT, NULL, NULL,
 				m_pVertexCount)) {
-			/* TODO: build geometry model */
+			 TODO: build geometry model
 		} else {
 			cleanupDBGShader();
 			setRunLevel(RL_DBG_RESTART);
@@ -2621,6 +2664,7 @@ void MainWindow::on_tbShaderReset_clicked()
 	resetWatchListData();
 }
 
+
 void MainWindow::on_tbShaderStep_clicked()
 {
 	ShaderStep (DBG_BH_JUMP_INTO);
@@ -2631,12 +2675,12 @@ void MainWindow::on_tbShaderStepOver_clicked()
 	ShaderStep (DBG_BH_FOLLOW_ELSE);
 }
 
-/*
+
 void MainWindow::on_tbShaderFragmentOptions_clicked()
 {
 	m_pftDialog->show();
 }
-*/
+
 
 void MainWindow::on_twShader_currentChanged(int selection)
 {
@@ -2691,7 +2735,7 @@ void MainWindow::on_twShader_currentChanged(int selection)
 		tbShaderExecute->setEnabled(false);
 	}
 }
-/*
+
 QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
 {
 	QModelIndexList output;         // Resulting filtered list.

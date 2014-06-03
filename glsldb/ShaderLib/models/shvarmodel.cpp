@@ -1,6 +1,7 @@
 
 #include "shvarmodel.h"
 #include "shdatamanager.h"
+#include <QApplication>
 
 ShVarModel::ShVarModel(QObject *parent) :
 	QStandardItemModel(parent)
@@ -24,6 +25,12 @@ void ShVarModel::appendRow(const ShVariableList *items)
 	for (int i = 0; i < items->numVariables; i++) {
 		ShVarItem* item = new ShVarItem(items->variables[i]);
 		root->appendRow(item);
+
+		QString item_name = item->data(DF_FULLNAME).toString();
+		foreach(ShUniform &uf, uniforms) {
+			if (item_name.compare(uf.name()))
+				item->setData(DF_DEBUG_UNIFORM_VALUE, uf.toString());
+		}
 	}
 }
 
@@ -51,7 +58,7 @@ void ShVarModel::setWatched(ShVarItem *item)
 
 		if (item->rowCount() < 1) {
 			setRecursive(true, DF_WATCHED, item);
-			//m_qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+			qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 			emit addWatchItem(item);
 		} else {
 			for (int i = 0; i < item->rowCount(); i++)
@@ -72,6 +79,16 @@ void ShVarModel::unsetWatched(ShVarItem *item)
 	emit dataChanged(item->index(), item->index());
 	if (item->parent() != this->invisibleRootItem())
 		unsetWatched(dynamic_cast<ShVarItem*>(item->parent()));
+}
+
+void ShVarModel::setUniforms(const char *strings, int count)
+{
+	char *uniform = strings;
+	for (int c = 0; c < count; ++c) {
+		int length = 0;
+		uniforms.append(ShUniform(uniform, length));
+		uniform += length;
+	}
 }
 
 void ShVarModel::valuesChanged()
