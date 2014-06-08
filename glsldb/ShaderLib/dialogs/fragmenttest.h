@@ -45,7 +45,7 @@ private slots:
 	void resetSettings();
 	void apply();
 	void updateStencil(int);
-	void updateStencil(QString &);
+	void updateStencil(QString);
 
 private:
 	Ui::ShFragmentTest *ui;
