@@ -24,6 +24,7 @@ signals:
 	
 public slots:
 	void updateGui(int, bool, bool);
+	void setGuiUpdates(bool);
 	void getShaders(const char *shaders[smCount]);
 	void setShaders(const char *shaders[smCount]);
 	void executeShader();
@@ -34,6 +35,7 @@ public slots:
 	void updateControls();
 	void updateHighlight(ShaderMode, DbgRsRange *);
 	void getOptions(FragmentTestOptions *);
+	void getCurrentIndex(int&);
 
 protected slots:
 	void currentChanged(int);

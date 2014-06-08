@@ -90,13 +90,12 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	connect(this, SIGNAL(updateShaders(int&)), shaderManager, SLOT(updateShaders(int&)));
 	connect(this, SIGNAL(cleanShader()), shaderManager, SLOT(cleanShader()));
 	connect(this, SIGNAL(removeShaders()), shaderManager, SLOT(removeShaders()));
+	connect(tbToggleGuiUpdate, SIGNAL(toggled(bool)), shaderManager,
+			SIGNAL(setGuiUpdates(bool)));
 
 
 	/*** Setup GUI ****/
 	setupUi(this);
-	teVertexShader->setTabStopWidth(30);
-	teGeometryShader->setTabStopWidth(30);
-	teFragmentShader->setTabStopWidth(30);
 
 	/* Functionality seems to be obsolete now */
 	tbToggleGuiUpdate->setVisible(false);
@@ -178,26 +177,6 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	}
 	twGlStatistics->insertTab(0, taGlCalls, QString("GL Calls"));
 	twGlStatistics->insertTab(1, taGlExt, QString("GL Extensions"));
-
-//	for (i = 0; i < 3; i++) {
-//		m_pShaders[i] = NULL;
-//	}
-//	m_bHaveValidShaderCode = false;
-//
-//	m_serializedUniforms.pData = NULL;
-//	m_serializedUniforms.count = 0;
-
-//	m_primitiveMode = GL_NONE;
-//
-//	m_pGeometryMap = NULL;
-//	m_pVertexCount = NULL;
-	//m_pGeoDataModel = NULL;
-
-//	m_pCoverage = NULL;
-//
-//	m_selectedPixel[0] = -1;
-//	m_selectedPixel[1] = -1;
-	lWatchSelectionPos->setText("No Selection");
 
 #ifdef _WIN32
 	// TODO: Only Windows can attach at the moment.
@@ -1278,9 +1257,6 @@ void MainWindow::on_tbPause_clicked()
 void MainWindow::setGuiUpdates(bool enabled)
 {
 	lvGlTrace->setUpdatesEnabled(enabled);
-	teFragmentShader->setUpdatesEnabled(enabled);
-	teGeometryShader->setUpdatesEnabled(enabled);
-	teVertexShader->setUpdatesEnabled(enabled);
 	tvGlCalls->setUpdatesEnabled(enabled);
 	tvGlCallsPf->setUpdatesEnabled(enabled);
 	tvGlExt->setUpdatesEnabled(enabled);
@@ -1411,27 +1387,15 @@ void MainWindow::recordDrawCall()
 				/* draw call recording stopped by user interaction */
 				pcErrorCode error = pc->insertGlEnd();
 				if (error == PCE_NONE) {
-					switch (twShader->currentIndex()) {
-					case 0:
-						error = pc->restoreRenderTarget(
-								DBG_TARGET_VERTEX_SHADER);
-						break;
-					case 1:
-						error = pc->restoreRenderTarget(
-								DBG_TARGET_GEOMETRY_SHADER);
-						break;
-					case 2:
-						error = pc->restoreRenderTarget(
-								DBG_TARGET_FRAGMENT_SHADER);
-						break;
-					}
+					int target = shaderManager->getCurrentTarget();
+					error = PCE_DBG_INVALID_VALUE;
+					if (target >= 0)
+						error = pc->restoreRenderTarget(target);
 				}
-				if (error == PCE_NONE) {
+				if (error == PCE_NONE)
 					error = pc->restoreActiveShader();
-				}
-				if (error == PCE_NONE) {
+				if (error == PCE_NONE)
 					error = pc->endReplay();
-				}
 				setErrorStatus(error);
 				if (isErrorCritical(error)) {
 					killProgram(1);
@@ -1559,7 +1523,6 @@ void MainWindow::setRunLevel(int rl)
 		tbPause->setEnabled(false);
 		tbToggleGuiUpdate->setEnabled(false);
 		tbToggleNoTrace->setEnabled(false);
-		tbShaderExecute->setEnabled(false);
 		tbToggleHaltOnError->setEnabled(false);
 		tbGlTraceSettings->setEnabled(true);
 		tbSave->setEnabled(true);

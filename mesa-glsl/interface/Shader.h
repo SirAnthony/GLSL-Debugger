@@ -14,15 +14,14 @@ class ast_node;
 class ast_type_qualifier;
 class ir_variable;
 
-// Changeagles
+// Changeables
 ShChangeable* createShChangeableCtx(int id, void* mem_ctx);
 ShChangeableIndex* createShChangeableIndexCtx(ShChangeableType type, long index, void* mem_ctx);
 void copyAstChangeableList(exec_list *clout, exec_list *clin, exec_list* only, void* mem_ctx);
-void addShChangeableCtx(ShChangeableList *cl, const ShChangeable *c);
 ShChangeable * copyShChangeableCtx(const ShChangeable *c, void* mem_ctx);
-void addShIndexToChangeableCtx(ShChangeable *c, const ShChangeableIndex *idx);
-void copyShChangeableToListCtx(ShChangeableList *cl, const ShChangeable *c);
-void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin);
+void addShIndexToChangeable(ShChangeable *c, const ShChangeableIndex *idx);
+void copyShChangeableToList(ShChangeableList *cl, const ShChangeable *c);
+void copyShChangeableList(ShChangeableList *clout, exec_list *clin);
 
 // Variables
 ShVariable* findShVariable(int id);
@@ -40,8 +39,6 @@ variableQualifier qualifierFromAst(const ast_type_qualifier* qualifier, bool is_
 variableQualifier qualifierFromIr(ir_variable* var);
 variableVaryingModifier modifierFromAst(const ast_type_qualifier* qualifier);
 variableVaryingModifier modifierFromIr(const ir_variable* var);
-
-
 
 
 

@@ -55,6 +55,7 @@ include_directories(
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_SOURCE_DIR}/utils"
 	"${CMAKE_CURRENT_SOURCE_DIR}/DebugLib"
+	"${CMAKE_CURRENT_SOURCE_DIR}/ShaderLib"
 	${OPENGL_INCLUDE_DIR}
 	${QT_INCLUDE_DIR}
 	${GLEW_INCLUDE_DIR}
@@ -67,12 +68,12 @@ target_link_libraries(glsldb
 	glenumerants
 	functionList
 	utils
-	shaderlib
+	shadergui
 	${QT_LIBRARIES}
 	${OPENGL_LIBRARIES}
 	${GLEW_LIBRARIES}
 	${GLSLDB_OS_DEPENDENT_LIBS}
-	${GLSL_LIBRARIES}
+	#${GLSL_LIBRARIES}
 )
 
 if(GLSLDB_WIN)

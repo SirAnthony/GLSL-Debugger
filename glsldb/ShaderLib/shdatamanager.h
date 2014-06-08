@@ -17,6 +17,7 @@ class ShVarItem;
 class QMainWindow;
 class FragmentTestOptions;
 
+
 struct GeometryInfo {
 	int primitiveMode;
 	int inputType;
@@ -65,20 +66,22 @@ public:
 
 	void registerDock(ShDockWidget*, DockType);
 
-	bool getDebugData(ShaderMode type, DbgCgOptions option, ShChangeableList *cl,
+	bool getDebugData(ShaderMode type, int option, ShChangeableList *cl,
 					  int format, bool *coverage, DataBox *data);
 	bool cleanShader(ShaderMode type);
 	void getPixels(int [2]);
 	bool hasActiveWindow();
 	const GeometryInfo &getGeometryInfo() const;
 	ShaderMode getMode();
+	int getCurrentTarget();
 	bool codeReady();
-	ShBuiltInResource *getResource();
+	ShBuiltInResource *getResource();	
 
 	bool isAvaliable()
 	{ return shadersAvaliable; }
 
 signals:
+	void setGuiUpdates(bool);
 	void saveQueries(int&);
 	void recordDrawCall(int&);
 	void cleanDocks(ShaderMode);
@@ -99,7 +102,7 @@ signals:
 	void getOptions(FragmentTestOptions *);
 	void getShaders(const char *shaders[]);
 	void setShaders(char *shaders[]);
-
+	void getCurrentIndex(int&);
 
 public slots:
 	void execute(ShaderMode);

@@ -10,6 +10,10 @@
     <height>300</height>
    </rect>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../glslDevil.qrc">
+    <normaloff>:/icons/icons/face-devil-grin_32.png</normaloff>:/icons/icons/face-devil-grin_32.png</iconset>
+  </property>
   <property name="windowTitle">
    <string>Watching</string>
   </property>
@@ -92,7 +96,7 @@
         </widget>
        </item>
        <item>
-        <spacer>
+        <spacer name="spacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -143,7 +147,7 @@
   <customwidget>
    <class>ShWatchedTreeView</class>
    <extends>QTreeView</extends>
-   <header>shproxytreeview.h</header>
+   <header>docks/shproxytreeview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

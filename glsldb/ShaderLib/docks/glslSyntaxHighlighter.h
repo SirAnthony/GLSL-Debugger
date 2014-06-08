@@ -31,11 +31,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
-#ifndef _GLSL_SYNTAX_HIGHLIGHTER_QT_H_
-#define _GLSL_SYNTAX_HIGHLIGHTER_QT_H_
+#ifndef GLSLSYNTAXHIGHLIGHTER_H
+#define GLSLSYNTAXHIGHLIGHTER_H
 
-#include <QtGui/QSyntaxHighlighter>
-#include <QtGui/QTextCharFormat>
+#include <QSyntaxHighlighter>
+#include <QTextCharFormat>
 
 class GlslSyntaxHighlighter: public QSyntaxHighlighter {
 Q_OBJECT
@@ -65,5 +65,5 @@ private:
 	QTextCharFormat swizzleFormat;
 };
 
-#endif
+#endif /* GLSLSYNTAXHIGHLIGHTER_H */
 

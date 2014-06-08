@@ -1,6 +1,6 @@
 
-#include "shvarmodel.h"
 #include "shdatamanager.h"
+#include "shvarmodel.h"
 #include <QApplication>
 
 ShVarModel::ShVarModel(QObject *parent) :

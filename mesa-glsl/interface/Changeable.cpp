@@ -86,16 +86,6 @@ static bool isEqualShChangeable(const ShChangeable *a, const ShChangeable *b)
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Old functions
-//
-
-void addShChangeable(ShChangeableList *cl, ShChangeable *c)
-{
-	addShChangeableCtx(cl, c);
-}
-
-
-////////////////////////////////////////////////////////////////////////
 // Mem-safe functions
 //
 
@@ -114,7 +104,7 @@ ShChangeableIndex* createShChangeableIndexCtx(ShChangeableType type, long index,
 	return idx;
 }
 
-void addShChangeableCtx(ShChangeableList *cl, const ShChangeable *c)
+void addShChangeable(ShChangeableList *cl, const ShChangeable *c)
 {
 	if (!cl || !c)
 		return;
@@ -148,16 +138,16 @@ ShChangeable * copyShChangeableCtx(const ShChangeable *c, void* mem_ctx)
 	return copy;
 }
 
-void copyShChangeableToListCtx(ShChangeableList *cl, const ShChangeable *c)
+void copyShChangeableToList(ShChangeableList *cl, const ShChangeable *c)
 {
 	if (!cl || !c)
 		return;
 
 	ShChangeable *copy = copyShChangeableCtx(c, cl);
-	addShChangeableCtx(cl, copy);
+	addShChangeable(cl, copy);
 }
 
-void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin)
+void copyShChangeableList(ShChangeableList *clout, exec_list *clin)
 {
 	if (!clout || !clin)
 		return;
@@ -172,7 +162,7 @@ void copyShChangeableListCtx(ShChangeableList *clout, exec_list *clin)
 			}
 		}
 		if (!alreadyInList)
-			copyShChangeableToListCtx(clout, ch_item->changeable);
+			copyShChangeableToList(clout, ch_item->changeable);
 	}
 }
 
@@ -205,7 +195,7 @@ void copyAstChangeableList(exec_list *clout, exec_list *clin, exec_list* only, v
 	}
 }
 
-void addShIndexToChangeableCtx(ShChangeable *c, const ShChangeableIndex *idx)
+void addShIndexToChangeable(ShChangeable *c, const ShChangeableIndex *idx)
 {
 	if (!c)
 		return;
@@ -232,5 +222,5 @@ void freeShChangeable(ShChangeable **c)
 void createShChangeableIndex(ShChangeable *c, ShChangeableIndex **idx)
 {
 	*idx = rzalloc(c, ShChangeableIndex);
-	addShIndexToChangeableCtx(c, *idx);
+	addShIndexToChangeable(c, *idx);
 }

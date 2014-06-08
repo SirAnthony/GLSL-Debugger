@@ -109,36 +109,14 @@ private slots:
 	void on_tbGlTraceSettings_clicked();
 	void on_tbSave_clicked();
 
-	/* shader */
-	void on_twShader_currentChanged(int selection);
-//	void on_tbShaderExecute_clicked();
-//	void on_tbShaderReset_clicked();
-//	void on_tbShaderStep_clicked();
-//	void on_tbShaderStepOver_clicked();
-//	void on_tbShaderFragmentOptions_clicked();
-
-	/* watch */
-	//void on_tbWatchWindow_clicked();
-	// void on_tbWatchWindowAdd_clicked();
-	/*void on_tbWatchDelete_clicked();*/
-	// void watchWindowClosed();
-
 	/****************
 	 * self connect *
 	 ****************/
 
 	void setRunLevel(int);
 	void setRunLevelDebuggable(int&, bool);
-	// void updateWatchItemData(OldShVarItem*);
-	// void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
 	void setMouseOverValues(int x, int y, const bool *active,
 			const QVariant *values);
-//	void newSelectedPixel(int x, int y);
-//	void newSelectedVertex(int n);
-//	void newSelectedPrimitive(int dataIdx);
-	// void changedActiveWindow(QWidget *w);
-//	void ShaderStep(int action, bool updateData = true, bool updateCovermap =
-//			true);
 
 	void singleStep();
 
@@ -150,19 +128,11 @@ private slots:
 private:
 	void closeEvent(QCloseEvent *event);
 
-
 	void setStatusBarText(QString);
-	//void setShaderCodeText(char *shaders[3]);
 	void leaveDBGState();
-//	void cleanupDBGShader();
-//	bool getDebugImage(DbgCgOptions option, ShChangeableList *cl, int rbFormat,
-//			bool *coverage, PixelBox **fbData);
-//	bool getDebugVertexData(DbgCgOptions option, ShChangeableList *cl,
-//			bool *coverage, VertexBox *vdata);
 
 	/* Gui update handling */
 	void setGuiUpdates(bool);
-	/*void updateWatchGui(int s);*/
 
 	void addGlTraceItem();
 	void addGlTraceErrorItem(const char *text);
@@ -195,8 +165,6 @@ private:
 	/* glTrace settings dialog */
 	GlTraceSettingsDialog *m_pgtDialog;
 
-	/* per fragment tests */
-//	FragmentTestDialog *m_pftDialog;
 
 	QStringList dbgProgArgs;
 	QString workDir;
@@ -224,51 +192,9 @@ private:
 	GlCallStatistics *m_pWglCallPfst;
 	GlCallStatistics *m_pWglExtPfst;
 
-//	ShHandle m_dShCompiler;
-	// ShBuiltInResource m_dShResources;
-//	ShVariableList m_dShVariableList;
-
 	ShDataManager *shaderManager;
 
-//	OldShVarModel *m_pShVarModel;
-	//QStack<LoopData*> m_qLoopData;
-
-//	char *m_pShaders[3];
-//	bool m_bHaveValidShaderCode;
-
-//	struct {
-//		char *pData;
-//		int count;
-//	} m_serializedUniforms;
-
-//	int m_primitiveMode;
-//	VertexBox *m_pGeometryMap;
-//	VertexBox *m_pVertexCount;
-	//GeoShaderDataModel *m_pGeoDataModel;
-
-//	bool *m_pCoverage;
-
-//	enum CoverageMapStatus {
-//		COVERAGEMAP_UNCHANGED,
-//		COVERAGEMAP_GROWN,
-//		COVERAGEMAP_SHRINKED
-//	};
-	// void updateWatchListData(CoverageMapStatus cmstatus, bool forceUpdate);
-	// void updateWatchItemsCoverage(bool *coverage);
-	// void resetWatchListData(void);
 	void updateSelectedPixelValues(void);
-	// QModelIndexList cleanupSelectionList(QModelIndexList input);
-
-	//WatchView* newWatchWindowGeoDataTree(QModelIndexList &list);
-	//WatchView* newWatchWindowVertexTable(QModelIndexList &list);
-	//WatchView* newWatchWindowFragment(QModelIndexList &list);
-//	void addToWatchWindowGeoDataTree(WatchView *watchView,
-//			QModelIndexList &list);
-//	void addToWatchWindowVertexTable(WatchView *watchView,
-//			QModelIndexList &list);
-//	void addToWatchWindowFragment(WatchView *watchView, QModelIndexList &list);
-
-//	int m_selectedPixel[2];
 
 	/* MRU program. */
 	bool loadMruProgram(QString& outProgram, QString& outArguments,

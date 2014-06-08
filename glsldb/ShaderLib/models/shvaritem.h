@@ -3,6 +3,7 @@
 
 #include <QStandardItem>
 #include "shdatamanager.h"
+#include "ShaderLang.h"
 
 typedef enum {
 	SHV_NONE,

@@ -50,7 +50,7 @@ void ast_debugjump_traverser_visitor::addShChangeables(ast_node* node)
 {
 	if (!node)
 		return;
-	copyShChangeableListCtx(&result.cgbls, &node->changeables);
+	copyShChangeableList(&result.cgbls, &node->changeables);
 	checkReturns(node);
 }
 
@@ -472,14 +472,14 @@ void ast_debugjump_traverser_visitor::leave(class ast_function_expression* node)
 			node->debug_state = ast_dbg_state_call;
 
 			// add local parameters of called function first
-			copyShChangeableListCtx(&result.cgbls, &funcDef->prototype->changeables);
+			copyShChangeableList(&result.cgbls, &funcDef->prototype->changeables);
 			funcDef->accept(this);
 
 			// if parsing ends up here and a target is still beeing
 			// searched, a wierd function was called, but anyway,
 			// let's copy the appropriate changeables
 			if (this->operation == OTOpTargetSet)
-				copyShChangeableListCtx(&result.cgbls, &node->changeables);
+				copyShChangeableList(&result.cgbls, &node->changeables);
 		} else {
 			processDebugable(node);
 
@@ -488,10 +488,10 @@ void ast_debugjump_traverser_visitor::leave(class ast_function_expression* node)
 			// else
 			// -> copy all, since user wants to jump over this func
 			if (this->finishedDbgFunction) {
-				copyShChangeableListCtx(&result.cgbls, &node->changeable_params);
+				copyShChangeableList(&result.cgbls, &node->changeable_params);
 				this->finishedDbgFunction = false;
 			} else {
-				copyShChangeableListCtx(&result.cgbls, &node->changeables);
+				copyShChangeableList(&result.cgbls, &node->changeables);
 				if (funcDef)
 					checkReturns(funcDef);
 				else

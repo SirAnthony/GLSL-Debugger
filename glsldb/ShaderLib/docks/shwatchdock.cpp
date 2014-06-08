@@ -19,6 +19,8 @@ ShWatchDock::ShWatchDock(QWidget *parent) :
 	QItemSelectionModel *selection = new QItemSelectionModel(ui->tvWatchList->model());
 	ui->tvWatchList->setSelectionModel(selection);
 
+	cleanDock(smNoop);
+
 	/* Track watch items */
 	connect(this->model, SIGNAL(newWatchItem(ShVarItem*)), SLOT(newItem(ShVarItem*)));
 	connect(ShDataManager::get(), SIGNAL(cleanModel()), this, SLOT(clearWatchList()));

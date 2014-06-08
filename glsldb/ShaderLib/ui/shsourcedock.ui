@@ -10,6 +10,10 @@
     <height>269</height>
    </rect>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../../glslDevil.qrc">
+    <normaloff>:/icons/icons/face-devil-grin_32.png</normaloff>:/icons/icons/face-devil-grin_32.png</iconset>
+  </property>
   <property name="windowTitle">
    <string>Shader Source</string>
   </property>

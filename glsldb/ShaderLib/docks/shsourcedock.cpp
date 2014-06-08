@@ -17,8 +17,12 @@ ShSourceDock::ShSourceDock(QWidget *parent) :
 	ui->setupUi(this);
 	connect(ui->twShader, SIGNAL(currentChanged(int)), this, SLOT(currentChanged(int)));
 
+	for (int i = 0; i < smCount; ++i)
+		editWidgets[i]->setTabStopWidth(30);
+
 	ShDataManager *manager = ShDataManager::get();
 	manager->registerDock(this, ShDataManager::dmDTSource);
+	connect(manager, SIGNAL(setGuiUpdates(bool)), this, SLOT(setGuiUpdates(bool)));
 	connect(manager, SIGNAL(updateStepControls(bool)),
 			this, SLOT(updateStepControls(bool)));
 	connect(manager, SIGNAL(updateControls(int,bool,bool)),
@@ -29,6 +33,7 @@ ShSourceDock::ShSourceDock(QWidget *parent) :
 			this, SLOT(getShaders(const char*[])));
 	connect(manager, SIGNAL(setShaders(const char*[])),
 			this, SLOT(setShaders(const char*[])));
+	connect(manager, SIGNAL(getCurrentIndex(int&)), this, SLOT(getCurrentIndex(int&)));
 	connect(this, SIGNAL(stepShader(int)), manager, SLOT(step(int)));
 	connect(this, SIGNAL(resetShader()), manager, SLOT(reset()));
 	connect(this, SIGNAL(executeShader(ShaderMode)), manager, SLOT(execute(ShaderMode)));
@@ -93,6 +98,13 @@ void ShSourceDock::updateGui(int active_tab, bool restart, bool debuggable)
 			icon.addFile(execute_icon);
 		ui->twShader->setTabIcon(i, icon);
 	}
+}
+
+void ShSourceDock::setGuiUpdates(bool enabled)
+{
+	ui->teFragment->setUpdatesEnabled(enabled);
+	ui->teGeometry->setUpdatesEnabled(enabled);
+	ui->teVertex->setUpdatesEnabled(enabled);
 }
 
 void ShSourceDock::stepInto()
@@ -213,6 +225,11 @@ void ShSourceDock::getOptions(FragmentTestOptions *opts)
 	if (!opts)
 		return;
 	memcpy(opts, &options, sizeof(FragmentTestOptions));
+}
+
+void ShSourceDock::getCurrentIndex(int &index)
+{
+	index = ui->twShader->currentIndex();
 }
 
 void ShSourceDock::currentChanged(int index)

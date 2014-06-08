@@ -2,6 +2,8 @@
 // I just want to separate it from that big file for future progControl
 // reimplementation. When the new interface will be there, I'll return code back.
 
+#ifdef GLSLDB_WIN
+
 #include <QtCore>
 #include <windows.h>
 #include "progControl.qt.h"
@@ -269,3 +271,5 @@ void ProgramControl::closeEvents(void) {
 
 	dbgPrint(DBGLVL_INFO, "Events closed.\n");
 }
+
+#endif

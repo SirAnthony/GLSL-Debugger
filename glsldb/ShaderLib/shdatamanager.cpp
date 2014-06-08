@@ -14,6 +14,7 @@
 #include "errorCodes.h"
 #include "progControl.qt.h"
 #include "runLevel.h"
+#include "ShaderLang.h"
 
 
 #include <QMessageBox>
@@ -142,7 +143,7 @@ static DbgCgOptions position_options(DbgRsTargetPosition position)
 	}
 }
 
-bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangeableList *cl,
+bool ShDataManager::getDebugData(ShaderMode type, int option, ShChangeableList *cl,
 								 int format, bool *coverage, DataBox *data)
 {
 	if (type < 0) {
@@ -152,7 +153,7 @@ bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangea
 
 	pcErrorCode error;
 	const char *shaders[3] = {NULL, NULL, NULL};
-	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, option);
+	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, (DbgCgOptions)option);
 
 	emit getShaders(shaders);
 	shaders[type] = debugCode;
@@ -233,6 +234,16 @@ const GeometryInfo &ShDataManager::getGeometryInfo() const
 ShaderMode ShDataManager::getMode()
 {
 	return shaderMode;
+}
+
+int ShDataManager::getCurrentTarget()
+{
+	int index = -1;
+	emit getCurrentIndex(index);
+
+	if (index >= 0 || index < smCount)
+		return dbg_pc_targets[index];
+	return -1;
 }
 
 bool ShDataManager::codeReady()
