@@ -15,7 +15,9 @@ class ShSourceDock : public ShDockWidget
 	Q_OBJECT
 public:
 	explicit ShSourceDock(QWidget *parent = 0);
-	~ShSourceDock();		
+	~ShSourceDock();
+
+	virtual void registerDock(ShDataManager *);
 
 signals:
 	void stepShader(int);
@@ -25,8 +27,8 @@ signals:
 public slots:
 	void updateGui(int, bool, bool);
 	void setGuiUpdates(bool);
-	void getShaders(const char *shaders[smCount]);
-	void setShaders(const char *shaders[smCount]);
+	void getShaders(const char *shaders[]);
+	void setShaders(const char *shaders[]);
 	void executeShader();
 	void stepInto();
 	void stepOver();
@@ -43,10 +45,10 @@ protected slots:
 	void showOptions();
 
 private:
+	Ui::ShSourceDock *ui;
 	FragmentTestOptions options;
 	QTextEdit *editWidgets[smCount];
-	QString shaderText[smCount];
-	Ui::ShSourceDock *ui;
+	QString shaderText[smCount];	
 };
 
 #endif // SHSOURCEDOCK_H

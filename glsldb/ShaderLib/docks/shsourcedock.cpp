@@ -2,26 +2,46 @@
 #include "shsourcedock.h"
 #include "ui_shsourcedock.h"
 #include "glslSyntaxHighlighter.h"
+#include "watch/shwindowmanager.h"
 #include "utils/dbgprint.h"
 #include "ShaderLang.h"
 
 #include <QTextDocument>
 #include <QTextCharFormat>
 #include <QTextEdit>
+#include <initializer_list>
 
 
 ShSourceDock::ShSourceDock(QWidget *parent) :
-	ShDockWidget(parent), editWidgets {
-		ui->teVertex, ui->teGeometry, ui->teFragment }
+	ShDockWidget(parent), ui(new Ui::ShSourceDock)
 {
 	ui->setupUi(this);
+	updateGui(-1, false, false);
+
 	connect(ui->twShader, SIGNAL(currentChanged(int)), this, SLOT(currentChanged(int)));
+	auto widgets = std::initializer_list<QTextEdit *>({
+		ui->teVertex, ui->teGeometry, ui->teFragment });
+	std::copy(widgets.begin(), widgets.end(), editWidgets);
+
+
+	connect(ui->tbReset, SIGNAL(clicked()), this, SIGNAL(resetShader()));
 
 	for (int i = 0; i < smCount; ++i)
 		editWidgets[i]->setTabStopWidth(30);
+}
 
-	ShDataManager *manager = ShDataManager::get();
-	manager->registerDock(this, ShDataManager::dmDTSource);
+ShSourceDock::~ShSourceDock()
+{
+	delete ui;
+}
+
+void ShSourceDock::registerDock(ShDataManager *manager)
+{
+	setModel(manager->getModel());
+	connect(manager, SIGNAL(cleanDocks(ShaderMode)), this, SLOT(cleanDock(ShaderMode)));
+	connect(this, SIGNAL(updateWindows(bool)),
+			manager->getWindows(), SLOT(updateWindows(bool)));
+
 	connect(manager, SIGNAL(setGuiUpdates(bool)), this, SLOT(setGuiUpdates(bool)));
 	connect(manager, SIGNAL(updateStepControls(bool)),
 			this, SLOT(updateStepControls(bool)));
@@ -37,11 +57,6 @@ ShSourceDock::ShSourceDock(QWidget *parent) :
 	connect(this, SIGNAL(stepShader(int)), manager, SLOT(step(int)));
 	connect(this, SIGNAL(resetShader()), manager, SLOT(reset()));
 	connect(this, SIGNAL(executeShader(ShaderMode)), manager, SLOT(execute(ShaderMode)));
-}
-
-ShSourceDock::~ShSourceDock()
-{
-	delete ui;
 }
 
 void ShSourceDock::getShaders(const char *shaders[])

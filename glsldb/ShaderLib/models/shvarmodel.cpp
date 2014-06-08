@@ -1,5 +1,4 @@
 
-#include "shdatamanager.h"
 #include "shvarmodel.h"
 #include <QApplication>
 
@@ -14,9 +13,6 @@ ShVarModel::ShVarModel(QObject *parent) :
 			<< "Selection Value" << "Value";
 
 	this->setVerticalHeaderLabels(column_names);
-
-	ShDataManager* manager = ShDataManager::get();
-	connect(manager, SIGNAL(cleanModel()), SLOT(clear()));
 }
 
 void ShVarModel::appendRow(const ShVariableList *items)

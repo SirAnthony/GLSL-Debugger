@@ -21,7 +21,7 @@ SelectionDialog::SelectionDialog(ShaderMode mode, DataBox *box,
 								 QSet<ShVarItem *> &watch_items,
 								 GeometryInfo &geometry,
 								 bool else_branch, QWidget *parent) :
-	QDialog(parent)
+	QDialog(parent), ui(new Ui::ShSelection)
 {
 	/* Statistics */
 	totalValues = 0;

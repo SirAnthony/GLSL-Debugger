@@ -10,8 +10,6 @@ namespace Ui {
 	class ShWatchDock;
 }
 
-
-
 class ShWatchDock : public ShDockWidget
 {
 	Q_OBJECT
@@ -19,6 +17,7 @@ public:
 	explicit ShWatchDock(QWidget *parent = 0);
 	~ShWatchDock();
 
+	virtual void registerDock(ShDataManager *);
 	void expand(ShVarItem *item);
 
 signals:
@@ -41,7 +40,7 @@ public slots:
 	void newWindow();
 	void extendWindow();
 
-protected:	
+protected:
 	int getWindowType();
 	int getItems(QList<ShVarItem *> &);
 	QModelIndexList filterSelection(const QModelIndexList &);

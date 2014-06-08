@@ -83,19 +83,23 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	connect(shaderManager, SIGNAL(setCurrentDebuggable(int&,bool)),
 			this, SLOT(setRunLevelDebuggable(int&,bool)));
 	connect(shaderManager, SIGNAL(killProgram(int)), this, SLOT(killProgram(int)));
-	connect(shaderManager, SIGNAL(setErrorStatus(int)),
-			this, SLOT(setErrorStatus(pcErrorCode)));
+	connect(shaderManager, SIGNAL(setErrorStatus(int)), this, SLOT(setErrorStatus(int)));
 	connect(shaderManager, SIGNAL(recordDrawCall(int&)),
 			this, SLOT(recordDrawCall(int&)));
 	connect(this, SIGNAL(updateShaders(int&)), shaderManager, SLOT(updateShaders(int&)));
 	connect(this, SIGNAL(cleanShader()), shaderManager, SLOT(cleanShader()));
 	connect(this, SIGNAL(removeShaders()), shaderManager, SLOT(removeShaders()));
-	connect(tbToggleGuiUpdate, SIGNAL(toggled(bool)), shaderManager,
-			SIGNAL(setGuiUpdates(bool)));
-
 
 	/*** Setup GUI ****/
 	setupUi(this);
+
+	connect(tbToggleGuiUpdate, SIGNAL(toggled(bool)), shaderManager,
+			SIGNAL(setGuiUpdates(bool)));
+
+	// Register docks
+	dwShaderSource->registerDock(shaderManager);
+	dwWatch->registerDock(shaderManager);
+	dwShVar->registerDock(shaderManager);
 
 	/* Functionality seems to be obsolete now */
 	tbToggleGuiUpdate->setVisible(false);
@@ -105,12 +109,6 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	/*   Status bar    */
 	statusbar->addPermanentWidget(fSBError);
 	statusbar->addPermanentWidget(fSBMouseInfo);
-
-	/*   Workspace    */
-	workspace = new QWorkspace;
-	setCentralWidget(workspace);
-	connect(workspace, SIGNAL(windowActivated(QWidget*)), this,
-			SLOT(changedActiveWindow(QWidget*)));
 
 	/*   Buffer View    */
 	QGridLayout *gridLayout;
@@ -142,11 +140,7 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	agWatchControl->addAction(aMinMaxLens);
 	agWatchControl->setEnabled(false);
 
-	/* per frgamnet operations */
-//	m_pftDialog = new FragmentTestDialog(this);
-
 	m_pCurrentCall = NULL;
-//	m_pShVarModel = NULL;
 
 	if (dbgProgArgs.size())
 		setRunLevel(RL_SETUP);
@@ -168,13 +162,9 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	m_pWglCallPfst = new GlCallStatistics(tvWglCallsPf);
 	m_pWglExtPfst = new GlCallStatistics(tvWglExtPf);
 
-	/* Prepare debugging */
-//	ShInitialize();
-//	m_dShCompiler = 0;
-
-	while (twGlStatistics->count() > 0) {
+	while (twGlStatistics->count() > 0)
 		twGlStatistics->removeTab(0);
-	}
+
 	twGlStatistics->insertTab(0, taGlCalls, QString("GL Calls"));
 	twGlStatistics->insertTab(1, taGlExt, QString("GL Extensions"));
 
@@ -211,23 +201,7 @@ MainWindow::~MainWindow()
 	delete m_pWglCallPfst;
 	delete m_pWglExtPfst;
 
-//	delete[] m_pCoverage;
-//	delete m_pGeometryMap;
-//	delete m_pVertexCount;
-	//delete m_pGeoDataModel;
-
 	delete m_pCurrentCall;
-
-//	for (int i = 0; i < 3; i++) {
-//		delete[] m_pShaders[i];
-//	}
-
-//	delete[] m_serializedUniforms.pData;
-//	m_serializedUniforms.pData = NULL;
-//	m_serializedUniforms.count = 0;
-
-	/* clean up compiler stuff */
-//	ShFinalize();
 }
 
 void MainWindow::killProgram(int hard)
@@ -550,27 +524,6 @@ pcErrorCode MainWindow::getNextCall()
 		pcErrorCode error = static_cast<pcErrorCode>(status);
 		if (isErrorCritical(error))
 			return error;
-
-//		for (int i = 0; i < 3; i++) {
-//			delete[] m_pShaders[i];
-//			m_pShaders[i] = NULL;
-//		}
-//		delete[] m_serializedUniforms.pData;
-//		m_serializedUniforms.pData = NULL;
-//		m_serializedUniforms.count = 0;
-
-//		pcErrorCode error = pc->getShaderCode(m_pShaders, &m_dShResources,
-//				&m_serializedUniforms.pData, &m_serializedUniforms.count);
-//		if (error == PCE_NONE) {
-//			/* show shader code(s) in tabs */
-//			setShaderCodeText(m_pShaders);
-//			if (m_pShaders[0] != NULL || m_pShaders[1] != NULL
-//					|| m_pShaders[2] != NULL) {
-//				m_bHaveValidShaderCode = true;
-//			}
-//		} else if (isErrorCritical(error)) {
-//			return error;
-//		}
 	}
 	return PCE_NONE;
 }
@@ -595,7 +548,6 @@ void MainWindow::on_tbExecute_clicked()
 		resetAllStatistics();
 
 		emit removeShaders();
-//		m_bHaveValidShaderCode = false;
 
 		/* Build arguments */
 		args = new char*[dbgProgArgs.size() + 1];
@@ -753,27 +705,6 @@ pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 			error = static_cast<pcErrorCode>(status);
 			if (isErrorCritical(error))
 				return error;
-//			for (int i = 0; i < 3; i++) {
-//				delete[] m_pShaders[i];
-//				m_pShaders[i] = NULL;
-//			}
-//			delete[] m_serializedUniforms.pData;
-//			m_serializedUniforms.pData = NULL;
-//			m_serializedUniforms.count = 0;
-//			error = pc->getShaderCode(m_pShaders, &m_dShResources,
-//					&m_serializedUniforms.pData, &m_serializedUniforms.count);
-//			if (error == PCE_NONE) {
-//				/* show shader code(s) in tabs */
-//				setShaderCodeText(m_pShaders);
-//				if (m_pShaders[0] != NULL || m_pShaders[1] != NULL
-//						|| m_pShaders[2] != NULL) {
-//					m_bHaveValidShaderCode = true;
-//				} else {
-//					m_bHaveValidShaderCode = false;
-//				}
-//			} else if (isErrorCritical(error)) {
-//				return error;
-//			}
 		}
 	} else {
 		/* current call is a "normal" function call */
@@ -1034,15 +965,13 @@ void MainWindow::on_tbJumpToDrawCall_clicked()
 		m_pCurrentCall = NULL;
 
 		emit removeShaders();
-//		setShaderCodeText(NULL);
+
 		resetAllStatistics();
 		setStatusBarText(QString("Running program without tracing"));
 		clearGlTraceItemList();
 		addGlTraceWarningItem("Running program without call tracing");
 		addGlTraceWarningItem("Statistics reset!");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-
-//		m_bHaveValidShaderCode = false;
 
 		pcErrorCode error = pc->executeToDrawCall(
 				tbToggleHaltOnError->isChecked());
@@ -1091,15 +1020,13 @@ void MainWindow::on_tbJumpToShader_clicked()
 		m_pCurrentCall = NULL;
 
 		emit removeShaders();
-//		setShaderCodeText(NULL);
+
 		resetAllStatistics();
 		setStatusBarText(QString("Running program without tracing"));
 		clearGlTraceItemList();
 		addGlTraceWarningItem("Running program without call tracing");
 		addGlTraceWarningItem("Statistics reset!");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-
-//		m_bHaveValidShaderCode = false;
 
 		pcErrorCode error = pc->executeToShaderSwitch(
 				tbToggleHaltOnError->isChecked());
@@ -1113,20 +1040,18 @@ void MainWindow::on_tbJumpToShader_clicked()
 	} else {
 		if (m_pCurrentCall && m_pCurrentCall->isShaderSwitch()) {
 			singleStep();
-			if (currentRunLevel == RL_SETUP) {
-				/* something was wrong in step */
+			/* something was wrong in step */
+			if (currentRunLevel == RL_SETUP)
 				return;
-			}
 		}
 
 		while (currentRunLevel == RL_TRACE_EXECUTE_RUN
 				&& (!m_pCurrentCall
 						|| (m_pCurrentCall && !m_pCurrentCall->isShaderSwitch()))) {
 			singleStep();
-			if (currentRunLevel == RL_SETUP) {
-				/* something was wrong in step */
+			/* something was wrong in step */
+			if (currentRunLevel == RL_SETUP)
 				return;
-			}
 			qApp->processEvents(QEventLoop::AllEvents);
 		}
 	}
@@ -1154,15 +1079,12 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 			m_pCurrentCall = NULL;
 
 			emit removeShaders();
-//			setShaderCodeText(NULL);
 			resetAllStatistics();
 			setStatusBarText(QString("Running program without tracing"));
 			clearGlTraceItemList();
 			addGlTraceWarningItem("Running program without call tracing");
 			addGlTraceWarningItem("Statistics reset!");
 			qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-
-//			m_bHaveValidShaderCode = false;
 
 			pcErrorCode error = pc->executeToUserDefined(
 					targetName.toAscii().data(),
@@ -1177,10 +1099,9 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 		} else {
 
 			singleStep();
-			if (currentRunLevel == RL_SETUP) {
-				/* something was wrong in step */
+			/* something was wrong in step */
+			if (currentRunLevel == RL_SETUP)
 				return;
-			}
 
 			while (currentRunLevel == RL_TRACE_EXECUTE_RUN
 					&& (!m_pCurrentCall
@@ -1188,10 +1109,9 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 									&& targetName.compare(
 											m_pCurrentCall->getName())))) {
 				singleStep();
-				if (currentRunLevel == RL_SETUP) {
-					/* something was wrong in step */
+				/* something was wrong in step */
+				if (currentRunLevel == RL_SETUP)
 					return;
-				}
 				qApp->processEvents(QEventLoop::AllEvents);
 			}
 		}
@@ -1214,15 +1134,12 @@ void MainWindow::on_tbRun_clicked()
 		m_pCurrentCall = NULL;
 
 		emit removeShaders();
-//		setShaderCodeText(NULL);
 		resetAllStatistics();
 		setStatusBarText(QString("Running program without tracing"));
 		clearGlTraceItemList();
 		addGlTraceWarningItem("Running program without call tracing");
 		addGlTraceWarningItem("Statistics reset!");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-
-//		m_bHaveValidShaderCode = false;
 
 		pcErrorCode error = pc->execute(tbToggleHaltOnError->isChecked());
 		setErrorStatus(error);
@@ -1235,10 +1152,9 @@ void MainWindow::on_tbRun_clicked()
 	} else {
 		while (currentRunLevel == RL_TRACE_EXECUTE_RUN) {
 			singleStep();
-			if (currentRunLevel == RL_SETUP) {
-				/* something was wrong in step */
+			/* something was wrong in step */
+			if (currentRunLevel == RL_SETUP)
 				return;
-			}
 			qApp->processEvents(QEventLoop::AllEvents);
 		}
 		setGlTraceItemIconType(GlTraceListItem::IT_ACTUAL);
@@ -1445,8 +1361,6 @@ void MainWindow::leaveDBGState()
 			return;
 		}
 		/* TODO: close all windows (obsolete?) */
-//		delete[] m_pCoverage;
-//		m_pCoverage = NULL;
 		break;
 	default:
 		break;
@@ -1760,13 +1674,14 @@ void MainWindow::setRunLevelDebuggable(int &primitive, bool has_shaders)
 		setRunLevel(RL_TRACE_EXECUTE_NO_DEBUGABLE);
 }
 
-void MainWindow::setErrorStatus(pcErrorCode error)
+void MainWindow::setErrorStatus(int status)
 {
 	QPalette palette;
 	int color = Qt::blue;
 	QString icon = QString::fromUtf8(":/icons/icons/dialog-error-blue_32.png");
 	bool added = false;
 
+	pcErrorCode error = static_cast<pcErrorCode>(status);
 	switch (error) {
 	/* no error */
 	case PCE_NONE:

@@ -45,7 +45,7 @@ void ShWindowManager::changedActive(QWidget *active)
 		dynamic_cast<WatchView*>(widget)->setActive(widget == active);
 }
 
-void ShWindowManager::createWindow(const QList<ShVarItem*> &list, enum WindowType type)
+void ShWindowManager::createWindow(const QList<ShVarItem*> &list, int type)
 {
 	if (type == wtNone) {
 		dbgPrint(DBGLVL_ERROR, "Wrong window type");
@@ -72,17 +72,17 @@ void ShWindowManager::createWindow(const QList<ShVarItem*> &list, enum WindowTyp
 	this->addWindow(window);
 	connect(window, SIGNAL(selectionChanged(int,int)),
 			manager, SLOT(selectionChanged(int,int)));
-	attachData(window, list, type);
+	attachData(window, list, static_cast<WindowType>(type));
 }
 
 
-void ShWindowManager::extendWindow(const QList<ShVarItem *> &list, enum WindowType type)
+void ShWindowManager::extendWindow(const QList<ShVarItem *> &list, int type)
 {
 	WatchView *window = dynamic_cast<WatchView*>(this->activeWindow());
 	if (!window)
 		return;
 
-	attachData(window, list, type);
+	attachData(window, list, static_cast<WindowType>(type));
 }
 
 void ShWindowManager::windowClosed()

@@ -4,6 +4,7 @@
 #include <QDockWidget>
 #include "models/shvarmodel.h"
 
+class ShDataManager;
 
 class ShDockWidget : public QDockWidget
 {
@@ -11,6 +12,7 @@ class ShDockWidget : public QDockWidget
 public:
 	explicit ShDockWidget(QWidget *parent = 0);
 	void setModel(ShVarModel*);
+	virtual void registerDock(ShDataManager*) = 0;
 
 	typedef enum {
 		trAll = 0,

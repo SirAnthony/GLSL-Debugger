@@ -14,6 +14,8 @@ public:
 	explicit ShVarDock(QWidget *parent = 0);
 	~ShVarDock();
 
+	virtual void registerDock(ShDataManager *);
+
 public slots:
 	virtual void cleanDock(ShaderMode) {}
 

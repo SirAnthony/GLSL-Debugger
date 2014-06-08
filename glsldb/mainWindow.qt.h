@@ -56,7 +56,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtGui/QScrollArea>
 #include <QtCore/QStack>
 
-class QWorkspace;
 class ShDataManager;
 
 class MainWindow: public QMainWindow, public Ui::MainWindow {
@@ -123,7 +122,7 @@ private slots:
 	void saveQueries(int &error);
 	void recordDrawCall(int &error);
 	void killProgram(int hard);
-	void setErrorStatus(pcErrorCode);
+	void setErrorStatus(int);
 
 private:
 	void closeEvent(QCloseEvent *event);
@@ -147,8 +146,6 @@ private:
 	void recordDrawCall();
 	void waitForEndOfExecution();
 
-	/* Workspace */
-	QWorkspace *workspace;
 	int currentRunLevel;
 
 	/* GLTrace Model */

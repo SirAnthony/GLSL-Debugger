@@ -57,15 +57,6 @@ public:
 								 QObject *parent = 0);
 	static ShDataManager* get();
 
-	enum DockType {
-		dmDTVar,
-		dmDTWatch,
-		dmDTSource,
-		dmDTCount
-	};
-
-	void registerDock(ShDockWidget*, DockType);
-
 	bool getDebugData(ShaderMode type, int option, ShChangeableList *cl,
 					  int format, bool *coverage, DataBox *data);
 	bool cleanShader(ShaderMode type);
@@ -75,9 +66,13 @@ public:
 	ShaderMode getMode();
 	int getCurrentTarget();
 	bool codeReady();
-	ShBuiltInResource *getResource();	
+	ShBuiltInResource *getResource();
 
-	bool isAvaliable()
+	inline ShVarModel *getModel()
+	{ return model; }
+	inline ShWindowManager *getWindows()
+	{ return windows; }
+	inline bool isAvaliable()
 	{ return shadersAvaliable; }
 
 signals:
@@ -101,7 +96,7 @@ signals:
 	void getWatchItems(QSet<ShVarItem *> &);
 	void getOptions(FragmentTestOptions *);
 	void getShaders(const char *shaders[]);
-	void setShaders(char *shaders[]);
+	void setShaders(const char *shaders[]);
 	void getCurrentIndex(int&);
 
 public slots:

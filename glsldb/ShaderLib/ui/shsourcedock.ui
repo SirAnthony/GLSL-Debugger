@@ -332,22 +332,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>tbReset</sender>
-   <signal>clicked()</signal>
-   <receiver>ShSourceDock</receiver>
-   <slot>resetShader()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>53</x>
-     <y>37</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>74</x>
-     <y>3</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>tbExecute</sender>
    <signal>clicked()</signal>
    <receiver>ShSourceDock</receiver>

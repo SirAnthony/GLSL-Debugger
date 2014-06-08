@@ -54,7 +54,7 @@ static const QRegExp hex_regexp("[0-9a-fA-F]{0,4}");
 static const QRegExpValidator hex_validator(hex_regexp);
 
 FragmentTestDialog::FragmentTestDialog(FragmentTestOptions &opts, QWidget *parent) :
-	 QDialog(parent), options(opts)
+	 QDialog(parent), ui(new Ui::ShFragmentTest), options(opts)
 {
 	ui->setupUi(this);
 	// TODO: masks
@@ -119,7 +119,7 @@ void FragmentTestDialog::updateStencil(int value)
 	ui->leStencilValue->setText(QString::number(value, 16));
 }
 
-void FragmentTestDialog::updateStencil(QString &value)
+void FragmentTestDialog::updateStencil(QString value)
 {
 	ui->dsStencilValue->setValue(value.toInt(NULL, 16));
 }

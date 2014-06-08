@@ -37,7 +37,7 @@ static void hide_column(ShaderMode mode, QAbstractItemView *view)
 /* Fragment Shader */
 LoopDialog::LoopDialog(ShaderMode mode, LoopData *data, QSet<ShVarItem *> &watchItems,
 					   GeometryInfo &geometry, QWidget *parent) :
-		QDialog(parent)
+		QDialog(parent), ui(new Ui::ShLoop)
 {
 	loopData = data;
 	ui->setupUi(this);

@@ -13,13 +13,15 @@
 
 
 WatchTable::WatchTable(QWidget *parent) :
-	WatchView(parent),
-	widgets {
-		ui->MappingX, ui->MappingY, ui->MappingZ,
-		ui->MappingRed, ui->MappingGreen, ui->MappingBlue
-	}
+	WatchView(parent), ui(new Ui::ShWatchTable)
 {
 	ui->setupUi(this);
+	auto mappings = std::initializer_list<ShMappingWidget *>({
+		ui->MappingX, ui->MappingY, ui->MappingZ,
+		ui->MappingRed, ui->MappingGreen, ui->MappingBlue
+	});
+	std::copy(mappings.begin(), mappings.end(), widgets);
+
 	ui->fMapping->setVisible(false);
 	type = ShWindowManager::wtVertex;
 	_model = new VertexTableModel(NULL, NULL, this);

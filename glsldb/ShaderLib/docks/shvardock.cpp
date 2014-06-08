@@ -3,6 +3,7 @@
 #include "ui_shvardock.h"
 #include "shproxytreeview.h"
 #include "shdatamanager.h"
+#include "watch/shwindowmanager.h"
 
 ShVarDock::ShVarDock(QWidget *parent) :
 	ShDockWidget(parent), ui(new Ui::ShVarDock)
@@ -16,11 +17,17 @@ ShVarDock::ShVarDock(QWidget *parent) :
 
 	// In another dock
 	//ui->tTabWidget->addTab(newTab<ShWatchedTreeView>(), "Watch list");
-
-	ShDataManager::get()->registerDock(this, ShDataManager::dmDTVar);
 }
 
 ShVarDock::~ShVarDock()
 {
 	delete ui;
+}
+
+void ShVarDock::registerDock(ShDataManager *manager)
+{
+	setModel(manager->getModel());
+	connect(manager, SIGNAL(cleanDocks(ShaderMode)), this, SLOT(cleanDock(ShaderMode)));
+	connect(this, SIGNAL(updateWindows(bool)),
+			manager->getWindows(), SLOT(updateWindows(bool)));
 }

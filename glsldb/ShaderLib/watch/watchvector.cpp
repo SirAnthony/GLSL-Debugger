@@ -20,10 +20,13 @@
 
 
 WatchVector::WatchVector(QWidget *parent) :
-		WatchView(parent),
-		widgets { ui->MappingRed, ui->MappingGreen, ui->MappingBlue }
+		WatchView(parent), ui(new Ui::ShWatchVector)
 {
 	ui->setupUi(this);
+	auto mappings = std::initializer_list<ShMappingWidgetFragment *>({
+		ui->MappingRed, ui->MappingGreen, ui->MappingBlue });
+	std::copy(mappings.begin(), mappings.end(), widgets);
+
 	ui->fMapping->setVisible(false);
 	type = ShWindowManager::wtFragment;
 

@@ -11,25 +11,12 @@ class ShTemplateTreeView : public ShTreeView
 {
 public:
 	ShTemplateTreeView(QWidget *parent = 0) :
-		ShTreeView(parent)
-	{
-		baseModel = NULL;
-	}
+		ShTreeView(parent) {}
 	ShTemplateTreeView(ShVarModel *_model, QWidget *parent = 0) :
 		ShTreeView(parent)
-	{
-		baseModel = NULL;
-		setModel(_model);
-	}
-	T* model() { return baseModel; }
+	{ setModel(_model); }
 	virtual void setModel(ShVarModel *_model)
-	{
-		if (!_model)
-			return;
-		baseModel = new T(_model);
-	}
-protected:
-	T* baseModel;
+	{ ShTreeView::setModel(new T(_model)); }
 };
 
 

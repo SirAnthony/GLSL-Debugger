@@ -12,7 +12,7 @@
 #include "utils/dbgprint.h"
 
 WatchGeoTree::WatchGeoTree(const GeometryInfo &info, QWidget *parent) :
-		WatchView(parent)
+		WatchView(parent), ui(new Ui::ShWatchGeoTree)
 {
 	/* Setup GUI */
 	ui->setupUi(this);

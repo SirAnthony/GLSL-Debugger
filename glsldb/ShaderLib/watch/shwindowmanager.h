@@ -32,8 +32,8 @@ signals:
 public slots:
 	void updateWindows(bool);
 	void changedActive(QWidget*);	
-	void createWindow(const QList<ShVarItem*>&, enum WindowType);
-	void extendWindow(const QList<ShVarItem*>&, enum WindowType);
+	void createWindow(const QList<ShVarItem*>&, int);
+	void extendWindow(const QList<ShVarItem*>&, int);
 	void windowClosed();
 
 protected:

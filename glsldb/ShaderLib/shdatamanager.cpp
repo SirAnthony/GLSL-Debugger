@@ -67,6 +67,7 @@ ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *
 	compiler(NULL), shVariables(NULL), pc(_pc), coverage(NULL)
 {
 	model = new ShVarModel();
+	connect(this, SIGNAL(cleanModel()), model, SLOT(clear()));
 	connect(model, SIGNAL(addWatchItem(ShVarItem*)),
 			this, SLOT(updateWatched(ShVarItem*)));
 	connect(this, SIGNAL(setRunLevel(int)), this, SLOT(updateGui(int)));
@@ -96,23 +97,6 @@ ShDataManager *ShDataManager::get()
 {
 	Q_ASSERT_X(instance, "ShDataManager", "Manager was not initialized");
 	return instance;
-}
-
-
-void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
-{
-	dock->setModel(model);
-
-	connect(this, SIGNAL(cleanDocks(ShaderMode)), dock, SLOT(cleanDock(ShaderMode)));
-	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));
-
-	if (type == dmDTWatch) {
-		ShWatchDock* wdock = dynamic_cast<ShWatchDock *>(dock);
-		connect(wdock, SIGNAL(createWindow(QList<ShVarItem*>&,int)),
-				windows, SLOT(createWindow(QList<ShVarItem*>&,ShWindowManager::WindowType)));
-		connect(wdock, SIGNAL(extendWindow(QList<ShVarItem*>,int)),
-				windows, SLOT(extendWindow(QList<ShVarItem*>,ShWindowManager::WindowType)));
-	}
 }
 
 static DataBox *create_databox(ShaderMode mode)
@@ -478,17 +462,20 @@ void ShDataManager::updateShaders(int &error)
 	/* call debug function that reads back the shader code */
 	char *uniforms;
 	int uniformsCount;
-	char *shaders[smCount];
+	char *shaders[smCount];	
 	for (int i = 0; i < smCount; i++)
 		shaders[i] = NULL;
 
-	error = pc->getShaderCode(shaders, &shResources, &uniforms, &uniformsCount);
+	error = pc->getShaderCode(shaders, &shResources, &uniforms, &uniformsCount);	
 	if (error == PCE_NONE) {
 		/* show shader code(s) in tabs */
-		emit setShaders(shaders);
+		const char *cshaders[smCount] = { shaders[0], shaders[1], shaders[2] };
+		emit setShaders(cshaders);
 		model->setUniforms(uniforms, uniformsCount);
 		shadersAvaliable = (shaders[0] || shaders[1] || shaders[2]);
-	}
+		for (int i = 0; i < smCount; ++i)
+			delete[] shaders[i];
+	}	
 }
 
 void ShDataManager::removeShaders()

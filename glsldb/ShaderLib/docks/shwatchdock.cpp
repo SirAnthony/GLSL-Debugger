@@ -8,28 +8,44 @@
 #include <QStack>
 
 ShWatchDock::ShWatchDock(QWidget *parent) :
-	ShDockWidget(parent)
-{	
-	ShDataManager *manager = ShDataManager::get();
-	manager->registerDock(this, ShDataManager::dmDTWatch);
-
+	ShDockWidget(parent), ui(new Ui::ShWatchDock)
+{
 	ui->setupUi(this);
-	ui->tvWatchList->setModel(model);
-
-	QItemSelectionModel *selection = new QItemSelectionModel(ui->tvWatchList->model());
-	ui->tvWatchList->setSelectionModel(selection);
-
 	cleanDock(smNoop);
+	updateGui(false);
 
 	/* Track watch items */
-	connect(this->model, SIGNAL(newWatchItem(ShVarItem*)), SLOT(newItem(ShVarItem*)));
-	connect(ShDataManager::get(), SIGNAL(cleanModel()), this, SLOT(clearWatchList()));
 	connect(ui->WatchDelete, SIGNAL(clicked()), SLOT(removeSelected()));
+}
+
+ShWatchDock::~ShWatchDock()
+{
+	delete ui;
+}
+
+void ShWatchDock::registerDock(ShDataManager *manager)
+{
+	// Windows
+	ShWindowManager *windows = manager->getWindows();
+	connect(this, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));
+	connect(this, SIGNAL(createWindow(const QList<ShVarItem*>&,int)),
+			windows, SLOT(createWindow(const QList<ShVarItem*>&,int)));
+	connect(this, SIGNAL(extendWindow(const QList<ShVarItem*>&,int)),
+			windows, SLOT(extendWindow(const QList<ShVarItem*>&,int)));
+
+	// Model
+	setModel(manager->getModel());
+	connect(model, SIGNAL(addWatchItem(ShVarItem*)), this, SLOT(newItem(ShVarItem*)));
+	ui->tvWatchList->setModel(model);
+	QItemSelectionModel *selection = new QItemSelectionModel(ui->tvWatchList->model());
+	ui->tvWatchList->setSelectionModel(selection);
 	connect(selection,
 			SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
 			this, SLOT(selectionChanged()));
 
-	connect(model, SIGNAL(addWatchItem(ShVarItem*)), this, SLOT(newItem(ShVarItem*)));
+	// Actions
+	connect(manager, SIGNAL(cleanDocks(ShaderMode)), this, SLOT(cleanDock(ShaderMode)));
+	connect(manager, SIGNAL(cleanModel()), this, SLOT(clearWatchList()));
 	connect(manager, SIGNAL(updateWatchGui(bool)), this, SLOT(updateGui(bool)));
 	connect(manager, SIGNAL(updateSelection(int,int,QString&,ShaderMode)),
 			this, SLOT(updateSelection(int,int,QString&,ShaderMode)));
@@ -41,11 +57,6 @@ ShWatchDock::ShWatchDock(QWidget *parent) :
 			this, SLOT(resetData(ShaderMode,bool*)));
 	connect(manager, SIGNAL(getWatchItems(QSet<ShVarItem*>&)),
 			this, SLOT(getWatchItems(QSet<ShVarItem*>&)));
-}
-
-ShWatchDock::~ShWatchDock()
-{
-	delete ui;
 }
 
 void ShWatchDock::expand(ShVarItem *item)
@@ -87,17 +98,17 @@ void ShWatchDock::updateData(ShaderMode type, CoverageMapStatus cmstatus,
 
 
 		if (force) {
-			if (scope & ShVarItem::AtScope || builtin)
+			if ((scope & ShVarItem::AtScope) || builtin)
 				updated = item->updateWatchData(type, coverage);
 			else
 				item->invalidateWatchData();
-		} else if (scope & ShVarItem::NewInScope || (changed && scope & ShVarItem::AtScope)) {
+		} else if ((scope & ShVarItem::NewInScope) || (changed && (scope & ShVarItem::AtScope))) {
 			updated = item->updateWatchData(type, coverage);
 		} else if (scope & ShVarItem::LeftScope) {
 			item->invalidateWatchData();
 		} else if (cmstatus == COVERAGEMAP_GROWN) {
 			/* If covermap grows larger, more readbacks could become possible */
-			if (scope & ShVarItem::AtScope || builtin) {
+			if ((scope & ShVarItem::AtScope) || builtin) {
 				if (type == smFragment) {
 					if (!item->pixelDataAvaliable())
 						updated = item->updateWatchData(type, coverage);

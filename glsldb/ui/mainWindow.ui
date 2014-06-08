@@ -875,16 +875,6 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3">
-    <layout class="QGridLayout">
-     <property name="margin">
-      <number>0</number>
-     </property>
-     <property name="spacing">
-      <number>0</number>
-     </property>
-    </layout>
-   </widget>
   </widget>
   <widget class="ShWatchDock" name="dwWatch">
    <property name="windowTitle">
@@ -893,16 +883,6 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_4">
-    <layout class="QVBoxLayout">
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <property name="margin">
-      <number>0</number>
-     </property>
-    </layout>
-   </widget>
   </widget>
   <widget class="QToolBar" name="toolBar_2">
    <property name="windowTitle">
@@ -928,16 +908,6 @@
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2">
-    <layout class="QGridLayout">
-     <property name="margin">
-      <number>0</number>
-     </property>
-     <property name="spacing">
-      <number>0</number>
-     </property>
-    </layout>
-   </widget>
   </widget>
   <widget class="QDockWidget" name="dwBufferView">
    <property name="windowIcon">

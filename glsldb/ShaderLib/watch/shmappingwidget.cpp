@@ -29,7 +29,7 @@ static QString get_color(QString name)
 
 
 ShMappingWidget::ShMappingWidget(QWidget *parent) :
-	QWidget(parent)
+	QWidget(parent), ui(new Ui::ShMappingWidget)
 {
 	RangeMapping rm;
 	ui->setupUi(this);
@@ -97,7 +97,7 @@ void ShMappingWidget::minMax(float minmax[2])
 }
 
 void ShMappingWidget::cbValActivated(int idx)
-{	
+{
 	Mapping m = getMappingFromInt(ui->cbVal->itemData(idx).toInt());
 	bool enabled = m.type == MAP_TYPE_VAR;
 	updateControls(enabled);
