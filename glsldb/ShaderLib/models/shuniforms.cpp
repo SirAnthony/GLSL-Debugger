@@ -11,7 +11,7 @@ ShUniform::ShUniform(const char *serializedUniform, int &length)
 
 	memcpy(&name_length, serializedUniform, sizeof(GLint));
 	length += sizeof(GLint);
-	name = QString::fromAscii(serializedUniform + length, name_length);
+	uniformName = QString::fromAscii(serializedUniform + length, name_length);
 	length += name_length;
 	memcpy(&gltype, serializedUniform + length, sizeof(GLuint));
 	length += sizeof(GLuint);
@@ -208,7 +208,7 @@ ShUniform::ShUniform(const char *serializedUniform, int &length)
 		data = NULL;
 	}
 
-	dbgPrint(DBGLVL_INFO, "Got Uniform " "%s" ":\n", name.toAscii().data());
+	dbgPrint(DBGLVL_INFO, "Got Uniform " "%s" ":\n", uniformName.toAscii().data());
 	dbgPrint(DBGLVL_INFO, "    size: %d\n", arraySize);
 	dbgPrint(DBGLVL_INFO, "    isVector: %d\n", type == shuVector);
 	dbgPrint(DBGLVL_INFO, "    isMatrix: %d\n", type == shuMatrix);
@@ -246,7 +246,7 @@ QString ShUniform::toString(int index) const
 		result += '(';
 
 	bool bracket = (type == shuMatrix || type == shuVector);
-	for (int j = 0; j < m_rows; ++j) {
+	for (int j = 0; j < arraySize; ++j) {
 		if (j)
 			result += ", ";
 		if (bracket)

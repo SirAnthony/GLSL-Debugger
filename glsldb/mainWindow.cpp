@@ -31,18 +31,19 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
-#include <QtGui/QDesktopServices>
-#include <QtGui/QTextDocument>
-#include <QtGui/QMessageBox>
-#include <QtGui/QHeaderView>
-#include <QtGui/QGridLayout>
-#include <QtGui/QFileDialog>
-#include <QtCore/QSettings>
-#include <QtGui/QWorkspace>
-#include <QtGui/QTabWidget>
-#include <QtGui/QTabBar>
-#include <QtGui/QColor>
-#include <QtCore/QUrl>
+#include <QDesktopServices>
+#include <QTextDocument>
+#include <QMessageBox>
+#include <QHeaderView>
+#include <QGridLayout>
+#include <QFileDialog>
+#include <QSettings>
+#include <QWorkspace>
+#include <QTabWidget>
+#include <QTabBar>
+#include <QColor>
+#include <QUrl>
+#include <QCloseEvent>
 #include <stdio.h>
 #include <string.h>
 
@@ -52,11 +53,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mainWindow.qt.h"
 #include "editCallDialog.qt.h"
-#include "dbgShaderView.qt.h"
-#include "compilerErrorDialog.qt.h"
+//#include "dbgShaderView.qt.h"
 #include "attachToProcessDialog.qt.h"
 #include "aboutBox.qt.h"
 #include "ShaderLib/shdatamanager.h"
+#include "ShaderLib/data/pixelBox.h"
 
 #include "runLevel.h"
 #include "debuglib.h"
@@ -75,18 +76,20 @@ extern "C" GLFunctionList glFunctions[];
 MainWindow::MainWindow(char *pname, const QStringList& args) :
 		dbgProgArgs(args)
 {
-	int i;
 	pc = new ProgramControl(pname);
 	shaderManager = ShDataManager::create(this, pc);
 	connect(shaderManager, SIGNAL(saveQueries(int&)), this, SLOT(saveQueries(int&)));
 	connect(shaderManager, SIGNAL(setRunLevel(int)), this, SLOT(setRunLevel(int)));
+	connect(shaderManager, SIGNAL(setCurrentDebuggable(int&,bool)),
+			this, SLOT(setRunLevelDebuggable(int&,bool)));
 	connect(shaderManager, SIGNAL(killProgram(int)), this, SLOT(killProgram(int)));
 	connect(shaderManager, SIGNAL(setErrorStatus(int)),
 			this, SLOT(setErrorStatus(pcErrorCode)));
 	connect(shaderManager, SIGNAL(recordDrawCall(int&)),
 			this, SLOT(recordDrawCall(int&)));
-	connect(this, SIGNAL(updateShaders(int&,bool&)),
-			shaderManager, SLOT(updateShaders(int&,bool&)));
+	connect(this, SIGNAL(updateShaders(int&)), shaderManager, SLOT(updateShaders(int&)));
+	connect(this, SIGNAL(cleanShader()), shaderManager, SLOT(cleanShader()));
+	connect(this, SIGNAL(removeShaders()), shaderManager, SLOT(removeShaders()));
 
 
 	/*** Setup GUI ****/
@@ -141,7 +144,7 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	agWatchControl->setEnabled(false);
 
 	/* per frgamnet operations */
-	m_pftDialog = new FragmentTestDialog(this);
+//	m_pftDialog = new FragmentTestDialog(this);
 
 	m_pCurrentCall = NULL;
 //	m_pShVarModel = NULL;
@@ -167,8 +170,8 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	m_pWglExtPfst = new GlCallStatistics(tvWglExtPf);
 
 	/* Prepare debugging */
-	ShInitialize();
-	m_dShCompiler = 0;
+//	ShInitialize();
+//	m_dShCompiler = 0;
 
 	while (twGlStatistics->count() > 0) {
 		twGlStatistics->removeTab(0);
@@ -245,7 +248,7 @@ MainWindow::~MainWindow()
 //	m_serializedUniforms.count = 0;
 
 	/* clean up compiler stuff */
-	ShFinalize();
+//	ShFinalize();
 }
 
 void MainWindow::killProgram(int hard)
@@ -283,7 +286,7 @@ void MainWindow::on_aOpen_triggered()
 	int i;
 
 	/* Cleanup shader debugging */
-	cleanupDBGShader();
+	emit cleanShader();
 
 	if (dbgProgArgs.size() != 0) {
 		QString arguments = QString("");
@@ -453,7 +456,8 @@ void MainWindow::on_tbBVCapture_clicked()
 	error = pc->readBackActiveRenderBuffer(3, &width, &height, &imageData);
 
 	if (error == PCE_NONE) {
-		PixelBoxFloat imageBox(width, height, 3, imageData);
+		PixelBox imageBox;
+		imageBox.setData<float>(width, height, 3, imageData);
 		lBVLabel->setPixmap(
 				QPixmap::fromImage(imageBox.getByteImage(PixelBox::FBM_CLAMP)));
 		lBVLabel->resize(width, height);
@@ -558,12 +562,13 @@ void MainWindow::on_cbGlstPfMode_currentIndexChanged(int m)
 pcErrorCode MainWindow::getNextCall()
 {
 	m_pCurrentCall = pc->getCurrentCall();
-	if (!m_bHaveValidShaderCode && m_pCurrentCall->isDebuggableDrawCall()) {
+	if (!shaderManager->isAvaliable() && m_pCurrentCall->isDebuggableDrawCall()) {
 		/* current call is a drawcall and we don't have valid shader code;
 		 * call debug function that reads back the shader code
 		 */
-		pcErrorCode error;
-		emit updateShaders(error, m_bHaveValidShaderCode);
+		int status;
+		emit updateShaders(status);
+		pcErrorCode error = static_cast<pcErrorCode>(status);
 		if (isErrorCritical(error))
 			return error;
 
@@ -598,7 +603,7 @@ void MainWindow::on_tbExecute_clicked()
 	m_pCurrentCall = NULL;
 
 	/* Cleanup shader debugging */
-	cleanupDBGShader();
+	emit cleanShader();
 
 	if (currentRunLevel == RL_SETUP) {
 		int i;
@@ -610,7 +615,8 @@ void MainWindow::on_tbExecute_clicked()
 		clearGlTraceItemList();
 		resetAllStatistics();
 
-		m_bHaveValidShaderCode = false;
+		emit removeShaders();
+//		m_bHaveValidShaderCode = false;
 
 		/* Build arguments */
 		args = new char*[dbgProgArgs.size() + 1];
@@ -746,56 +752,6 @@ void MainWindow::clearGlTraceItemList(void)
 	}
 }
 
-/*
- * void MainWindow::setShaderCodeText(char *shaders[3])
-{
-	if (shaders && shaders[0]) {
-		 make a new document, the old one get's deleted by qt
-		QTextDocument *newDoc = new QTextDocument(QString(shaders[0]),
-				teVertexShader);
-		 the document becomes owner of the highlighter, so it get's freed
-		GlslSyntaxHighlighter *highlighter;
-		highlighter = new GlslSyntaxHighlighter(newDoc);
-		teVertexShader->setDocument(newDoc);
-		teVertexShader->setTabStopWidth(30);
-	} else {
-		 make a new empty document, the old one get's deleted by qt
-		QTextDocument *newDoc = new QTextDocument(QString(""), teVertexShader);
-		teVertexShader->setDocument(newDoc);
-	}
-	if (shaders && shaders[1]) {
-		 make a new document, the old one get's deleted by qt
-		QTextDocument *newDoc = new QTextDocument(QString(shaders[1]),
-				teGeometryShader);
-		 the document becomes owner of the highlighter, so it get's freed
-		GlslSyntaxHighlighter *highlighter;
-		highlighter = new GlslSyntaxHighlighter(newDoc);
-		teGeometryShader->setDocument(newDoc);
-		teGeometryShader->setTabStopWidth(30);
-	} else {
-		 make a new empty document, the old one get's deleted by qt
-		QTextDocument *newDoc = new QTextDocument(QString(""),
-				teGeometryShader);
-		teGeometryShader->setDocument(newDoc);
-	}
-	if (shaders && shaders[2]) {
-		 make a new document, the old one get's deleted by qt
-		QTextDocument *newDoc = new QTextDocument(QString(shaders[2]),
-				teFragmentShader);
-		 the document becomes owner of the highlighter, so it get's freed
-		GlslSyntaxHighlighter *highlighter;
-		highlighter = new GlslSyntaxHighlighter(newDoc);
-		teFragmentShader->setDocument(newDoc);
-		teFragmentShader->setTabStopWidth(30);
-	} else {
-		 make a new empty document, the old one get's deleted by qt
-		QTextDocument *newDoc = new QTextDocument(QString(""),
-				teFragmentShader);
-		teFragmentShader->setDocument(newDoc);
-	}
-}
-*/
-
 pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 {
 	pcErrorCode error;
@@ -813,7 +769,9 @@ pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 			}
 		} else {
 			/* call debug function that reads back the shader code */
-			emit updateShaders(error, m_bHaveValidShaderCode);
+			int status;
+			emit updateShaders(status);
+			error = static_cast<pcErrorCode>(status);
 			if (isErrorCritical(error))
 				return error;
 //			for (int i = 0; i < 3; i++) {
@@ -947,7 +905,7 @@ void MainWindow::recordDrawCall(int &error)
 	setRunLevel(RL_DBG_RECORD_DRAWCALL);
 	/* save active shader */
 	error = pc->saveActiveShader();
-	if (isErrorCritical(error))
+	if (isErrorCritical((pcErrorCode)error))
 		return;
 
 	recordDrawCall();
@@ -1096,7 +1054,8 @@ void MainWindow::on_tbJumpToDrawCall_clicked()
 		delete m_pCurrentCall;
 		m_pCurrentCall = NULL;
 
-		setShaderCodeText(NULL);
+		emit removeShaders();
+//		setShaderCodeText(NULL);
 		resetAllStatistics();
 		setStatusBarText(QString("Running program without tracing"));
 		clearGlTraceItemList();
@@ -1104,7 +1063,7 @@ void MainWindow::on_tbJumpToDrawCall_clicked()
 		addGlTraceWarningItem("Statistics reset!");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
-		m_bHaveValidShaderCode = false;
+//		m_bHaveValidShaderCode = false;
 
 		pcErrorCode error = pc->executeToDrawCall(
 				tbToggleHaltOnError->isChecked());
@@ -1152,7 +1111,8 @@ void MainWindow::on_tbJumpToShader_clicked()
 		delete m_pCurrentCall;
 		m_pCurrentCall = NULL;
 
-		setShaderCodeText(NULL);
+		emit removeShaders();
+//		setShaderCodeText(NULL);
 		resetAllStatistics();
 		setStatusBarText(QString("Running program without tracing"));
 		clearGlTraceItemList();
@@ -1160,7 +1120,7 @@ void MainWindow::on_tbJumpToShader_clicked()
 		addGlTraceWarningItem("Statistics reset!");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
-		m_bHaveValidShaderCode = false;
+//		m_bHaveValidShaderCode = false;
 
 		pcErrorCode error = pc->executeToShaderSwitch(
 				tbToggleHaltOnError->isChecked());
@@ -1214,7 +1174,8 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 			delete m_pCurrentCall;
 			m_pCurrentCall = NULL;
 
-			setShaderCodeText(NULL);
+			emit removeShaders();
+//			setShaderCodeText(NULL);
 			resetAllStatistics();
 			setStatusBarText(QString("Running program without tracing"));
 			clearGlTraceItemList();
@@ -1222,7 +1183,7 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 			addGlTraceWarningItem("Statistics reset!");
 			qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
-			m_bHaveValidShaderCode = false;
+//			m_bHaveValidShaderCode = false;
 
 			pcErrorCode error = pc->executeToUserDefined(
 					targetName.toAscii().data(),
@@ -1273,7 +1234,8 @@ void MainWindow::on_tbRun_clicked()
 		delete m_pCurrentCall;
 		m_pCurrentCall = NULL;
 
-		setShaderCodeText(NULL);
+		emit removeShaders();
+//		setShaderCodeText(NULL);
 		resetAllStatistics();
 		setStatusBarText(QString("Running program without tracing"));
 		clearGlTraceItemList();
@@ -1281,7 +1243,7 @@ void MainWindow::on_tbRun_clicked()
 		addGlTraceWarningItem("Statistics reset!");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
-		m_bHaveValidShaderCode = false;
+//		m_bHaveValidShaderCode = false;
 
 		pcErrorCode error = pc->execute(tbToggleHaltOnError->isChecked());
 		setErrorStatus(error);
@@ -1393,975 +1355,6 @@ void MainWindow::on_tbSave_clicked()
 
 	delete sDialog;
 }
-/*
-bool MainWindow::getDebugVertexData(DbgCgOptions option, ShChangeableList *cl,
-		bool *coverage, VertexBox *vdata)
-{
-	int target, elementsPerVertex, numVertices, numPrimitives,
-			forcePointPrimitiveMode;
-	float *data = NULL;
-	pcErrorCode error;
-
-	char *shaders[] = {
-		m_pShaders[0],
-		m_pShaders[1],
-		m_pShaders[2] };
-
-	char *debugCode = NULL;
-	debugCode = ShDebugGetProg(m_dShCompiler, cl, &m_dShVariableList, option);
-	switch (currentRunLevel) {
-	case RL_DBG_VERTEX_SHADER:
-		shaders[0] = debugCode;
-		shaders[1] = NULL;
-		target = DBG_TARGET_VERTEX_SHADER;
-		break;
-	case RL_DBG_GEOMETRY_SHADER:
-		shaders[1] = debugCode;
-		target = DBG_TARGET_GEOMETRY_SHADER;
-		break;
-	default:
-		QMessageBox::critical(this, "Internal Error",
-				"MainWindow::getDebugVertexData called when debugging "
-						"non-vertex/geometry shader<br>Please report this probem to "
-						"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
-						"glsldevil@vis.uni-stuttgart.de</A>.", QMessageBox::Ok);
-		free(debugCode);
-		return false;
-	}
-
-	switch (option) {
-	case DBG_CG_GEOMETRY_MAP:
-		elementsPerVertex = 3;
-		forcePointPrimitiveMode = 0;
-		break;
-	case DBG_CG_VERTEX_COUNT:
-		elementsPerVertex = 3;
-		forcePointPrimitiveMode = 1;
-		break;
-	case DBG_CG_GEOMETRY_CHANGEABLE:
-		elementsPerVertex = 2;
-		forcePointPrimitiveMode = 0;
-		break;
-	case DBG_CG_CHANGEABLE:
-	case DBG_CG_COVERAGE:
-	case DBG_CG_SELECTION_CONDITIONAL:
-	case DBG_CG_SWITCH_CONDITIONAL:
-	case DBG_CG_LOOP_CONDITIONAL:
-		if (target == DBG_TARGET_GEOMETRY_SHADER) {
-			elementsPerVertex = 1;
-			forcePointPrimitiveMode = 1;
-		} else {
-			elementsPerVertex = 1;
-			forcePointPrimitiveMode = 0;
-		}
-		break;
-	default:
-		elementsPerVertex = 1;
-		forcePointPrimitiveMode = 0;
-		break;
-	}
-
-	error = pc->shaderStepVertex(shaders, target, m_primitiveMode,
-			forcePointPrimitiveMode, elementsPerVertex, &numPrimitives,
-			&numVertices, &data);
-
-	/////// DEBUG
-	UT_NOTIFY(LV_DEBUG, ">>>>> DEBUG CG: ");
-	switch (option) {
-	case DBG_CG_GEOMETRY_MAP:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_GEOMETRY_MAP\n");
-		break;
-	case DBG_CG_VERTEX_COUNT:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_VERTEX_COUNT\n");
-		break;
-	case DBG_CG_GEOMETRY_CHANGEABLE:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_GEOMETRY_CHANGEABLE\n");
-		break;
-	case DBG_CG_CHANGEABLE:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_CHANGEABLE\n");
-		break;
-	case DBG_CG_COVERAGE:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_COVERAGE\n");
-		break;
-	case DBG_CG_SELECTION_CONDITIONAL:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_SELECTION_CONDITIONAL\n");
-		break;
-	case DBG_CG_SWITCH_CONDITIONAL:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_SWITCH_CONDITIONAL\n");
-		break;
-	case DBG_CG_LOOP_CONDITIONAL:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "DBG_CG_LOOP_CONDITIONAL\n");
-		break;
-	default:
-		dbgPrintNoPrefix(DBGLVL_COMPILERINFO, "XXXXXX FIXME XXXXX\n");
-		break;
-	}
-	if (currentRunLevel == RL_DBG_VERTEX_SHADER) {
-		dbgPrint(DBGLVL_COMPILERINFO,
-				">>>>> DEBUG VERTEX SHADER:\n %s\n", shaders[0]);
-	} else {
-		dbgPrint(DBGLVL_COMPILERINFO,
-				">>>>> DEBUG GEOMETRY SHADER:\n %s\n", shaders[1]);
-	}
-	dbgPrint(DBGLVL_INFO,
-			"getDebugVertexData: numPrimitives=%i numVertices=%i\n", numPrimitives, numVertices);
-	////////////////
-
-	free(debugCode);
-	if (error != PCE_NONE) {
-		setErrorStatus(error);
-		if (isErrorCritical(error)) {
-			cleanupDBGShader();
-			setRunLevel(RL_SETUP);
-			QMessageBox::critical(this, "Critical Error", "Could not debug "
-					"shader. An error occured!", QMessageBox::Ok);
-			UT_NOTIFY(LV_ERROR,
-					"Critical Error in getDebugVertexData: " << getErrorDescription(error));
-			killProgram(1);
-			return false;
-		}
-		QMessageBox::critical(this, "Error", "Could not debug "
-				"shader. An error occured!", QMessageBox::Ok);
-		UT_NOTIFY(LV_WARN,
-				"Error in getDebugVertexData: " << getErrorDescription(error));
-		return false;
-	}
-
-	vdata->setData(data, elementsPerVertex, numVertices, numPrimitives,
-			coverage);
-	free(data);
-	UT_NOTIFY(LV_TRACE, "getDebugVertexData done");
-	return true;
-}
-
-bool MainWindow::getDebugImage(DbgCgOptions option, ShChangeableList *cl,
-		int rbFormat, bool *coverage, PixelBox **fbData)
-{
-	int width, height, channels;
-	void *imageData;
-	pcErrorCode error;
-
-	char *shaders[] = {
-		m_pShaders[0],
-		m_pShaders[1],
-		m_pShaders[2] };
-
-	if (currentRunLevel != RL_DBG_FRAGMENT_SHADER) {
-		QMessageBox::critical(this, "Internal Error",
-				"MainWindow::getDebugImage called when debugging "
-						"debugging non-fragment shader<br>Please report this probem to "
-						"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
-						"glsldevil@vis.uni-stuttgart.de</A>.", QMessageBox::Ok);
-		return false;
-	}
-
-	char *debugCode = NULL;
-	debugCode = ShDebugGetProg(m_dShCompiler, cl, &m_dShVariableList, option);
-	shaders[2] = debugCode;
-
-	switch (option) {
-	case DBG_CG_CHANGEABLE:
-	case DBG_CG_COVERAGE:
-		channels = 1;
-		break;
-	case DBG_CG_SELECTION_CONDITIONAL:
-	case DBG_CG_SWITCH_CONDITIONAL:
-	case DBG_CG_LOOP_CONDITIONAL:
-		if (currentRunLevel == RL_DBG_FRAGMENT_SHADER)
-			channels = 1;
-		else
-			channels = 3;
-		break;
-	default:
-		channels = 3;
-		break;
-	}
-
-	UT_NOTIFY(LV_TRACE, "Init buffers...");
-	switch (option) {
-	case DBG_CG_ORIGINAL_SRC:
-		error = pc->initializeRenderBuffer(true, true, true, true, 0.0, 0.0,
-				0.0, 0.0, 0.0, 0);
-		break;
-	case DBG_CG_COVERAGE:
-	case DBG_CG_SELECTION_CONDITIONAL:
-	case DBG_CG_SWITCH_CONDITIONAL:
-	case DBG_CG_LOOP_CONDITIONAL:
-	case DBG_CG_CHANGEABLE:
-		error = pc->initializeRenderBuffer(false, m_pftDialog->copyAlpha(),
-				m_pftDialog->copyDepth(), m_pftDialog->copyStencil(), 0.0, 0.0,
-				0.0, m_pftDialog->alphaValue(), m_pftDialog->depthValue(),
-				m_pftDialog->stencilValue());
-		break;
-	default: {
-		QString msg;
-		msg.append("Unhandled DbgCgCoption ");
-		msg.append(QString::number(option));
-		msg.append("<BR>Please report this probem to "
-				"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
-				"glsldevil@vis.uni-stuttgart.de</A>.");
-		QMessageBox::critical(this, "Internal Error", msg, QMessageBox::Ok);
-		return false;
-	}
-	}
-	setErrorStatus(error);
-	if (isErrorCritical(error)) {
-		cleanupDBGShader();
-		setRunLevel(RL_SETUP);
-		QMessageBox::critical(this, "Error", "Could not initialize buffers for "
-				"fragment program debugging.", QMessageBox::Ok);
-		killProgram(1);
-		return false;
-	}
-
-	error = pc->shaderStepFragment(shaders, channels, rbFormat, &width, &height,
-			&imageData);
-	free(debugCode);
-	if (error != PCE_NONE) {
-		setErrorStatus(error);
-		if (isErrorCritical(error)) {
-			cleanupDBGShader();
-			setRunLevel(RL_SETUP);
-			QMessageBox::critical(this, "Error", "Could not debug fragment "
-					"shader. An error occured!", QMessageBox::Ok);
-			killProgram(1);
-			return false;
-		}
-		QMessageBox::critical(this, "Error", "Could not debug fragment "
-				"shader. An error occured!", QMessageBox::Ok);
-		return false;
-	}
-
-	if (rbFormat == GL_FLOAT) {
-		PixelBoxFloat *fb = new PixelBoxFloat(width, height, channels,
-				(float*) imageData, coverage);
-		if (*fbData) {
-			PixelBoxFloat *pfbData = dynamic_cast<PixelBoxFloat*>(*fbData);
-			pfbData->addPixelBox(fb);
-			delete fb;
-		} else {
-			*fbData = fb;
-		}
-	} else if (rbFormat == GL_INT) {
-		PixelBoxInt *fb = new PixelBoxInt(width, height, channels,
-				(int*) imageData, coverage);
-		if (*fbData) {
-			PixelBoxInt *pfbData = dynamic_cast<PixelBoxInt*>(*fbData);
-			pfbData->addPixelBox(fb);
-			delete fb;
-		} else {
-			*fbData = fb;
-		}
-	} else if (rbFormat == GL_UNSIGNED_INT) {
-		PixelBoxUInt *fb = new PixelBoxUInt(width, height, channels,
-				(unsigned int*) imageData, coverage);
-		if (*fbData) {
-			PixelBoxUInt *pfbData = dynamic_cast<PixelBoxUInt*>(*fbData);
-			pfbData->addPixelBox(fb);
-			delete fb;
-		} else {
-			*fbData = fb;
-		}
-	} else {
-		UT_NOTIFY(LV_ERROR, "Invalid image data format");
-	}
-
-	free(imageData);
-	UT_NOTIFY(LV_TRACE, "getDebugImage done.");
-	return true;
-}
-
-
-void MainWindow::updateWatchItemData(OldShVarItem *watchItem)
-{
-	ShChangeableList cl;
-
-	cl.numChangeables = 0;
-	cl.changeables = NULL;
-
-	ShChangeable *watchItemCgbl = watchItem->getShChangeable();
-	addShChangeable(&cl, watchItemCgbl);
-
-	int rbFormat = watchItem->getReadbackFormat();
-
-	if (currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
-		PixelBox *fb = watchItem->getPixelBoxPointer();
-		if (fb) {
-			if (getDebugImage(DBG_CG_CHANGEABLE, &cl, rbFormat, m_pCoverage,
-					&fb)) {
-				watchItem->setCurrentValue(m_selectedPixel[0],
-						m_selectedPixel[1]);
-			} else {
-				QMessageBox::warning(this, "Warning",
-						"The requested data could "
-								"not be retrieved.");
-			}
-		} else {
-			if (getDebugImage(DBG_CG_CHANGEABLE, &cl, rbFormat, m_pCoverage,
-					&fb)) {
-				watchItem->setPixelBoxPointer(fb);
-				watchItem->setCurrentValue(m_selectedPixel[0],
-						m_selectedPixel[1]);
-			} else {
-				QMessageBox::warning(this, "Warning",
-						"The requested data could "
-								"not be retrieved.");
-			}
-		}
-	} else if (currentRunLevel == RL_DBG_VERTEX_SHADER) {
-		VertexBox *data = new VertexBox();
-		if (getDebugVertexData(DBG_CG_CHANGEABLE, &cl, m_pCoverage, data)) {
-			VertexBox *vb = watchItem->getVertexBoxPointer();
-			if (vb) {
-				vb->addVertexBox(data);
-				delete data;
-			} else {
-				watchItem->setVertexBoxPointer(data);
-			}
-			watchItem->setCurrentValue(m_selectedPixel[0]);
-		} else {
-			QMessageBox::warning(this, "Warning", "The requested data could "
-					"not be retrieved.");
-		}
-	} else if (currentRunLevel == RL_DBG_GEOMETRY_SHADER) {
-		VertexBox *currentData = new VertexBox();
-
-		UT_NOTIFY(LV_TRACE, "Get CHANGEABLE:");
-		if (getDebugVertexData(DBG_CG_CHANGEABLE, &cl, m_pCoverage,
-				currentData)) {
-			VertexBox *vb = watchItem->getCurrentPointer();
-			if (vb) {
-				vb->addVertexBox(currentData);
-				delete currentData;
-			} else {
-				watchItem->setCurrentPointer(currentData);
-			}
-
-			VertexBox *vertexData = new VertexBox();
-
-			UT_NOTIFY(LV_TRACE, "Get GEOMETRY_CHANGABLE:");
-			if (getDebugVertexData(DBG_CG_GEOMETRY_CHANGEABLE, &cl, NULL,
-					vertexData)) {
-				VertexBox *vb = watchItem->getVertexBoxPointer();
-				if (vb) {
-					vb->addVertexBox(vertexData);
-					delete vertexData;
-				} else {
-					watchItem->setVertexBoxPointer(vertexData);
-				}
-			} else {
-				QMessageBox::warning(this, "Warning",
-						"The requested data could "
-								"not be retrieved.");
-			}
-			watchItem->setCurrentValue(m_selectedPixel[0]);
-		} else {
-			QMessageBox::warning(this, "Warning", "The requested data could "
-					"not be retrieved.");
-			return;
-		}
-	}
-	freeShChangeable(&watchItemCgbl);
-}
-
-
-static void invalidateWatchItemData(OldShVarItem *item)
-{
-	if (item->getPixelBoxPointer()) {
-		item->getPixelBoxPointer()->invalidateData();
-		item->resetCurrentValue();
-	}
-	if (item->getCurrentPointer()) {
-		item->getCurrentPointer()->invalidateData();
-	}
-	if (item->getVertexBoxPointer()) {
-		item->getVertexBoxPointer()->invalidateData();
-	}
-}
-
-
-void MainWindow::updateWatchListData(CoverageMapStatus cmstatus,
-		bool forceUpdate)
-{
-	QList<OldShVarItem*> watchItems;
-	int i;
-
-	if (m_pShVarModel) {
-		watchItems = m_pShVarModel->getAllWatchItemPointers();
-	}
-
-	for (i = 0; i < watchItems.count(); i++) {
-		OldShVarItem *item = watchItems[i];
-
-		UT_NOTIFY_VA(LV_TRACE,
-				">>>>>>>>>>>>>>updateWatchListData: %s (%i, %i, %i, %i)\n", qPrintable(item->getFullName()), item->isChanged(), item->hasEnteredScope(), item->isInScope(), item->isInScopeStack());
-
-		if (forceUpdate) {
-			if (item->isInScope() || item->isBuildIn()
-					|| item->isInScopeStack()) {
-				updateWatchItemData(item);
-			} else {
-				invalidateWatchItemData(item);
-			}
-		} else if ((item->isChanged() || item->hasEnteredScope())
-				&& (item->isInScope() || item->isInScopeStack())) {
-			updateWatchItemData(item);
-		} else if (item->hasLeftScope()) {
-			invalidateWatchItemData(item);
-		} else {
-			 If covermap grows larger, more readbacks could become possible
-			if (cmstatus == COVERAGEMAP_GROWN) {
-				if (item->isInScope() || item->isBuildIn()
-						|| item->isInScopeStack()) {
-					if (currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
-						PixelBox *dataBox = item->getPixelBoxPointer();
-						if (!(dataBox->isAllDataAvailable())) {
-							updateWatchItemData(item);
-						}
-					} else {
-						updateWatchItemData(item);
-					}
-				} else {
-					invalidateWatchItemData(item);
-				}
-			}
-		}
-		 HACK: when an error occurs in shader debugging the runlevel
-		 * might change to RL_SETUP and all shader debugging data will
-		 * be invalid; so we have to check it here
-
-		if (currentRunLevel == RL_SETUP) {
-			return;
-		}
-	}
-
-	 Now update all windows to update themselves if necessary
-	QWidgetList windowList = workspace->windowList();
-
-	for (i = 0; i < windowList.count(); i++) {
-		WatchView *wv = static_cast<WatchView*>(windowList[i]);
-		wv->updateView(cmstatus != COVERAGEMAP_UNCHANGED);
-	}
-	 update view
-	m_pShVarModel->currentValuesChanged();
-}
-
-void MainWindow::updateWatchItemsCoverage(bool *coverage)
-{
-	QList<OldShVarItem*> watchItems;
-	int i;
-
-	if (m_pShVarModel) {
-		watchItems = m_pShVarModel->getAllWatchItemPointers();
-	}
-
-	for (i = 0; i < watchItems.count(); i++) {
-		OldShVarItem *item = watchItems[i];
-		if (currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
-			PixelBox *fb = item->getPixelBoxPointer();
-			fb->setNewCoverage(coverage);
-			item->setCurrentValue(m_selectedPixel[0], m_selectedPixel[1]);
-		} else if (currentRunLevel == RL_DBG_VERTEX_SHADER) {
-			VertexBox *vb = item->getVertexBoxPointer();
-			vb->setNewCoverage(coverage);
-			item->setCurrentValue(m_selectedPixel[0]);
-		} else if (currentRunLevel == RL_DBG_GEOMETRY_SHADER) {
-			VertexBox *cb = item->getCurrentPointer();
-			cb->setNewCoverage(coverage);
-			item->setCurrentValue(m_selectedPixel[0]);
-		}
-	}
-	 update view
-	m_pShVarModel->currentValuesChanged();
-}
-*/
-
-/*
-
-void MainWindow::resetWatchListData(void)
-{
-	QList<OldShVarItem*> watchItems;
-	int i;
-
-	if (m_pShVarModel) {
-		watchItems = m_pShVarModel->getAllWatchItemPointers();
-		for (i = 0; i < watchItems.count(); i++) {
-			OldShVarItem *item = watchItems[i];
-			if (item->isInScope() || item->isBuildIn()) {
-				updateWatchItemData(item);
-				 HACK: when an error occurs in shader debugging the runlevel
-				 * might change to RL_SETUP and all shader debugging data will
-				 * be invalid; so we have to check it here
-
-				if (currentRunLevel == RL_SETUP) {
-					return;
-				}
-			} else {
-				invalidateWatchItemData(item);
-			}
-		}
-		 Now notify all windows to update themselves if necessary
-		QWidgetList windowList = workspace->windowList();
-		for (i = 0; i < windowList.count(); i++) {
-			WatchView *wv = static_cast<WatchView*>(windowList[i]);
-			wv->updateView(true);
-		}
-		 update view
-		m_pShVarModel->currentValuesChanged();
-	}
-}
-
-
-void MainWindow::ShaderStep(int action, bool updateWatchData,
-		bool updateCovermap)
-{
-	bool updateGUI = true;
-
-	switch (action) {
-	case DBG_BH_RESET:
-	case DBG_BH_JUMP_INTO:
-	case DBG_BH_FOLLOW_ELSE:
-	case DBG_BH_JUMP_OVER:
-		updateGUI = true;
-		break;
-	case DBG_BH_LOOP_NEXT_ITER:
-		updateGUI = false;
-		break;
-	}
-
-	int debugOptions = EDebugOpIntermediate;
-	DbgResult *dr = NULL;
-	static int nOldCoverageMap = 0;
-	CoverageMapStatus cmstatus = COVERAGEMAP_UNCHANGED;
-
-	dr = ShDebugJumpToNext(m_dShCompiler, debugOptions, action);
-
-	if (dr) {
-		switch (dr->status) {
-		case DBG_RS_STATUS_OK: {
-			 Update scope list and mark changed variables
-			m_pShVarModel->setChangedAndScope(dr->cgbls, dr->scope,
-					dr->scopeStack);
-
-			if (currentRunLevel == RL_DBG_FRAGMENT_SHADER && updateCovermap) {
-				 Read cover map
-				PixelBoxFloat *pCoverageBox = NULL;
-				if (!(getDebugImage(DBG_CG_COVERAGE, NULL, GL_FLOAT, NULL,
-						(PixelBox**) &pCoverageBox))) {
-					QMessageBox::warning(this, "Warning", "An error "
-							"occurred while reading coverage.");
-					return;
-				}
-
-				 Retrieve covermap from CoverageBox
-				int nNewCoverageMap;
-				delete[] m_pCoverage;
-				m_pCoverage = pCoverageBox->getCoverageFromData(
-						&nNewCoverageMap);
-				updateWatchItemsCoverage(m_pCoverage);
-
-				if (nNewCoverageMap == nOldCoverageMap) {
-					cmstatus = COVERAGEMAP_UNCHANGED;
-				} else if (nNewCoverageMap > nOldCoverageMap) {
-					cmstatus = COVERAGEMAP_GROWN;
-				} else {
-					cmstatus = COVERAGEMAP_SHRINKED;
-				}
-				nOldCoverageMap = nNewCoverageMap;
-
-				delete pCoverageBox;
-			} else if ((currentRunLevel == RL_DBG_GEOMETRY_SHADER
-					|| (currentRunLevel == RL_DBG_VERTEX_SHADER))
-					&& updateCovermap) {
-				 Retrieve cover map (one render pass 'DBG_CG_COVERAGE')
-				VertexBox *pCoverageBox = new VertexBox(NULL);
-				if (!(getDebugVertexData(DBG_CG_COVERAGE, NULL, NULL,
-						pCoverageBox))) {
-					QMessageBox::warning(this, "Warning", "An error "
-							"occurred while reading vertex coverage.");
-					 TODO: error handling
-					UT_NOTIFY(LV_WARN, "Error reading vertex coverage!");
-					delete pCoverageBox;
-					cleanupDBGShader();
-					setRunLevel(RL_DBG_RESTART);
-					return;
-				}
-
-				 Convert data to bool map: VertexBox -> bool
-				 * Check for change of covermap
-				bool *newCoverage;
-				bool coverageChanged;
-				newCoverage = pCoverageBox->getCoverageFromData(m_pCoverage,
-						&coverageChanged);
-				delete[] m_pCoverage;
-				m_pCoverage = newCoverage;
-				updateWatchItemsCoverage(m_pCoverage);
-
-				if (coverageChanged) {
-					UT_NOTIFY(LV_INFO, "cmstatus = COVERAGEMAP_GROWN");
-					cmstatus = COVERAGEMAP_GROWN;
-				} else {
-					UT_NOTIFY(LV_INFO, "cmstatus = COVERAGEMAP_UNCHANGED");
-					cmstatus = COVERAGEMAP_UNCHANGED;
-				}
-
-				delete pCoverageBox;
-			}
-		}
-			break;
-		case DBG_RS_STATUS_FINISHED:
-			tbShaderStep->setEnabled(false);
-			tbShaderStepOver->setEnabled(false);
-			break;
-		default: {
-			QString msg;
-			msg.append("An unhandled debug result (");
-			msg.append(QString::number(dr->status));
-			msg.append(") occurred.");
-			msg.append("<br>Please report this probem to "
-					"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
-					"glsldevil@vis.uni-stuttgart.de</A>.");
-			QMessageBox::critical(this, "Internal Error", msg, QMessageBox::Ok);
-			return;
-		}
-			break;
-		}
-
-		if (dr->position == DBG_RS_POSITION_DUMMY) {
-			tbShaderStep->setEnabled(false);
-			tbShaderStepOver->setEnabled(false);
-		}
-
-		 Process watch list
-		if (updateWatchData) {
-			UT_NOTIFY(LV_INFO,
-					"updateWatchData " << cmstatus << " emitVertex: " << dr->passedEmitVertex << " discard: " << dr->passedDiscard);
-			updateWatchListData(cmstatus,
-					dr->passedEmitVertex || dr->passedDiscard);
-		}
-
-		VertexBox vbCondition;
-
-		 Process position dependent requests
-		switch (dr->position) {
-		case DBG_RS_POSITION_SELECTION_IF_CHOOSE:
-		case DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE: {
-			SelectionDialog *sDialog = NULL;
-			switch (currentRunLevel) {
-			case RL_DBG_FRAGMENT_SHADER: {
-				PixelBoxFloat *imageBox = NULL;
-				if (getDebugImage(DBG_CG_SELECTION_CONDITIONAL, NULL, GL_FLOAT,
-						m_pCoverage, (PixelBox**) &imageBox)) {
-				} else {
-					QMessageBox::warning(this, "Warning",
-							"An error occurred while retrieving "
-									"the selection image.");
-					delete imageBox;
-					return;
-				}
-				sDialog = new SelectionDialog(imageBox,
-						dr->position
-								== DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE,
-						this);
-				delete imageBox;
-			}
-				break;
-			case RL_DBG_GEOMETRY_SHADER: {
-				if (getDebugVertexData(DBG_CG_SELECTION_CONDITIONAL, NULL,
-						m_pCoverage, &vbCondition)) {
-				} else {
-					QMessageBox::warning(this, "Warning",
-							"An error occurred while retrieving "
-									"the selection condition.");
-					cleanupDBGShader();
-					setRunLevel(RL_DBG_RESTART);
-					return;
-				}
-
-				 Create list of all watch item boxes
-				QList<OldShVarItem*> watchItems;
-				if (m_pShVarModel) {
-					watchItems = m_pShVarModel->getAllWatchItemPointers();
-				}
-
-				sDialog = new SelectionDialog(&vbCondition, watchItems,
-						m_primitiveMode, m_dShResources.geoOutputType,
-						m_pGeometryMap, m_pVertexCount,
-						dr->position
-								== DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE,
-						this);
-			}
-				break;
-			case RL_DBG_VERTEX_SHADER: {
-				 Get condition for each vertex
-				if (getDebugVertexData(DBG_CG_SELECTION_CONDITIONAL, NULL,
-						m_pCoverage, &vbCondition)) {
-				} else {
-					QMessageBox::warning(this, "Warning",
-							"An error occurred while retrieving "
-									"the selection condition.");
-					cleanupDBGShader();
-					setRunLevel(RL_DBG_RESTART);
-					return;
-				}
-
-				 Create list of all watch item boxes
-				QList<OldShVarItem*> watchItems;
-				if (m_pShVarModel) {
-					watchItems = m_pShVarModel->getAllWatchItemPointers();
-				}
-
-				sDialog = new SelectionDialog(&vbCondition, watchItems,
-						dr->position
-								== DBG_RS_POSITION_SELECTION_IF_ELSE_CHOOSE,
-						this);
-			}
-				break;
-			default:
-				// TODO: Is this an internal error?
-				QMessageBox::warning(this, "Warning",
-						"The current run level is invalid for "
-								"SelectionDialog.");
-			}
-			switch (sDialog->exec()) {
-			case SelectionDialog::SB_SKIP:
-				ShaderStep (DBG_BH_JUMP_OVER);
-				break;
-			case SelectionDialog::SB_IF:
-				ShaderStep (DBG_BH_JUMP_INTO);
-				break;
-			case SelectionDialog::SB_ELSE:
-				ShaderStep (DBG_BH_FOLLOW_ELSE);
-				break;
-			}
-			delete sDialog;
-		}
-			break;
-		case DBG_RS_POSITION_SWITCH_CHOOSE: {
-			// TODO: switch choose
-		}
-			break;
-		case DBG_RS_POSITION_LOOP_CHOOSE: {
-			LoopData *lData = NULL;
-			switch (currentRunLevel) {
-			case RL_DBG_FRAGMENT_SHADER: {
-				PixelBoxFloat *loopCondition = NULL;
-
-				if (updateCovermap) {
-					 First get image of loop condition
-					if (!getDebugImage(DBG_CG_LOOP_CONDITIONAL, NULL, GL_FLOAT,
-							m_pCoverage, (PixelBox**) &loopCondition)) {
-						QMessageBox::warning(this, "Warning",
-								"An error occurred while retrieving "
-										"the loop image.");
-						delete loopCondition;
-						return;
-					}
-				}
-
-				 Add data to the loop storage
-				if (dr->loopIteration == 0) {
-					UT_NOTIFY(LV_INFO, "==> new loop encountered");
-					lData = new LoopData(loopCondition, this);
-					m_qLoopData.push(lData);
-				} else {
-					UT_NOTIFY(LV_INFO,
-							"==> known loop at " << dr->loopIteration);
-					if (!m_qLoopData.isEmpty()) {
-						lData = m_qLoopData.top();
-						if (updateCovermap) {
-							lData->addLoopIteration(loopCondition,
-									dr->loopIteration);
-						}
-					} else {
-						 TODO error handling
-						QMessageBox::warning(this, "Warning",
-								"An error occurred while trying to "
-										"get loop count data.");
-						ShaderStep (DBG_BH_JUMP_OVER);
-						delete loopCondition;
-						return;
-					}
-				}
-				delete loopCondition;
-			}
-				break;
-			case RL_DBG_VERTEX_SHADER:
-			case RL_DBG_GEOMETRY_SHADER: {
-				VertexBox loopCondition;
-				if (!(getDebugVertexData(DBG_CG_LOOP_CONDITIONAL, NULL,
-						m_pCoverage, &loopCondition))) {
-					QMessageBox::warning(this, "Warning",
-							"An error occurred while trying to "
-									"get the loop count condition.");
-					cleanupDBGShader();
-					setRunLevel(RL_DBG_RESTART);
-					return;
-				}
-
-				 Add data to the loop storage
-				if (dr->loopIteration == 0) {
-					UT_NOTIFY(LV_INFO, "==> new loop encountered\n");
-					lData = new LoopData(&loopCondition, this);
-					m_qLoopData.push(lData);
-				} else {
-					UT_NOTIFY(LV_INFO,
-							"==> known loop at " << dr->loopIteration);
-					if (!m_qLoopData.isEmpty()) {
-						lData = m_qLoopData.top();
-						if (updateCovermap) {
-							lData->addLoopIteration(&loopCondition,
-									dr->loopIteration);
-						}
-					} else {
-						 TODO error handling
-						QMessageBox::warning(this, "Warning",
-								"An error occurred while trying to "
-										"get the loop data.");
-						ShaderStep (DBG_BH_JUMP_OVER);
-						return;
-					}
-				}
-			}
-				break;
-			}
-
-			if (updateGUI) {
-				LoopDialog *lDialog;
-				switch (currentRunLevel) {
-				case RL_DBG_FRAGMENT_SHADER:
-					lDialog = new LoopDialog(lData, this);
-					break;
-				case RL_DBG_GEOMETRY_SHADER: {
-					 Create list of all watch item boxes
-					QList<OldShVarItem*> watchItems;
-					if (m_pShVarModel) {
-						watchItems = m_pShVarModel->getAllWatchItemPointers();
-					}
-					lDialog = new LoopDialog(lData, watchItems, m_primitiveMode,
-							m_dShResources.geoOutputType, m_pGeometryMap,
-							m_pVertexCount, this);
-				}
-					break;
-				case RL_DBG_VERTEX_SHADER: {
-					 Create list of all watch item boxes
-					QList<OldShVarItem*> watchItems;
-					if (m_pShVarModel) {
-						watchItems = m_pShVarModel->getAllWatchItemPointers();
-					}
-					lDialog = new LoopDialog(lData, watchItems, this);
-				}
-					break;
-				default:
-					lDialog = NULL;
-					QMessageBox::warning(this, "Warning", "The "
-							"current run level does not match the request.");
-				}
-				if (lDialog) {
-					connect(lDialog, SIGNAL(doShaderStep(int, bool, bool)),
-							this, SLOT(ShaderStep(int, bool, bool)));
-					switch (lDialog->exec()) {
-					case LoopDialog::SA_NEXT:
-						ShaderStep (DBG_BH_LOOP_NEXT_ITER);
-						break;
-					case LoopDialog::SA_BREAK:
-						ShaderStep (DBG_BH_JUMP_OVER);
-						break;
-					case LoopDialog::SA_JUMP:
-						 Force update of all changed items
-						updateWatchListData(COVERAGEMAP_GROWN, false);
-						ShaderStep(DBG_BH_JUMP_INTO);
-						break;
-					}
-					disconnect(lDialog, 0, 0, 0);
-					delete lDialog;
-				} else {
-					ShaderStep (DBG_BH_JUMP_OVER);
-				}
-			}
-		}
-			break;
-		default:
-			break;
-		}
-
-		 Update GUI shader text windows
-		if (updateGUI) {
-			QTextDocument *document = NULL;
-			QTextEdit *edit = NULL;
-			switch (currentRunLevel) {
-			case RL_DBG_VERTEX_SHADER:
-				document = teVertexShader->document();
-				edit = teVertexShader;
-				break;
-			case RL_DBG_GEOMETRY_SHADER:
-				document = teGeometryShader->document();
-				edit = teGeometryShader;
-				break;
-			case RL_DBG_FRAGMENT_SHADER:
-				document = teFragmentShader->document();
-				edit = teFragmentShader;
-				break;
-			default:
-				QMessageBox::warning(this, "Warning", "The "
-						"current run level does not allow for shader "
-						"stepping.");
-			}
-
-			 Mark actual debug position
-			if (document && edit) {
-				QTextCharFormat highlight;
-				QTextCursor cursor(document);
-
-				cursor.setPosition(0, QTextCursor::MoveAnchor);
-				cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor,
-						1);
-				highlight.setBackground(Qt::white);
-				cursor.mergeCharFormat(highlight);
-
-				 Highlight the actual statement
-				cursor.setPosition(0, QTextCursor::MoveAnchor);
-				cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor,
-						dr->range.left.line - 1);
-				cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor,
-						dr->range.left.colum - 1);
-				cursor.setPosition(0, QTextCursor::KeepAnchor);
-				cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor,
-						dr->range.right.line - 1);
-				cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
-						dr->range.right.colum);
-				highlight.setBackground(Qt::yellow);
-				cursor.mergeCharFormat(highlight);
-
-				 Ensure the highlighted line is visible
-				QTextCursor cursorVisible = edit->textCursor();
-				cursorVisible.setPosition(0, QTextCursor::MoveAnchor);
-				cursorVisible.movePosition(QTextCursor::Down,
-						QTextCursor::MoveAnchor, MAX(dr->range.left.line-3, 0));
-				edit->setTextCursor(cursorVisible);
-				edit->ensureCursorVisible();
-				cursorVisible.setPosition(0, QTextCursor::KeepAnchor);
-				cursorVisible.movePosition(QTextCursor::Down,
-						QTextCursor::KeepAnchor, dr->range.right.line + 1);
-				edit->setTextCursor(cursorVisible);
-				edit->ensureCursorVisible();
-
-				 Unselect visible cursor
-				QTextCursor cursorSet = edit->textCursor();
-				cursorSet.setPosition(0, QTextCursor::MoveAnchor);
-				cursorSet.movePosition(QTextCursor::Down,
-						QTextCursor::MoveAnchor, dr->range.left.line - 1);
-				edit->setTextCursor(cursorSet);
-				qApp->processEvents();
-			}
-		}
-	} else {
-		 TODO: error
-	}
-
-	 TODO free debug result
-}
-*/
 
 pcErrorCode MainWindow::recordCall()
 {
@@ -2456,629 +1449,7 @@ void MainWindow::recordDrawCall()
 		}
 	}
 }
-/*
-void MainWindow::on_tbShaderExecute_clicked()
-{
-	int type = twShader->currentIndex();
-	QString sourceCode;
-	char *shaderCode = NULL;
-	int debugOptions = EDebugOpIntermediate;
-	EShLanguage language = EShLangFragment;
-	pcErrorCode error = PCE_NONE;
 
-	if (currentRunLevel == RL_DBG_VERTEX_SHADER
-			|| currentRunLevel == RL_DBG_GEOMETRY_SHADER
-			|| currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
-
-		 clean up debug run
-		cleanupDBGShader();
-
-		setRunLevel(RL_DBG_RESTART);
-		return;
-	}
-
-	if (currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE) {
-		error = pc->saveAndInterruptQueries();
-		setErrorStatus(error);
-		if (isErrorCritical(error)) {
-			killProgram(1);
-			setRunLevel(RL_SETUP);
-			return;
-		}
-	}
-
-	 setup debug render target
-	switch (type) {
-	case 0:
-		error = pc->setDbgTarget(DBG_TARGET_VERTEX_SHADER, DBG_PFT_KEEP,
-				DBG_PFT_KEEP, DBG_PFT_KEEP, DBG_PFT_KEEP);
-		break;
-	case 1:
-		error = pc->setDbgTarget(DBG_TARGET_GEOMETRY_SHADER, DBG_PFT_KEEP,
-				DBG_PFT_KEEP, DBG_PFT_KEEP, DBG_PFT_KEEP);
-		break;
-	case 2:
-		error = pc->setDbgTarget(DBG_TARGET_FRAGMENT_SHADER,
-				m_pftDialog->alphaTestOption(), m_pftDialog->depthTestOption(),
-				m_pftDialog->stencilTestOption(),
-				m_pftDialog->blendingOption());
-		break;
-	}
-	setErrorStatus(error);
-	if (error != PCE_NONE) {
-		if (isErrorCritical(error)) {
-			killProgram(1);
-			setRunLevel(RL_SETUP);
-			return;
-		} else {
-			setRunLevel(RL_DBG_RESTART);
-			return;
-		}
-	}
-
-	 record stream, store currently active shader program,
-	 * and enter debug state only when shader is executed the first time
-	 * and not after restart.
-
-	if (currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE) {
-		setRunLevel(RL_DBG_RECORD_DRAWCALL);
-		 save active shader
-		error = pc->saveActiveShader();
-		setErrorStatus(error);
-		if (isErrorCritical(error)) {
-			killProgram(1);
-			setRunLevel(RL_SETUP);
-			return;
-		}
-		recordDrawCall();
-		 has the user interrupted the recording?
-		if (currentRunLevel != RL_DBG_RECORD_DRAWCALL) {
-			return;
-		}
-	}
-
-	switch (type) {
-	case 0:  Vertex shaders
-		if (m_pShaders[0]) {
-			setRunLevel(RL_DBG_VERTEX_SHADER);
-			language = EShLangVertex;
-		} else {
-			return;
-		}
-		break;
-	case 1:  Geometry shaders
-		if (m_pShaders[1]) {
-			language = EShLangGeometry;
-			setRunLevel(RL_DBG_GEOMETRY_SHADER);
-		} else {
-			return;
-		}
-		break;
-	case 2:  Fragment shaders
-		if (m_pShaders[2]) {
-			language = EShLangFragment;
-			setRunLevel(RL_DBG_FRAGMENT_SHADER);
-		} else {
-			return;
-		}
-		break;
-	default:
-		return;
-	}
-
-	 start building the parse tree for this shader
-	m_dShCompiler = ShConstructCompiler(language, debugOptions);
-	if (m_dShCompiler == 0) {
-		setErrorStatus(PCE_UNKNOWN_ERROR);
-		killProgram(1);
-		setRunLevel(RL_SETUP);
-		return;
-	}
-
-	shaderCode = m_pShaders[type];
-
-	if (!ShCompile(m_dShCompiler, &shaderCode, 1, EShOptNone, &m_dShResources,
-			debugOptions, &m_dShVariableList)) {
-		const char *err = ShGetInfoLog(m_dShCompiler);
-		Dialog_CompilerError dlgCompilerError(this);
-		dlgCompilerError.labelMessage->setText(
-				"Your shader seems not to be compliant to the official GLSL1.2 specification and may rely on vendor specific enhancements.<br>If this is not the case, please report this probem to <A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">glsldevil@vis.uni-stuttgart.de</A>.");
-		dlgCompilerError.setDetailedOutput(err);
-		dlgCompilerError.exec();
-		cleanupDBGShader();
-		setRunLevel(RL_DBG_RESTART);
-		return;
-	}
-
-	m_pShVarModel = new OldShVarModel(&m_dShVariableList, this, qApp);
-	connect(m_pShVarModel, SIGNAL(newWatchItem(OldShVarItem*)), this,
-			SLOT(updateWatchItemData(OldShVarItem*)));
-	QItemSelectionModel *selectionModel = new QItemSelectionModel(
-			m_pShVarModel->getFilterModel(OldShVarModel::TV_WATCH_LIST));
-
-	m_pShVarModel->attach(tvShVarAll, OldShVarModel::TV_ALL);
-	m_pShVarModel->attach(tvShVarBuiltIn, OldShVarModel::TV_BUILTIN);
-	m_pShVarModel->attach(tvShVarScope, OldShVarModel::TV_SCOPE);
-	m_pShVarModel->attach(tvShVarUniform, OldShVarModel::TV_UNIFORM);
-	m_pShVarModel->attach(tvWatchList, OldShVarModel::TV_WATCH_LIST);
-
-	tvWatchList->setSelectionModel(selectionModel);
-
-	 Watchview feedback for selection tracking
-	connect(tvWatchList->selectionModel(),
-			SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
-			this,
-			SLOT(watchSelectionChanged(const QItemSelection &, const QItemSelection &)));
-
-	 set uniform values
-//	m_pShVarModel->setUniformValues(m_serializedUniforms.pData,
-//			m_serializedUniforms.count);
-
-	ShaderStep (DBG_BH_JUMP_INTO);
-
-	if (currentRunLevel != RL_DBG_VERTEX_SHADER
-			&& currentRunLevel != RL_DBG_GEOMETRY_SHADER
-			&& currentRunLevel != RL_DBG_FRAGMENT_SHADER) {
-		return;
-	}
-
-	if (language == EShLangGeometry) {
-		delete m_pGeometryMap;
-		delete m_pVertexCount;
-		m_pGeometryMap = new VertexBox();
-		m_pVertexCount = new VertexBox();
-		UT_NOTIFY(LV_INFO, "Get GEOMETRY_MAP:");
-		if (getDebugVertexData(DBG_CG_GEOMETRY_MAP, NULL, NULL,
-				m_pGeometryMap)) {
-			 TODO: build geometry model
-		} else {
-			cleanupDBGShader();
-			setRunLevel(RL_DBG_RESTART);
-			return;
-		}
-		UT_NOTIFY(LV_INFO, "Get VERTEX_COUNT:");
-		if (getDebugVertexData(DBG_CG_VERTEX_COUNT, NULL, NULL,
-				m_pVertexCount)) {
-			 TODO: build geometry model
-		} else {
-			cleanupDBGShader();
-			setRunLevel(RL_DBG_RESTART);
-			return;
-		}
-
-		//m_pGeoDataModel = new GeoShaderDataModel(m_primitiveMode,
-		//			m_dShResources.geoOutputType, m_pGeometryMap, m_pVertexCount);
-
-	}
-
-}
-
-void MainWindow::on_tbShaderReset_clicked()
-{
-	ShaderStep(DBG_BH_RESET, true);
-	ShaderStep (DBG_BH_JUMP_INTO);
-
-	tbShaderStep->setEnabled(true);
-	tbShaderStepOver->setEnabled(true);
-
-	resetWatchListData();
-}
-
-
-void MainWindow::on_tbShaderStep_clicked()
-{
-	ShaderStep (DBG_BH_JUMP_INTO);
-}
-
-void MainWindow::on_tbShaderStepOver_clicked()
-{
-	ShaderStep (DBG_BH_FOLLOW_ELSE);
-}
-
-
-void MainWindow::on_tbShaderFragmentOptions_clicked()
-{
-	m_pftDialog->show();
-}
-
-
-void MainWindow::on_twShader_currentChanged(int selection)
-{
-	if (currentRunLevel == RL_DBG_VERTEX_SHADER
-			|| currentRunLevel == RL_DBG_GEOMETRY_SHADER
-			|| currentRunLevel == RL_DBG_FRAGMENT_SHADER) {
-		if ((currentRunLevel == RL_DBG_VERTEX_SHADER && selection == 0)
-				|| (currentRunLevel == RL_DBG_GEOMETRY_SHADER && selection == 1)
-				|| (currentRunLevel == RL_DBG_FRAGMENT_SHADER && selection == 2)) {
-			tbShaderExecute->setEnabled(true);
-			tbShaderReset->setEnabled(true);
-			tbShaderStepOver->setEnabled(true);
-			tbShaderStep->setEnabled(true);
-		} else {
-			tbShaderExecute->setEnabled(false);
-			tbShaderReset->setEnabled(false);
-			tbShaderStepOver->setEnabled(false);
-			tbShaderStep->setEnabled(false);
-			tbShaderFragmentOptions->setEnabled(false);
-		}
-	} else if ((currentRunLevel == RL_DBG_RESTART
-			|| currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE)
-			&& m_bHaveValidShaderCode) {
-		switch (twShader->currentIndex()) {
-		case 0:
-			if (m_pShaders[0] && m_dShResources.transformFeedbackSupported) {
-				tbShaderExecute->setEnabled(true);
-			} else {
-				tbShaderExecute->setEnabled(false);
-			}
-			tbShaderFragmentOptions->setEnabled(false);
-			break;
-		case 1:
-			if (m_pShaders[1] && m_dShResources.geoShaderSupported
-					&& m_dShResources.transformFeedbackSupported) {
-				tbShaderExecute->setEnabled(true);
-			} else {
-				tbShaderExecute->setEnabled(false);
-			}
-			tbShaderFragmentOptions->setEnabled(false);
-			break;
-		case 2:
-			if (m_pShaders[2] && m_dShResources.framebufferObjectsSupported) {
-				tbShaderExecute->setEnabled(true);
-				tbShaderFragmentOptions->setEnabled(true);
-			} else {
-				tbShaderExecute->setEnabled(false);
-			}
-			break;
-		}
-	} else {
-		tbShaderExecute->setEnabled(false);
-	}
-}
-
-QModelIndexList MainWindow::cleanupSelectionList(QModelIndexList input)
-{
-	QModelIndexList output;         // Resulting filtered list.
-	QStack<QModelIndex> stack;      // For iterative tree traversal.
-
-	if (!m_pShVarModel) {
-		return output;
-	}
-
-	//for (int i = 0; i < input.count(); i++) {
-	//    ShVarItem *item = m_pShVarModel->getWatchItemPointer(input[i]);
-
-	//    if (item->isSelectable()) {
-	//        output << input[i];
-	//    }
-	//}
-
-
-	 * Add directly selected items in reverse order such that getting them
-	 * from the stack restores the original order. This is also required
-	 * for all following push operations.
-
-	for (int i = input.count() - 1; i >= 0; i--) {
-		stack.push(input[i]);
-	}
-
-	while (!stack.isEmpty()) {
-		QModelIndex idx = stack.pop();
-		OldShVarItem *item = this->m_pShVarModel->getWatchItemPointer(idx);
-
-		// Item might be NULL because 'idx' can become invalid during recursion
-		// which causes the parent removal to crash.
-		if (item != NULL) {
-			for (int c = item->childCount() - 1; c >= 0; c--) {
-				stack.push(idx.child(c, idx.column()));
-			}
-
-			if ((item->childCount() == 0) && item->isSelectable()
-					&& !output.contains(idx)) {
-				output << idx;
-			}
-		}
-	}
-
-	return output;
-}
-*/
-/*
-
-
-WatchView* MainWindow::newWatchWindowFragment(QModelIndexList &list)
-{
-	WatchVector *window = NULL;
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
-		if (item) {
-			if (!window) {
-				 Create window
-				window = new WatchVector(workspace);
-				connect(window, SIGNAL(destroyed()), this,
-						SLOT(watchWindowClosed()));
-				connect(window,
-						SIGNAL(mouseOverValuesChanged(int, int, const bool *, const QVariant *)),
-						this,
-						SLOT(setMouseOverValues(int, int, const bool *, const QVariant *)));
-				connect(window, SIGNAL(selectionChanged(int, int)), this,
-						SLOT(newSelectedPixel(int, int)));
-				connect(aZoom, SIGNAL(triggered()), window,
-						SLOT(setZoomMode()));
-				connect(aSelectPixel, SIGNAL(triggered()), window,
-						SLOT(setPickMode()));
-				connect(aMinMaxLens, SIGNAL(triggered()), window,
-						SLOT(setMinMaxMode()));
-				 initialize mouse mode
-				agWatchControl->setEnabled(true);
-				if (agWatchControl->checkedAction() == aZoom) {
-					window->setZoomMode();
-				} else if (agWatchControl->checkedAction() == aSelectPixel) {
-					window->setPickMode();
-				} else if (agWatchControl->checkedAction() == aMinMaxLens) {
-					window->setMinMaxMode();
-				}
-				window->setWorkspace(workspace);
-				workspace->addWindow(window);
-			}
-			window->attachFpData(item->getPixelBoxPointer(),
-					item->getFullName());
-		}
-	}
-	return window;
-}
-
-WatchView* MainWindow::newWatchWindowVertexTable(QModelIndexList &list)
-{
-	WatchTable *window = NULL;
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
-		if (item) {
-			if (!window) {
-				 Create window
-				window = new WatchTable(workspace);
-				connect(window, SIGNAL(selectionChanged(int)), this,
-						SLOT(newSelectedVertex(int)));
-				workspace->addWindow(window);
-			}
-			window->attachVpData(item->getVertexBoxPointer(),
-					item->getFullName());
-		}
-	}
-	return window;
-}
-
-WatchView* MainWindow::newWatchWindowGeoDataTree(QModelIndexList &list)
-{
-	WatchGeoDataTree *window = NULL;
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
-		if (item) {
-			if (!window) {
-				 Create window
-				window = new WatchGeoDataTree(m_primitiveMode,
-						m_dShResources.geoOutputType, m_pGeometryMap,
-						m_pVertexCount, workspace);
-				connect(window, SIGNAL(selectionChanged(int)), this,
-						SLOT(newSelectedPrimitive(int)));
-				workspace->addWindow(window);
-			}
-			window->attachData(item->getCurrentPointer(),
-					item->getVertexBoxPointer(), item->getFullName());
-		}
-	}
-	return window;
-}
-
-
-
-void MainWindow::on_tbWatchWindow_clicked()
-{
-	QModelIndexList list = cleanupSelectionList(
-			tvWatchList->selectionModel()->selectedRows(0));
-
-	if (m_pShVarModel && !list.isEmpty()) {
-		WatchView *window = NULL;
-		switch (currentRunLevel) {
-		case RL_DBG_GEOMETRY_SHADER:
-			window = newWatchWindowGeoDataTree(list);
-			break;
-		case RL_DBG_VERTEX_SHADER:
-			window = newWatchWindowVertexTable(list);
-			break;
-		case RL_DBG_FRAGMENT_SHADER:
-			window = newWatchWindowFragment(list);
-			break;
-		default:
-			UT_NOTIFY(LV_WARN, "invalid runlevel");
-		}
-		if (window) {
-			window->updateView(true);
-			window->show();
-		} else {
-			// TODO: Should this be an error?
-			QMessageBox::warning(this, "Warning", "The "
-					"watch window could not be created.");
-		}
-	}
-}
-
-
-void MainWindow::addToWatchWindowVertexTable(WatchView *watchView,
-		QModelIndexList &list)
-{
-	WatchTable *window = static_cast<WatchTable*>(watchView);
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
-		if (item) {
-			window->attachVpData(item->getVertexBoxPointer(),
-					item->getFullName());
-		}
-	}
-}
-
-void MainWindow::addToWatchWindowFragment(WatchView *watchView,
-		QModelIndexList &list)
-{
-	WatchVector *window = static_cast<WatchVector*>(watchView);
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
-		if (item) {
-			window->attachFpData(item->getPixelBoxPointer(),
-					item->getFullName());
-		}
-	}
-}
-
-void MainWindow::addToWatchWindowGeoDataTree(WatchView *watchView,
-		QModelIndexList &list)
-{
-	WatchGeoDataTree *window = static_cast<WatchGeoDataTree*>(watchView);
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		OldShVarItem *item = m_pShVarModel->getWatchItemPointer(list[i]);
-		if (item) {
-			window->attachData(item->getCurrentPointer(),
-					item->getVertexBoxPointer(), item->getFullName());
-		}
-	}
-}
-
-
-void MainWindow::on_tbWatchWindowAdd_clicked()
-{
-	 TODO: do not use static cast! instead watchView should provide functionality
-	WatchView *window = static_cast<WatchView*>(workspace->activeWindow());
-	QModelIndexList list = cleanupSelectionList(
-			tvWatchList->selectionModel()->selectedRows(0));
-
-	if (window && m_pShVarModel && !list.isEmpty()) {
-		switch (currentRunLevel) {
-		case RL_DBG_GEOMETRY_SHADER:
-			addToWatchWindowGeoDataTree(window, list);
-			break;
-		case RL_DBG_VERTEX_SHADER:
-			addToWatchWindowVertexTable(window, list);
-			break;
-		case RL_DBG_FRAGMENT_SHADER:
-			addToWatchWindowFragment(window, list);
-			break;
-		default:
-			QMessageBox::critical(this, "Internal Error",
-					"on_tbWatchWindowAdd_clicked was called on an invalid "
-							"run level.<br>Please report this probem to "
-							"<A HREF=\"mailto:glsldevil@vis.uni-stuttgart.de\">"
-							"glsldevil@vis.uni-stuttgart.de</A>.",
-					QMessageBox::Ok);
-		}
-		window->updateView(true);
-	}
-}
-
-
-void MainWindow::watchWindowClosed()
-{
-	QWidgetList windowList = workspace->windowList();
-	if (windowList.count() == 0) {
-		agWatchControl->setEnabled(false);
-	}
-}
-
-
-void MainWindow::updateWatchGui(int s)
-{
-	if (s == 0) {
-		tbWatchWindow->setEnabled(false);
-		tbWatchWindowAdd->setEnabled(false);
-		tbWatchDelete->setEnabled(false);
-	} else if (s == 1) {
-		tbWatchWindow->setEnabled(true);
-		if (workspace->activeWindow()) {
-			tbWatchWindowAdd->setEnabled(true);
-		} else {
-			tbWatchWindowAdd->setEnabled(false);
-		}
-		tbWatchDelete->setEnabled(true);
-	} else {
-		tbWatchWindow->setEnabled(true);
-		if (workspace->activeWindow()) {
-			tbWatchWindowAdd->setEnabled(true);
-		} else {
-			tbWatchWindowAdd->setEnabled(false);
-		}
-		tbWatchDelete->setEnabled(true);
-	}
-}
-*/
-
-/*
-void MainWindow::on_tbWatchDelete_clicked()
-{
-	int i;
-
-	if (!tvWatchList)
-		return;
-	if (!m_pShVarModel)
-		return;
-
-	QModelIndexList list;
-	do {
-		list = tvWatchList->selectionModel()->selectedIndexes();
-		if (list.count() != 0) {
-			m_pShVarModel->unsetItemWatched(list[0]);
-		}
-	} while (list.count() != 0);
-
-	updateWatchGui(
-			cleanupSelectionList(tvWatchList->selectionModel()->selectedRows()).count());
-
-	// Now update all windows to update themselves if necessary
-	QWidgetList windowList = workspace->windowList();
-
-	for (i = 0; i < windowList.count(); i++) {
-		WatchView *wv = static_cast<WatchView*>(windowList[i]);
-		wv->updateView(false);
-	}
-}
-*/
-
-/*
-void MainWindow::watchSelectionChanged(const QItemSelection& selected,
-		const QItemSelection& deselected)
-{
-	UNUSED_ARG(selected)
-	UNUSED_ARG(deselected)
-	updateWatchGui(
-			cleanupSelectionList(tvWatchList->selectionModel()->selectedRows()).count());
-}
-*/
-
-/*
-void MainWindow::changedActiveWindow(QWidget *w)
-{
-	QWidgetList list = workspace->windowList();
-	int i;
-
-	for (i = 0; i < list.count(); i++) {
-		if (w == list[i]) {
-			static_cast<WatchView*>(list[i])->setActive(true);
-		} else {
-			static_cast<WatchView*>(list[i])->setActive(false);
-		}
-	}
-}
-*/
 
 void MainWindow::leaveDBGState()
 {
@@ -3110,141 +1481,13 @@ void MainWindow::leaveDBGState()
 			return;
 		}
 		/* TODO: close all windows (obsolete?) */
-		delete[] m_pCoverage;
-		m_pCoverage = NULL;
+//		delete[] m_pCoverage;
+//		m_pCoverage = NULL;
 		break;
 	default:
 		break;
 	}
 }
-
-/*
-void MainWindow::cleanupDBGShader()
-{
-	QList<OldShVarItem*> watchItems;
-	int i;
-
-	pcErrorCode error = PCE_NONE;
-
-	 remove debug markers from code display
-	QTextDocument *document = NULL;
-	QTextEdit *edit = NULL;
-	switch (currentRunLevel) {
-	case RL_DBG_VERTEX_SHADER:
-		document = teVertexShader->document();
-		edit = teVertexShader;
-		break;
-	case RL_DBG_GEOMETRY_SHADER:
-		document = teGeometryShader->document();
-		edit = teGeometryShader;
-		break;
-	case RL_DBG_FRAGMENT_SHADER:
-		document = teFragmentShader->document();
-		edit = teFragmentShader;
-		break;
-	}
-	if (document && edit) {
-		QTextCharFormat highlight;
-		QTextCursor cursor(document);
-
-		cursor.setPosition(0, QTextCursor::MoveAnchor);
-		cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor, 1);
-		highlight.setBackground(Qt::white);
-		cursor.mergeCharFormat(highlight);
-	}
-
-	lWatchSelectionPos->setText("No Selection");
-	m_selectedPixel[0] = -1;
-	m_selectedPixel[1] = -1;
-
-	switch (currentRunLevel) {
-	case RL_DBG_GEOMETRY_SHADER:
-		//delete m_pGeoDataModel;
-	case RL_DBG_VERTEX_SHADER:
-	case RL_DBG_FRAGMENT_SHADER:
-		while (!m_qLoopData.isEmpty()) {
-			delete m_qLoopData.pop();
-		}
-
-		if (m_pShVarModel) {
-			 free data boxes
-			watchItems = m_pShVarModel->getAllWatchItemPointers();
-			for (i = 0; i < watchItems.count(); i++) {
-				PixelBox *fb;
-				VertexBox *vb;
-				if ((fb = watchItems[i]->getPixelBoxPointer())) {
-					watchItems[i]->setPixelBoxPointer(NULL);
-					delete fb;
-				}
-				if ((vb = watchItems[i]->getCurrentPointer())) {
-					watchItems[i]->setCurrentPointer(NULL);
-					delete vb;
-				}
-				if ((vb = watchItems[i]->getVertexBoxPointer())) {
-					watchItems[i]->setVertexBoxPointer(NULL);
-					delete vb;
-				}
-			}
-
-			 Watchview feedback for selection tracking
-			disconnect(tvWatchList->selectionModel(),
-					SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
-					this,
-					SLOT(watchSelectionChanged(const QItemSelection &, const QItemSelection &)));
-
-			 reset shader debuging
-			m_pShVarModel->detach(tvShVarAll);
-			m_pShVarModel->detach(tvShVarBuiltIn);
-			m_pShVarModel->detach(tvShVarScope);
-			m_pShVarModel->detach(tvShVarUniform);
-			m_pShVarModel->detach(tvWatchList);
-
-			disconnect(m_pShVarModel, SIGNAL(newWatchItem(OldShVarItem*)), this,
-					0);
-			delete m_pShVarModel;
-			m_pShVarModel = NULL;
-		}
-
-		if (m_dShCompiler) {
-			// It is not needed in mesa-glsl
-			freeShVariableList(&m_dShVariableList);
-			ShDestruct(m_dShCompiler);
-			m_dShCompiler = 0;
-		}
-
-		UT_NOTIFY(LV_INFO, "restore render target");
-		 restore render target
-		switch (currentRunLevel) {
-		case RL_DBG_VERTEX_SHADER:
-			error = pc->restoreRenderTarget(DBG_TARGET_VERTEX_SHADER);
-			break;
-		case RL_DBG_GEOMETRY_SHADER:
-			error = pc->restoreRenderTarget(DBG_TARGET_GEOMETRY_SHADER);
-			break;
-		case RL_DBG_FRAGMENT_SHADER:
-			error = pc->restoreRenderTarget(DBG_TARGET_FRAGMENT_SHADER);
-			break;
-		default:
-			error = PCE_NONE;
-		}
-
-		setErrorStatus(error);
-		if (error != PCE_NONE) {
-			if (isErrorCritical(error)) {
-				setRunLevel(RL_SETUP);
-				UT_NOTIFY(LV_ERROR, getErrorDescription(error));
-				killProgram(1);
-				return;
-			}
-			UT_NOTIFY(LV_WARN, getErrorDescription(error));
-			return;
-		}
-		break;
-	default:
-		break;
-	}
-}
-*/
 
 void MainWindow::setRunLevel(int rl)
 {
@@ -3284,21 +1527,6 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(false);
 		tbGlTraceSettings->setEnabled(false);
 		tbSave->setEnabled(false);
-		tbShaderExecute->setEnabled(false);
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		tbShaderFragmentOptions->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
-		setShaderCodeText(NULL);
-		m_bHaveValidShaderCode = false;
 		setGuiUpdates(true);
 		break;
 	case RL_SETUP:  // User has setup parameters for debugging
@@ -3335,30 +1563,10 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(false);
 		tbGlTraceSettings->setEnabled(true);
 		tbSave->setEnabled(true);
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		tbShaderFragmentOptions->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
-		setShaderCodeText(NULL);
-		m_bHaveValidShaderCode = false;
 		setGuiUpdates(true);
 		break;
 	case RL_TRACE_EXECUTE:  // Trace is running in step mode
 		/* choose sub-level */
-		if (m_pCurrentCall && m_pCurrentCall->isDebuggable(&m_primitiveMode)
-				&& m_bHaveValidShaderCode) {
-			setRunLevel(RL_TRACE_EXECUTE_IS_DEBUGABLE);
-		} else {
-			setRunLevel(RL_TRACE_EXECUTE_NO_DEBUGABLE);
-		}
 		break;
 	case RL_TRACE_EXECUTE_NO_DEBUGABLE:  // sub-level for non debugable calls
 		currentRunLevel = RL_TRACE_EXECUTE_NO_DEBUGABLE;
@@ -3396,19 +1604,6 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(true);
 		tbGlTraceSettings->setEnabled(true);
 		tbSave->setEnabled(true);
-		tbShaderExecute->setEnabled(false);
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		tbShaderFragmentOptions->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
 		setGuiUpdates(true);
 		break;
 	case RL_TRACE_EXECUTE_IS_DEBUGABLE:  // sub-level for debugable calls
@@ -3447,52 +1642,6 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(true);
 		tbGlTraceSettings->setEnabled(true);
 		tbSave->setEnabled(true);
-		if (m_bHaveValidShaderCode) {
-			switch (twShader->currentIndex()) {
-			case 0:
-				if (m_pShaders[0]
-						&& m_dShResources.transformFeedbackSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				tbShaderFragmentOptions->setEnabled(false);
-				break;
-			case 1:
-				if (m_pShaders[1] && m_dShResources.geoShaderSupported
-						&& m_dShResources.transformFeedbackSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				tbShaderFragmentOptions->setEnabled(false);
-				break;
-			case 2:
-				if (m_pShaders[2]
-						&& m_dShResources.framebufferObjectsSupported) {
-					tbShaderExecute->setEnabled(true);
-					tbShaderFragmentOptions->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-					tbShaderFragmentOptions->setEnabled(false);
-				}
-				break;
-			}
-		} else {
-			tbShaderExecute->setEnabled(false);
-			tbShaderFragmentOptions->setEnabled(false);
-		}
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
 		setGuiUpdates(true);
 		break;
 	case RL_TRACE_EXECUTE_RUN:
@@ -3528,25 +1677,8 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(false);
 		tbGlTraceSettings->setEnabled(false);
 		tbSave->setEnabled(false);
-		tbShaderExecute->setEnabled(false);
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		tbShaderFragmentOptions->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
 		/* update handling */
-		if (tbToggleGuiUpdate->isChecked()) {
-			setGuiUpdates(false);
-		} else {
-			setGuiUpdates(true);
-		}
+		setGuiUpdates(!tbToggleGuiUpdate->isChecked());
 		break;
 	case RL_DBG_RECORD_DRAWCALL:
 		currentRunLevel = RL_DBG_RECORD_DRAWCALL;
@@ -3577,19 +1709,6 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(false);
 		tbSave->setEnabled(false);
 		tbGlTraceSettings->setEnabled(false);
-		tbShaderExecute->setEnabled(false);
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		tbShaderFragmentOptions->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
 		setGuiUpdates(true);
 		break;
 	case RL_DBG_VERTEX_SHADER:
@@ -3626,53 +1745,6 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(false);
 		tbGlTraceSettings->setEnabled(false);
 		tbSave->setEnabled(true);
-
-		if (m_bHaveValidShaderCode) {
-			switch (twShader->currentIndex()) {
-			case 0:
-				if (m_pShaders[0]
-						&& m_dShResources.transformFeedbackSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				break;
-			case 1:
-				if (m_pShaders[1] && m_dShResources.geoShaderSupported
-						&& m_dShResources.transformFeedbackSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				break;
-			case 2:
-				if (m_pShaders[2]
-						&& m_dShResources.framebufferObjectsSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				break;
-			}
-		} else {
-			tbShaderExecute->setEnabled(false);
-		}
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-grin_32.png")));
-		tbShaderReset->setEnabled(true);
-		tbShaderStep->setEnabled(true);
-		tbShaderStepOver->setEnabled(true);
-		tbShaderFragmentOptions->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		twShader->setTabIcon(rl - RL_DBG_VERTEX_SHADER,
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		updateWatchGui(0);
 		setGuiUpdates(true);
 		break;
 	case RL_DBG_RESTART:
@@ -3711,55 +1783,18 @@ void MainWindow::setRunLevel(int rl)
 		tbToggleHaltOnError->setEnabled(true);
 		tbGlTraceSettings->setEnabled(true);
 		tbSave->setEnabled(true);
-
-		if (m_bHaveValidShaderCode) {
-			switch (twShader->currentIndex()) {
-			case 0:
-				if (m_pShaders[0]
-						&& m_dShResources.transformFeedbackSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				tbShaderFragmentOptions->setEnabled(false);
-				break;
-			case 1:
-				if (m_pShaders[1] && m_dShResources.geoShaderSupported
-						&& m_dShResources.transformFeedbackSupported) {
-					tbShaderExecute->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-				}
-				tbShaderFragmentOptions->setEnabled(false);
-				break;
-			case 2:
-				if (m_pShaders[2]
-						&& m_dShResources.framebufferObjectsSupported) {
-					tbShaderExecute->setEnabled(true);
-					tbShaderFragmentOptions->setEnabled(true);
-				} else {
-					tbShaderExecute->setEnabled(false);
-					tbShaderFragmentOptions->setEnabled(false);
-				}
-				break;
-			}
-		} else {
-			tbShaderExecute->setEnabled(false);
-		}
-		tbShaderExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/shader-execute_32.png")));
-		tbShaderReset->setEnabled(false);
-		tbShaderStep->setEnabled(false);
-		tbShaderStepOver->setEnabled(false);
-		twShader->setTabIcon(0, QIcon());
-		twShader->setTabIcon(1, QIcon());
-		twShader->setTabIcon(2, QIcon());
-		updateWatchGui(0);
 		setGuiUpdates(true);
 		break;
 	}
+}
+
+void MainWindow::setRunLevelDebuggable(int &primitive, bool has_shaders)
+{
+	/* choose sub-level */
+	if (m_pCurrentCall && m_pCurrentCall->isDebuggable(&primitive) && has_shaders)
+		setRunLevel(RL_TRACE_EXECUTE_IS_DEBUGABLE);
+	else
+		setRunLevel(RL_TRACE_EXECUTE_NO_DEBUGABLE);
 }
 
 void MainWindow::setErrorStatus(pcErrorCode error)
@@ -3840,36 +1875,6 @@ void MainWindow::setMouseOverValues(int x, int y, const bool *active,
 		}
 	}
 }
-
-//void MainWindow::newSelectedPixel(int x, int y)
-//{
-//	m_selectedPixel[0] = x;
-//	m_selectedPixel[1] = y;
-//	lWatchSelectionPos->setText(
-//			"Pixel " + QString::number(x) + ", " + QString::number(y));
-//	if (m_pShVarModel && m_selectedPixel[0] >= 0 && m_selectedPixel[1] >= 0) {
-//		m_pShVarModel->setCurrentValues(m_selectedPixel[0], m_selectedPixel[1]);
-//	}
-//}
-//
-//void MainWindow::newSelectedVertex(int n)
-//{
-//	m_selectedPixel[0] = n;
-//	m_selectedPixel[1] = -1;
-//	if (m_pShVarModel && m_selectedPixel[0] >= 0) {
-//		lWatchSelectionPos->setText("Vertex " + QString::number(n));
-//		m_pShVarModel->setCurrentValues(m_selectedPixel[0]);
-//	}
-//}
-//
-//void MainWindow::newSelectedPrimitive(int dataIdx)
-//{
-//	m_selectedPixel[0] = dataIdx;
-//	if (m_pShVarModel && m_selectedPixel[0] >= 0) {
-//		lWatchSelectionPos->setText("Primitive " + QString::number(dataIdx));
-//		m_pShVarModel->setCurrentValues(m_selectedPixel[0]);
-//	}
-//}
 
 void MainWindow::resetPerFrameStatistics(void)
 {

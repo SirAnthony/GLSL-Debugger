@@ -9,9 +9,13 @@
 
 ShWatchDock::ShWatchDock(QWidget *parent) :
 	ShDockWidget(parent)
-{
+{	
+	ShDataManager *manager = ShDataManager::get();
+	manager->registerDock(this, ShDataManager::dmDTWatch);
+
 	ui->setupUi(this);
 	ui->tvWatchList->setModel(model);
+
 	QItemSelectionModel *selection = new QItemSelectionModel(ui->tvWatchList->model());
 	ui->tvWatchList->setSelectionModel(selection);
 
@@ -23,7 +27,18 @@ ShWatchDock::ShWatchDock(QWidget *parent) :
 			SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
 			this, SLOT(selectionChanged()));
 
-	ShDataManager::get()->registerDock(this, ShDataManager::dmDTWatch);
+	connect(model, SIGNAL(addWatchItem(ShVarItem*)), this, SLOT(newItem(ShVarItem*)));
+	connect(manager, SIGNAL(updateWatchGui(bool)), this, SLOT(updateGui(bool)));
+	connect(manager, SIGNAL(updateSelection(int,int,QString&,ShaderMode)),
+			this, SLOT(updateSelection(int,int,QString&,ShaderMode)));
+	connect(manager, SIGNAL(updateWatchCoverage(ShaderMode,bool*)),
+			this, SLOT(updateCoverage(ShaderMode,bool*)));
+	connect(manager, SIGNAL(updateWatchData(ShaderMode,CoverageMapStatus,bool*,bool)),
+			this, SLOT(updateData(ShaderMode,CoverageMapStatus,bool*,bool)));
+	connect(manager, SIGNAL(resetWatchData(ShaderMode,bool*)),
+			this, SLOT(resetData(ShaderMode,bool*)));
+	connect(manager, SIGNAL(getWatchItems(QSet<ShVarItem*>&)),
+			this, SLOT(getWatchItems(QSet<ShVarItem*>&)));
 }
 
 ShWatchDock::~ShWatchDock()
@@ -44,7 +59,7 @@ void ShWatchDock::expand(ShVarItem *item)
 }
 
 void ShWatchDock::updateGui(bool enable)
-{	
+{
 	bool window_active = ShDataManager::get()->hasActiveWindow();
 	ui->WatchWindow->setEnabled(enable);
 	ui->WatchDelete->setEnabled(enable);

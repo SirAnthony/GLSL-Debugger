@@ -46,20 +46,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "glCallStatistics.qt.h"
 #include "jumpToDialog.qt.h"
 
-//#include "ShHandle.h"
-#include "ShaderLang.h"
-
 #include "progControl.qt.h"
-#include "shVarModel.qt.h"
 #include "errorCodes.h"
 #include "functionCall.h"
-#include "pixelBox.qt.h"
-#include "loopDialog.qt.h"
-#include "loopData.qt.h"
-#include "watchView.qt.h"
 #include "glTraceFilterModel.qt.h"
-#include "geoShaderDataModel.qt.h"
-#include "fragmentTestDialog.qt.h"
 #include "glTraceListModel.qt.h"
 #include "glTraceSettingsDialog.qt.h"
 
@@ -78,7 +68,9 @@ public:
 
 signals:
 	void changeRunLevel(int);
-	void updateShaders(int&, bool&);
+	void updateShaders(int&);
+	void cleanShader();
+	void removeShaders();
 
 private slots:
 	/****************
@@ -136,6 +128,7 @@ private slots:
 	 ****************/
 
 	void setRunLevel(int);
+	void setRunLevelDebuggable(int&, bool);
 	// void updateWatchItemData(OldShVarItem*);
 	// void watchSelectionChanged(const QItemSelection&, const QItemSelection&);
 	void setMouseOverValues(int x, int y, const bool *active,
@@ -203,7 +196,7 @@ private:
 	GlTraceSettingsDialog *m_pgtDialog;
 
 	/* per fragment tests */
-	FragmentTestDialog *m_pftDialog;
+//	FragmentTestDialog *m_pftDialog;
 
 	QStringList dbgProgArgs;
 	QString workDir;
@@ -241,7 +234,7 @@ private:
 	//QStack<LoopData*> m_qLoopData;
 
 //	char *m_pShaders[3];
-	bool m_bHaveValidShaderCode;
+//	bool m_bHaveValidShaderCode;
 
 //	struct {
 //		char *pData;

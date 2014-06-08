@@ -52,7 +52,7 @@ public:
 	 * other things like ShVarItem which have no direct connection
 	 * with MainWindow.
 	 */
-	static ShDataManager* create(QMainWindow *window, ProgramControl *pc, int &geoOut,
+	static ShDataManager* create(QMainWindow *window, ProgramControl *pc,
 								 QObject *parent = 0);
 	static ShDataManager* get();
 
@@ -75,6 +75,9 @@ public:
 	bool codeReady();
 	ShBuiltInResource *getResource();
 
+	bool isAvaliable()
+	{ return shadersAvaliable; }
+
 signals:
 	void saveQueries(int&);
 	void recordDrawCall(int&);
@@ -82,25 +85,33 @@ signals:
 	void cleanModel();
 	void setErrorStatus(int);
 	void setRunLevel(int);
+	void setCurrentDebuggable(int&, bool);
 	void killProgram(int);
 	void updateSelection(int, int, QString &, ShaderMode);
-	void updateSourceHighlight(ShaderMode, DbgRsRange &);
-	void updateStepControls(bool);	
+	void updateSourceHighlight(ShaderMode, DbgRsRange *);
+	void updateStepControls(bool);
+	void updateControls(int, bool, bool);
+	void updateWatchGui(bool);
 	void updateWatchCoverage(ShaderMode, bool *);
 	void updateWatchData(ShaderMode, CoverageMapStatus, bool *, bool);
 	void resetWatchData(ShaderMode, bool *);
 	void getWatchItems(QSet<ShVarItem *> &);
 	void getOptions(FragmentTestOptions *);
-	void setShaders(const char *shaders[]);
+	void getShaders(const char *shaders[]);
+	void setShaders(char *shaders[]);
+
 
 public slots:
 	void execute(ShaderMode);
+	void cleanShader();
 	void reset();
-	bool step(int action, bool update_watch = true, bool update_covermap = true);
+	void step(int action, bool update_watch = true, bool update_covermap = true);
 	void selectionChanged(int, int);
-	void updateShaders(int &error, bool &code);
+	void updateShaders(int &error);
+	void removeShaders();
 
 protected slots:
+	void updateGui(int);
 	void updateWatched(ShVarItem *);
 
 protected:
@@ -112,20 +123,21 @@ protected:
 
 private:
 	ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent = 0);
-	// Probably we do not need stack here	
+	~ShDataManager();
+	// Probably we do not need stack here
 	QStack<LoopData*> loopsData;
 	ShVarModel* model;
 	ShWindowManager* windows;
 	ShaderMode shaderMode;
+	bool ready;
 	bool shadersAvaliable;
 	int selectedPixel[2];
 	GeometryInfo geometry;
 	ShHandle compiler;
 	ShBuiltInResource shResources;
-	ShVariableList* shVariables;	
-	ShDockWidget* docks[dmDTCount];
+	ShVariableList* shVariables;
 	ProgramControl *pc;
-	bool *coverage;	
+	bool *coverage;
 	static ShDataManager* instance;
 };
 

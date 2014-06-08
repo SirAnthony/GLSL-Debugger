@@ -54,6 +54,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "notify.h"
 #include "build-config.h"
 #include "FunctionsMap.h"
+#include "utils/dbgprint.h"
 
 extern "C" {
   #include "GL/gl.h"

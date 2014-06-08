@@ -116,11 +116,18 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${ARCHIVE_DIR}")
 
 if(USE_MESA)
 	message(STATUS "GLSL compiler: mesa")
-	add_definitions(-DUSE_MESA)
+	add_definitions(-DUSE_MESA)	
 	add_subdirectory(mesa-glsl)
-else()
+	set(GLSL_INCLUDES "${PROJECT_SOURCE_DIR}/mesa-glsl/include")
+    set(GLSL_LIBRARIES glsl_mesa_interface)	
+else()    
 	message(STATUS "GLSL compiler: native")
 	add_subdirectory(GLSLCompiler)
+	set(GLSL_INCLUDES
+    	"${PROJECT_SOURCE_DIR}/GLSLCompiler/glslang/Public"
+    	"${PROJECT_SOURCE_DIR}/GLSLCompiler/glslang/Include"
+    )
+    set(GLSL_LIBRARIES glslang)
 endif()
 
 add_subdirectory(glsldb)

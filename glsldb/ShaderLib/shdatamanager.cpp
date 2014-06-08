@@ -62,23 +62,32 @@ static void printDebugInfo(int option, int target, const char *shaders[3])
 
 ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent) :
 	QObject(parent), shaderMode(smNoop), shadersAvaliable(false),
-	selectedPixel {-1, -1}, geometry { GL_NONE, GL_POINTS, NULL, NULL },
+	selectedPixel {-1, -1}, geometry { GL_NONE, GL_POINTS, GL_POINTS, NULL, NULL },
 	compiler(NULL), shVariables(NULL), pc(_pc), coverage(NULL)
 {
 	model = new ShVarModel();
 	connect(model, SIGNAL(addWatchItem(ShVarItem*)),
 			this, SLOT(updateWatched(ShVarItem*)));
+	connect(this, SIGNAL(setRunLevel(int)), this, SLOT(updateGui(int)));
 
 	windows = new ShWindowManager(window);
-	window->setCentralWidget(windows);	
+	window->setCentralWidget(windows);
+	ShInitialize();
+}
+
+ShDataManager::~ShDataManager()
+{
+	delete model;
+	delete windows;
+	ShFinalize();
 }
 
 ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc,
-									 int &geoOut, QObject *parent)
+									 QObject *parent)
 {
 	if (instance)
 		delete instance;
-	instance = new ShDataManager(window, pc, geoOut, parent);
+	instance = new ShDataManager(window, pc, parent);
 	return instance;
 }
 
@@ -91,11 +100,10 @@ ShDataManager *ShDataManager::get()
 
 void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 {
-	docks[type] = dock;
 	dock->setModel(model);
 
 	connect(this, SIGNAL(cleanDocks(ShaderMode)), dock, SLOT(cleanDock(ShaderMode)));
-	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));	
+	connect(dock, SIGNAL(updateWindows(bool)), windows, SLOT(updateWindows(bool)));
 
 	if (type == dmDTWatch) {
 		ShWatchDock* wdock = dynamic_cast<ShWatchDock *>(dock);
@@ -103,28 +111,6 @@ void ShDataManager::registerDock(ShDockWidget *dock, DockType type)
 				windows, SLOT(createWindow(QList<ShVarItem*>&,ShWindowManager::WindowType)));
 		connect(wdock, SIGNAL(extendWindow(QList<ShVarItem*>,int)),
 				windows, SLOT(extendWindow(QList<ShVarItem*>,ShWindowManager::WindowType)));
-		connect(this, SIGNAL(updateSelection(int,int,QString&,ShaderMode)),
-				wdock, SLOT(updateSelection(int,int,QString&,ShaderMode)));
-		connect(this, SIGNAL(updateWatchCoverage(ShaderMode,bool*)),
-				wdock, SLOT(updateCoverage(ShaderMode,bool*)));
-		connect(this, SIGNAL(updateWatchData(ShaderMode,CoverageMapStatus,bool*,bool)),
-				wdock, SLOT(updateData(ShaderMode,CoverageMapStatus,bool*,bool)));
-		connect(this, SIGNAL(resetWatchData(ShaderMode,bool*)),
-				wdock, SLOT(resetData(ShaderMode,bool*)));
-		connect(this, SIGNAL(getWatchItems(QSet<ShVarItem*>&)),
-				wdock, SLOT(getWatchItems(QSet<ShVarItem*>&)));
-		connect(model, SIGNAL(addWatchItem(ShVarItem*)),
-				wdock, SLOT(newItem(ShVarItem*)));
-	} else if (type == dmDTSource) {
-		ShSourceDock* sdock = dynamic_cast<ShSourceDock *>(dock);
-		connect(this, SIGNAL(updateStepControls(bool)), sdock, SLOT(updateControls(bool)));
-		connect(this, SIGNAL(updateSourceHighlight(ShaderMode,DbgRsRange&)),
-				sdock, SLOT(updateHighlight(ShaderMode,DbgRsRange&)));
-		connect(this, SIGNAL(setShaders(const char*[])),
-				sdock, SLOT(setShaders(const char*[])));
-		connect(sdock, SIGNAL(stepShader(int)), this, SLOT(step(int)));
-		connect(sdock, SIGNAL(resetShader()), this, SLOT(reset()));
-		connect(sdock, SIGNAL(executeShader(ShaderMode)), this, SLOT(execute(ShaderMode)));
 	}
 }
 
@@ -158,22 +144,17 @@ static DbgCgOptions position_options(DbgRsTargetPosition position)
 
 bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangeableList *cl,
 								 int format, bool *coverage, DataBox *data)
-{	
+{
 	if (type < 0) {
 		dbgPrint(DBGLVL_ERROR, "ShDataManager::getDebugData called with error type.");
 		return false;
 	}
 
 	pcErrorCode error;
-	const char *shaders[3];
+	const char *shaders[3] = {NULL, NULL, NULL};
 	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, option);
-	ShSourceDock *sdock = dynamic_cast<ShSourceDock*>(docks[dmDTSource]);
-	if (!sdock) {
-		free(debugCode);
-		return false;
-	}
 
-	sdock->getSource(shaders);
+	emit getShaders(shaders);
 	shaders[type] = debugCode;
 	if (type == smVertex)
 		shaders[1] = NULL;
@@ -194,8 +175,6 @@ bool ShDataManager::getDebugData(ShaderMode type, DbgCgOptions option, ShChangea
 	dbgPrint(DBGLVL_INFO, "getDebugVertexData done");
 	return true;
 }
-
-
 
 bool ShDataManager::cleanShader(ShaderMode type)
 {
@@ -258,9 +237,7 @@ ShaderMode ShDataManager::getMode()
 
 bool ShDataManager::codeReady()
 {
-	return (currentRunLevel == RL_DBG_RESTART
-			|| currentRunLevel == RL_TRACE_EXECUTE_IS_DEBUGABLE)
-			&& shadersAvaliable
+	return ready && shadersAvaliable;
 }
 
 ShBuiltInResource *ShDataManager::getResource()
@@ -269,7 +246,7 @@ ShBuiltInResource *ShDataManager::getResource()
 }
 
 void ShDataManager::execute(ShaderMode type)
-{	
+{
 	if (shaderMode > 0) {
 		/* clean up debug run */
 		cleanShader(shaderMode);
@@ -277,7 +254,7 @@ void ShDataManager::execute(ShaderMode type)
 		return;
 	}
 
-	pcErrorCode error = PCE_NONE;
+	int error = PCE_NONE;
 	emit saveQueries(error);
 	if (!processError(error, type))
 		return;
@@ -306,17 +283,13 @@ void ShDataManager::execute(ShaderMode type)
 	if (!processError(error, type, true))
 		return;
 
-
 	emit recordDrawCall(error);
 	if (!processError(error, type))
 		return;
 
-	const char *shaders[3];
-	ShSourceDock *sdock = dynamic_cast<ShSourceDock*>(docks[dmDTSource]);
-	if (!sdock)
-		return;
-	sdock->getSource(shaders);
-	if (!sdock[type])
+	const char *shaders[3] = {NULL, NULL, NULL};
+	emit getShaders(shaders);
+	if (!shaders[type])
 		return;
 
 	emit setRunLevel(dbg_runlevels[type]);
@@ -349,6 +322,11 @@ void ShDataManager::execute(ShaderMode type)
 
 	step(DBG_BH_JUMP_INTO);
 	updateGeometry(type);
+}
+
+void ShDataManager::cleanShader()
+{
+	cleanShader(shaderMode);
 }
 
 void ShDataManager::reset()
@@ -452,7 +430,7 @@ void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 	updateDialogs(dr->position, dr->loopIteration, update_covermap, updateGUI);
 
 	if (updateGUI)
-		emit updateSourceHighlight(shaderMode, dr->range);
+		emit updateSourceHighlight(shaderMode, &dr->range);
 }
 
 void ShDataManager::selectionChanged(int x, int y)
@@ -484,7 +462,7 @@ void ShDataManager::selectionChanged(int x, int y)
 	emit updateSelection(x, y, text, mode);
 }
 
-void ShDataManager::updateShaders(int &error, bool &code)
+void ShDataManager::updateShaders(int &error)
 {
 	/* call debug function that reads back the shader code */
 	char *uniforms;
@@ -498,8 +476,48 @@ void ShDataManager::updateShaders(int &error, bool &code)
 		/* show shader code(s) in tabs */
 		emit setShaders(shaders);
 		model->setUniforms(uniforms, uniformsCount);
-		shadersAvaliable = code = (shaders[0] || shaders[1] || shaders[2]);
+		shadersAvaliable = (shaders[0] || shaders[1] || shaders[2]);
 	}
+}
+
+void ShDataManager::removeShaders()
+{
+	emit setShaders(NULL);
+	shadersAvaliable = false;
+}
+
+void ShDataManager::updateGui(int rl)
+{
+	int shader_level = -1;
+
+	switch (rl) {
+	case RL_TRACE_EXECUTE:  // Trace is running in step mode
+		emit setCurrentDebuggable(geometry.primitiveMode, shadersAvaliable);
+		return;
+	case RL_INIT:
+	case RL_SETUP:
+		emit removeShaders();
+		break;
+	case RL_TRACE_EXECUTE_NO_DEBUGABLE:
+	case RL_TRACE_EXECUTE_RUN:
+	case RL_DBG_RECORD_DRAWCALL:
+		break;
+	case RL_DBG_VERTEX_SHADER:
+	case RL_DBG_GEOMETRY_SHADER:
+	case RL_DBG_FRAGMENT_SHADER:
+		shader_level = rl - RL_DBG_VERTEX_SHADER;
+		break;
+	case RL_TRACE_EXECUTE_IS_DEBUGABLE:
+	case RL_DBG_RESTART:
+		break;
+	default:
+		return;
+	}
+
+	ready = (rl == RL_DBG_RESTART || rl == RL_TRACE_EXECUTE_IS_DEBUGABLE);
+	emit updateControls(shader_level, rl == RL_DBG_RESTART,
+						rl == RL_TRACE_EXECUTE_IS_DEBUGABLE);
+	emit updateWatchGui(false);
 }
 
 void ShDataManager::updateWatched(ShVarItem *item)
@@ -522,8 +540,8 @@ void ShDataManager::updateGeometry(ShaderMode type)
 	geometry.map = new VertexBox();
 	geometry.count = new VertexBox();
 	dbgPrint(DBGLVL_INFO, "Get GEOMETRY_MAP & VERTEX_COUNT:");
-	if (getDebugData(mode, DBG_CG_GEOMETRY_MAP, NULL, 0, NULL, geometry.map) &&
-			getDebugData(mode, DBG_CG_VERTEX_COUNT, NULL, 0, NULL, geometry.count)) {
+	if (getDebugData(type, DBG_CG_GEOMETRY_MAP, NULL, 0, NULL, geometry.map) &&
+			getDebugData(type, DBG_CG_VERTEX_COUNT, NULL, 0, NULL, geometry.count)) {
 		/* TODO: build geometry model */
 	} else {
 		cleanShader(type);

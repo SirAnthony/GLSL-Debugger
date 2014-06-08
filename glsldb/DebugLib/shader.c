@@ -47,7 +47,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "glenumerants.h"
 #include "shader.h"
 #include "../utils/dbgprint.h"
-#include "../../GLSLCompiler/glslang/Public/ResourceLimits.h"
+#include "ResourceLimits.h"
 
 #ifdef _WIN32
 #include "generated/trampolines.h"

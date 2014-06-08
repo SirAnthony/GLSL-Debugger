@@ -27,9 +27,9 @@ void ShVarModel::appendRow(const ShVariableList *items)
 		root->appendRow(item);
 
 		QString item_name = item->data(DF_FULLNAME).toString();
-		foreach(ShUniform &uf, uniforms) {
+		foreach(const ShUniform &uf, uniforms) {
 			if (item_name.compare(uf.name()))
-				item->setData(DF_DEBUG_UNIFORM_VALUE, uf.toString());
+				item->setData(uf.toString(), DF_DEBUG_UNIFORM_VALUE);
 		}
 	}
 }
@@ -83,7 +83,7 @@ void ShVarModel::unsetWatched(ShVarItem *item)
 
 void ShVarModel::setUniforms(const char *strings, int count)
 {
-	char *uniform = strings;
+	const char *uniform = strings;
 	for (int c = 0; c < count; ++c) {
 		int length = 0;
 		uniforms.append(ShUniform(uniform, length));

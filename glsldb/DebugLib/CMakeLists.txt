@@ -144,6 +144,7 @@ include_directories(
 	"${PROJECT_SOURCE_DIR}/glsldb/utils"
 	"${CMAKE_CURRENT_BINARY_DIR}"
 	${DEBUGLIB_OS_DEPENDENT_INCLUDES}
+	${GLSL_INCLUDES}
 )
 
 add_library(glenumerants STATIC ${ENUMERANTS_SRC})

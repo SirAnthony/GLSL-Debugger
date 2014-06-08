@@ -3,7 +3,6 @@
 
 #include "shdockwidget.h"
 #include "dialogs/fragmenttest.h"
-#include "ShaderLang.h"
 
 class QTextEdit;
 
@@ -16,9 +15,7 @@ class ShSourceDock : public ShDockWidget
 	Q_OBJECT
 public:
 	explicit ShSourceDock(QWidget *parent = 0);
-	~ShSourceDock();	
-
-	void getSource(const char *shaders[smCount]);
+	~ShSourceDock();		
 
 signals:
 	void stepShader(int);
@@ -26,17 +23,21 @@ signals:
 	void executeShader(ShaderMode);
 	
 public slots:
+	void updateGui(int, bool, bool);
+	void getShaders(const char *shaders[smCount]);
 	void setShaders(const char *shaders[smCount]);
 	void executeShader();
 	void stepInto();
 	void stepOver();
 	virtual void cleanDock(ShaderMode);
-	void updateControls(bool);
-	void updateHighlight(ShaderMode, DbgRsRange &);
+	void updateStepControls(bool);
+	void updateControls();
+	void updateHighlight(ShaderMode, DbgRsRange *);
 	void getOptions(FragmentTestOptions *);
 
 protected slots:
 	void currentChanged(int);
+	void updateCurrent(int);
 	void showOptions();
 
 private:

@@ -7,21 +7,21 @@
 
 class ShUniformData {
 public:
-	virtual ~UniformData() {}
+	virtual ~ShUniformData() {}
 	virtual QString toString(int element) const = 0;
 };
 
 template<typename T>
 class TypedShUniformData: public ShUniformData {
 public:
-	TypedUniformData(const char * const data, int count)
+	TypedShUniformData(const char * const _data, int count)
 	{
 		data = new T[count];
-		memcpy(data, data, sizeof(T) * count);
+		memcpy(data, _data, sizeof(T) * count);
 		elements = count;
 	}
 
-	~TypedUniformData()
+	~TypedShUniformData()
 	{
 		delete[] data;
 	}
@@ -52,7 +52,7 @@ public:
 	~ShUniform();
 
 	QString name() const
-	{ return name; }
+	{ return uniformName; }
 
 	bool isVector() const
 	{ return type == shuVector; }
@@ -73,7 +73,7 @@ public:
 	QString toString(int index) const;
 
 private:
-	QString name;
+	QString uniformName;
 	ShUniformType type;
 	int arraySize;
 	int matrixColumns;

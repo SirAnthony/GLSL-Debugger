@@ -49,16 +49,6 @@ if(GLSLDB_WIN)
 	)
 endif()
 
-if(USE_MESA)
-    set(GLSL_INCLUDES "${PROJECT_SOURCE_DIR}/mesa-glsl/include")
-    set(GLSL_LIBRARIES glsl_mesa_interface)
-else()
-    set(GLSL_INCLUDES
-    	"${PROJECT_SOURCE_DIR}/GLSLCompiler/glslang/Public"
-    	"${PROJECT_SOURCE_DIR}/GLSLCompiler/glslang/Include"
-    )
-    set(GLSL_LIBRARIES glslang)
-endif()
 
 include_directories(
 	"${CMAKE_CURRENT_BINARY_DIR}"
