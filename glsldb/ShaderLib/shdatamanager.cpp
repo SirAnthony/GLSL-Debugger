@@ -61,8 +61,8 @@ static void printDebugInfo(int option, int target, const char *shaders[3])
 }
 
 
-ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent) :
-	QObject(parent), shaderMode(smNoop), shadersAvaliable(false),
+ShDataManager::ShDataManager(ProgramControl *_pc, QWidget *parent) :
+	QObject(parent), shaderMode(smNoop), ready(false), shadersAvaliable(false),
 	selectedPixel {-1, -1}, geometry { GL_NONE, GL_POINTS, GL_POINTS, NULL, NULL },
 	compiler(NULL), shVariables(NULL), pc(_pc), coverage(NULL)
 {
@@ -70,26 +70,23 @@ ShDataManager::ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *
 	connect(this, SIGNAL(cleanModel()), model, SLOT(clear()));
 	connect(model, SIGNAL(addWatchItem(ShVarItem*)),
 			this, SLOT(updateWatched(ShVarItem*)));
-	connect(this, SIGNAL(setRunLevel(int)), this, SLOT(updateGui(int)));
 
-	windows = new ShWindowManager(window);
-	window->setCentralWidget(windows);
+	windows = new ShWindowManager(parent);
 	ShInitialize();
 }
 
 ShDataManager::~ShDataManager()
 {
-	delete model;
-	delete windows;
 	ShFinalize();
+	delete windows;
+	delete model;
 }
 
-ShDataManager *ShDataManager::create(QMainWindow *window, ProgramControl *pc,
-									 QObject *parent)
+ShDataManager *ShDataManager::create(ProgramControl *pc, QWidget *parent)
 {
 	if (instance)
 		delete instance;
-	instance = new ShDataManager(window, pc, parent);
+	instance = new ShDataManager(pc, parent);
 	return instance;
 }
 
@@ -460,13 +457,13 @@ void ShDataManager::selectionChanged(int x, int y)
 void ShDataManager::updateShaders(int &error)
 {
 	/* call debug function that reads back the shader code */
-	char *uniforms;
-	int uniformsCount;
-	char *shaders[smCount];	
+	int uniformsCount = 0;
+	char *uniforms = NULL;
+	char *shaders[smCount];
 	for (int i = 0; i < smCount; i++)
 		shaders[i] = NULL;
 
-	error = pc->getShaderCode(shaders, &shResources, &uniforms, &uniformsCount);	
+	error = pc->getShaderCode(shaders, &shResources, &uniforms, &uniformsCount);
 	if (error == PCE_NONE) {
 		/* show shader code(s) in tabs */
 		const char *cshaders[smCount] = { shaders[0], shaders[1], shaders[2] };
@@ -475,7 +472,7 @@ void ShDataManager::updateShaders(int &error)
 		shadersAvaliable = (shaders[0] || shaders[1] || shaders[2]);
 		for (int i = 0; i < smCount; ++i)
 			delete[] shaders[i];
-	}	
+	}
 }
 
 void ShDataManager::removeShaders()
@@ -489,9 +486,6 @@ void ShDataManager::updateGui(int rl)
 	int shader_level = -1;
 
 	switch (rl) {
-	case RL_TRACE_EXECUTE:  // Trace is running in step mode
-		emit setCurrentDebuggable(geometry.primitiveMode, shadersAvaliable);
-		return;
 	case RL_INIT:
 	case RL_SETUP:
 		emit removeShaders();

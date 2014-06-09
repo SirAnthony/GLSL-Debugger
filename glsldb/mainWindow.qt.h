@@ -113,9 +113,7 @@ private slots:
 	 ****************/
 
 	void setRunLevel(int);
-	void setRunLevelDebuggable(int&, bool);
-	void setMouseOverValues(int x, int y, const bool *active,
-			const QVariant *values);
+	void setMouseOverValues(int x, int y, const bool *active, const QVariant *values);
 
 	void singleStep();
 
@@ -167,7 +165,7 @@ private:
 	QString workDir;
 	ProgramControl *pc;
 
-	const FunctionCall *m_pCurrentCall;
+	const FunctionCall *currentCall;
 
 	/* == 1 if we are inside a glNewList-glEndList block */
 	bool m_bInDLCompilation;

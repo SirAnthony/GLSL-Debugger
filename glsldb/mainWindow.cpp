@@ -77,11 +77,9 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 		dbgProgArgs(args)
 {
 	pc = new ProgramControl(pname);
-	shaderManager = ShDataManager::create(this, pc);
+	shaderManager = ShDataManager::create(pc, this);
 	connect(shaderManager, SIGNAL(saveQueries(int&)), this, SLOT(saveQueries(int&)));
 	connect(shaderManager, SIGNAL(setRunLevel(int)), this, SLOT(setRunLevel(int)));
-	connect(shaderManager, SIGNAL(setCurrentDebuggable(int&,bool)),
-			this, SLOT(setRunLevelDebuggable(int&,bool)));
 	connect(shaderManager, SIGNAL(killProgram(int)), this, SLOT(killProgram(int)));
 	connect(shaderManager, SIGNAL(setErrorStatus(int)), this, SLOT(setErrorStatus(int)));
 	connect(shaderManager, SIGNAL(recordDrawCall(int&)),
@@ -109,6 +107,10 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	/*   Status bar    */
 	statusbar->addPermanentWidget(fSBError);
 	statusbar->addPermanentWidget(fSBMouseInfo);
+
+	/*   Workspace    */
+    ShWindowManager *workspace = shaderManager->getWindows();
+	setCentralWidget(workspace);
 
 	/*   Buffer View    */
 	QGridLayout *gridLayout;
@@ -140,7 +142,7 @@ MainWindow::MainWindow(char *pname, const QStringList& args) :
 	agWatchControl->addAction(aMinMaxLens);
 	agWatchControl->setEnabled(false);
 
-	m_pCurrentCall = NULL;
+	currentCall = NULL;
 
 	if (dbgProgArgs.size())
 		setRunLevel(RL_SETUP);
@@ -201,7 +203,7 @@ MainWindow::~MainWindow()
 	delete m_pWglCallPfst;
 	delete m_pWglExtPfst;
 
-	delete m_pCurrentCall;
+	delete currentCall;
 }
 
 void MainWindow::killProgram(int hard)
@@ -514,8 +516,8 @@ void MainWindow::on_cbGlstPfMode_currentIndexChanged(int m)
 
 pcErrorCode MainWindow::getNextCall()
 {
-	m_pCurrentCall = pc->getCurrentCall();
-	if (!shaderManager->isAvaliable() && m_pCurrentCall->isDebuggableDrawCall()) {
+	currentCall = pc->getCurrentCall();
+	if (!shaderManager->isAvaliable() && currentCall->isDebuggableDrawCall()) {
 		/* current call is a drawcall and we don't have valid shader code;
 		 * call debug function that reads back the shader code
 		 */
@@ -531,8 +533,8 @@ pcErrorCode MainWindow::getNextCall()
 void MainWindow::on_tbExecute_clicked()
 {
 	UT_NOTIFY(LV_TRACE, "Executing");
-	delete m_pCurrentCall;
-	m_pCurrentCall = NULL;
+	delete currentCall;
+	currentCall = NULL;
 
 	/* Cleanup shader debugging */
 	emit cleanShader();
@@ -573,7 +575,7 @@ void MainWindow::on_tbExecute_clicked()
 			setRunLevel(RL_SETUP);
 		} else {
 			setStatusBarText(QString("Executing " + dbgProgArgs[0]));
-			m_pCurrentCall = pc->getCurrentCall();
+			currentCall = pc->getCurrentCall();
 			setRunLevel(RL_TRACE_EXECUTE);
 			addGlTraceWarningItem("Program Start");
 			addGlTraceItem();
@@ -598,10 +600,10 @@ void MainWindow::on_tbExecute_clicked()
 
 void MainWindow::addGlTraceItem()
 {
-	if (!m_pCurrentCall)
+	if (!currentCall)
 		return;
 
-	char *callString = m_pCurrentCall->getCallString();
+	char *callString = currentCall->getCallString();
 	QIcon icon;
 	QString iconText;
 	GlTraceListItem::IconType iconType;
@@ -615,27 +617,27 @@ void MainWindow::addGlTraceItem()
 		iconType = GlTraceListItem::IT_EMPTY;
 	}
 
-	if (m_pCurrentCall->isGlFunc()) {
-		m_pGlCallSt->incCallStatistic(QString(m_pCurrentCall->getName()));
-		m_pGlExtSt->incCallStatistic(QString(m_pCurrentCall->getExtension()));
-		m_pGlCallPfst->incCallStatistic(QString(m_pCurrentCall->getName()));
-		m_pGlExtPfst->incCallStatistic(QString(m_pCurrentCall->getExtension()));
-	} else if (m_pCurrentCall->isGlxFunc()) {
-		m_pGlxCallSt->incCallStatistic(QString(m_pCurrentCall->getName()));
-		m_pGlxExtSt->incCallStatistic(QString(m_pCurrentCall->getExtension()));
-		m_pGlxCallPfst->incCallStatistic(QString(m_pCurrentCall->getName()));
+	if (currentCall->isGlFunc()) {
+		m_pGlCallSt->incCallStatistic(QString(currentCall->getName()));
+		m_pGlExtSt->incCallStatistic(QString(currentCall->getExtension()));
+		m_pGlCallPfst->incCallStatistic(QString(currentCall->getName()));
+		m_pGlExtPfst->incCallStatistic(QString(currentCall->getExtension()));
+	} else if (currentCall->isGlxFunc()) {
+		m_pGlxCallSt->incCallStatistic(QString(currentCall->getName()));
+		m_pGlxExtSt->incCallStatistic(QString(currentCall->getExtension()));
+		m_pGlxCallPfst->incCallStatistic(QString(currentCall->getName()));
 		m_pGlxExtPfst->incCallStatistic(
-				QString(m_pCurrentCall->getExtension()));
-	} else if (m_pCurrentCall->isWglFunc()) {
-		m_pWglCallSt->incCallStatistic(QString(m_pCurrentCall->getName()));
-		m_pWglExtSt->incCallStatistic(QString(m_pCurrentCall->getExtension()));
-		m_pWglCallPfst->incCallStatistic(QString(m_pCurrentCall->getName()));
+				QString(currentCall->getExtension()));
+	} else if (currentCall->isWglFunc()) {
+		m_pWglCallSt->incCallStatistic(QString(currentCall->getName()));
+		m_pWglExtSt->incCallStatistic(QString(currentCall->getExtension()));
+		m_pWglCallPfst->incCallStatistic(QString(currentCall->getName()));
 		m_pWglExtPfst->incCallStatistic(
-				QString(m_pCurrentCall->getExtension()));
+				QString(currentCall->getExtension()));
 	}
 
 	/* Check what options are valid depending on the command */
-	if (m_pCurrentCall->isDebuggable()) {
+	if (currentCall->isDebuggable()) {
 
 	}
 
@@ -688,7 +690,7 @@ pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 	pcErrorCode error;
 
 	if ((fCall && fCall->isShaderSwitch())
-			|| m_pCurrentCall->isShaderSwitch()) {
+			|| currentCall->isShaderSwitch()) {
 		/* current call is a glsl shader switch */
 
 		/* call shader switch */
@@ -714,7 +716,7 @@ pcErrorCode MainWindow::nextStep(const FunctionCall *fCall)
 	}
 	/* Readback image if requested by user */
 	if (tbBVCaptureAutomatic->isChecked()
-			&& m_pCurrentCall->isFramebufferChange()) {
+			&& currentCall->isFramebufferChange()) {
 		on_tbBVCapture_clicked();
 	}
 	if (error == PCE_NONE) {
@@ -741,7 +743,7 @@ void MainWindow::on_tbStep_clicked()
 
 	while (currentRunLevel == RL_TRACE_EXECUTE_RUN
 			&& !m_pGlTraceFilterModel->isFunctionVisible(
-					m_pCurrentCall->getName())) {
+					currentCall->getName())) {
 		singleStep();
 		qApp->processEvents(QEventLoop::AllEvents);
 		if (currentRunLevel == RL_SETUP) {
@@ -765,8 +767,8 @@ void MainWindow::singleStep()
 
 	pcErrorCode error = nextStep(NULL);
 
-	delete m_pCurrentCall;
-	m_pCurrentCall = NULL;
+	delete currentCall;
+	currentCall = NULL;
 
 	/* Error handling */
 	setErrorStatus(error);
@@ -835,8 +837,8 @@ void MainWindow::on_tbSkip_clicked()
 
 	pcErrorCode error = pc->callDone();
 
-	delete m_pCurrentCall;
-	m_pCurrentCall = NULL;
+	delete currentCall;
+	currentCall = NULL;
 
 	/* Error handling */
 	setErrorStatus(error);
@@ -858,7 +860,7 @@ void MainWindow::on_tbSkip_clicked()
 
 void MainWindow::on_tbEdit_clicked()
 {
-	EditCallDialog *dialog = new EditCallDialog(m_pCurrentCall);
+	EditCallDialog *dialog = new EditCallDialog(currentCall);
 	dialog->exec();
 
 	if (dialog->result() == QDialog::Accepted) {
@@ -866,7 +868,7 @@ void MainWindow::on_tbEdit_clicked()
 
 		resetPerFrameStatistics();
 
-		if ((*(FunctionCall*) editCall) != *m_pCurrentCall) {
+		if ((*(FunctionCall*) editCall) != *currentCall) {
 
 			char *callString = editCall->getCallString();
 			setGlTraceItemText(callString);
@@ -877,10 +879,10 @@ void MainWindow::on_tbEdit_clicked()
 			pc->overwriteFuncArguments(editCall);
 
 			/* Replace current call by edited call */
-			delete m_pCurrentCall;
-			m_pCurrentCall = NULL;
+			delete currentCall;
+			currentCall = NULL;
 
-			m_pCurrentCall = new FunctionCall(editCall);
+			currentCall = new FunctionCall(editCall);
 			delete editCall;
 
 		} else {
@@ -912,7 +914,7 @@ void MainWindow::waitForEndOfExecution()
 			/* TODO: error check */
 			pc->executeContinueOnError();
 			pc->checkChildStatus();
-			m_pCurrentCall = pc->getCurrentCall();
+			currentCall = pc->getCurrentCall();
 			addGlTraceItem();
 			setErrorStatus(error);
 			pc->callDone();
@@ -961,8 +963,8 @@ void MainWindow::on_tbJumpToDrawCall_clicked()
 	setRunLevel(RL_TRACE_EXECUTE_RUN);
 
 	if (tbToggleNoTrace->isChecked()) {
-		delete m_pCurrentCall;
-		m_pCurrentCall = NULL;
+		delete currentCall;
+		currentCall = NULL;
 
 		emit removeShaders();
 
@@ -983,7 +985,7 @@ void MainWindow::on_tbJumpToDrawCall_clicked()
 		}
 		waitForEndOfExecution(); /* last statement!! */
 	} else {
-		if (m_pCurrentCall && m_pCurrentCall->isDebuggableDrawCall()) {
+		if (currentCall && currentCall->isDebuggableDrawCall()) {
 			singleStep();
 			if (currentRunLevel == RL_SETUP) {
 				/* something was wrong in step */
@@ -992,9 +994,9 @@ void MainWindow::on_tbJumpToDrawCall_clicked()
 		}
 
 		while (currentRunLevel == RL_TRACE_EXECUTE_RUN
-				&& (!m_pCurrentCall
-						|| (m_pCurrentCall
-								&& !m_pCurrentCall->isDebuggableDrawCall()))) {
+				&& (!currentCall
+						|| (currentCall
+								&& !currentCall->isDebuggableDrawCall()))) {
 			singleStep();
 			if (currentRunLevel == RL_SETUP) {
 				/* something was wrong in step */
@@ -1016,8 +1018,8 @@ void MainWindow::on_tbJumpToShader_clicked()
 	setRunLevel(RL_TRACE_EXECUTE_RUN);
 
 	if (tbToggleNoTrace->isChecked()) {
-		delete m_pCurrentCall;
-		m_pCurrentCall = NULL;
+		delete currentCall;
+		currentCall = NULL;
 
 		emit removeShaders();
 
@@ -1038,7 +1040,7 @@ void MainWindow::on_tbJumpToShader_clicked()
 		}
 		waitForEndOfExecution(); /* last statement!! */
 	} else {
-		if (m_pCurrentCall && m_pCurrentCall->isShaderSwitch()) {
+		if (currentCall && currentCall->isShaderSwitch()) {
 			singleStep();
 			/* something was wrong in step */
 			if (currentRunLevel == RL_SETUP)
@@ -1046,8 +1048,8 @@ void MainWindow::on_tbJumpToShader_clicked()
 		}
 
 		while (currentRunLevel == RL_TRACE_EXECUTE_RUN
-				&& (!m_pCurrentCall
-						|| (m_pCurrentCall && !m_pCurrentCall->isShaderSwitch()))) {
+				&& (!currentCall
+						|| (currentCall && !currentCall->isShaderSwitch()))) {
 			singleStep();
 			/* something was wrong in step */
 			if (currentRunLevel == RL_SETUP)
@@ -1075,8 +1077,8 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 		targetName = pJumpToDialog->getTargetFuncName();
 
 		if (tbToggleNoTrace->isChecked()) {
-			delete m_pCurrentCall;
-			m_pCurrentCall = NULL;
+			delete currentCall;
+			currentCall = NULL;
 
 			emit removeShaders();
 			resetAllStatistics();
@@ -1104,10 +1106,10 @@ void MainWindow::on_tbJumpToUserDef_clicked()
 				return;
 
 			while (currentRunLevel == RL_TRACE_EXECUTE_RUN
-					&& (!m_pCurrentCall
-							|| (m_pCurrentCall
+					&& (!currentCall
+							|| (currentCall
 									&& targetName.compare(
-											m_pCurrentCall->getName())))) {
+											currentCall->getName())))) {
 				singleStep();
 				/* something was wrong in step */
 				if (currentRunLevel == RL_SETUP)
@@ -1130,8 +1132,8 @@ void MainWindow::on_tbRun_clicked()
 
 	setRunLevel(RL_TRACE_EXECUTE_RUN);
 	if (tbToggleNoTrace->isChecked()) {
-		delete m_pCurrentCall;
-		m_pCurrentCall = NULL;
+		delete currentCall;
+		currentCall = NULL;
 
 		emit removeShaders();
 		resetAllStatistics();
@@ -1259,8 +1261,8 @@ pcErrorCode MainWindow::recordCall()
 
 	error = pc->callDone();
 
-	delete m_pCurrentCall;
-	m_pCurrentCall = NULL;
+	delete currentCall;
+	currentCall = NULL;
 
 	/* Error handling */
 	setErrorStatus(error);
@@ -1283,17 +1285,17 @@ pcErrorCode MainWindow::recordCall()
 void MainWindow::recordDrawCall()
 {
 	pc->initRecording();
-	if (!strcmp(m_pCurrentCall->getName(), "glBegin")) {
+	if (!strcmp(currentCall->getName(), "glBegin")) {
 		while (currentRunLevel == RL_DBG_RECORD_DRAWCALL
-				&& (!m_pCurrentCall
-						|| (m_pCurrentCall
-								&& strcmp(m_pCurrentCall->getName(), "glEnd")))) {
+				&& (!currentCall
+						|| (currentCall
+								&& strcmp(currentCall->getName(), "glEnd")))) {
 			if (recordCall() != PCE_NONE) {
 				return;
 			}
 			qApp->processEvents(QEventLoop::AllEvents);
 		}
-		if (!m_pCurrentCall || strcmp(m_pCurrentCall->getName(), "glEnd")
+		if (!currentCall || strcmp(currentCall->getName(), "glEnd")
 				|| recordCall() != PCE_NONE) {
 			if (currentRunLevel == RL_DBG_RECORD_DRAWCALL) {
 				/* TODO: error handling */
@@ -1371,7 +1373,7 @@ void MainWindow::setRunLevel(int rl)
 {
 	QString title = QString(MAIN_WINDOW_TITLE);
 	UT_NOTIFY(LV_INFO,
-			"new level: " << rl << " " << (m_pCurrentCall ? m_pCurrentCall->getName() : ""));
+			"new level: " << rl << " " << (currentCall ? currentCall->getName() : ""));
 
 	switch (rl) {
 	case RL_INIT:  // Program start
@@ -1442,9 +1444,16 @@ void MainWindow::setRunLevel(int rl)
 		tbSave->setEnabled(true);
 		setGuiUpdates(true);
 		break;
-	case RL_TRACE_EXECUTE:  // Trace is running in step mode
+	case RL_TRACE_EXECUTE: {	// Trace is running in step mode
 		/* choose sub-level */
+		int *primitive = shaderManager->primitiveMode();
+		bool call_debuggable = currentCall && currentCall->isDebuggable(primitive);
+		if (call_debuggable && shaderManager->isAvaliable())
+			setRunLevel(RL_TRACE_EXECUTE_IS_DEBUGABLE);
+		else
+			setRunLevel(RL_TRACE_EXECUTE_NO_DEBUGABLE);
 		break;
+	}
 	case RL_TRACE_EXECUTE_NO_DEBUGABLE:  // sub-level for non debugable calls
 		currentRunLevel = RL_TRACE_EXECUTE_NO_DEBUGABLE;
 		title.append(" - ");
@@ -1466,7 +1475,7 @@ void MainWindow::setRunLevel(int rl)
 								":/icons/icons/face-devil-green-grin_32.png")));
 		tbStep->setEnabled(true);
 		tbSkip->setEnabled(true);
-		if (m_pCurrentCall && m_pCurrentCall->isEditable()) {
+		if (currentCall && currentCall->isEditable()) {
 			tbEdit->setEnabled(true);
 		} else {
 			tbEdit->setEnabled(false);
@@ -1504,7 +1513,7 @@ void MainWindow::setRunLevel(int rl)
 								":/icons/icons/face-devil-green-grin_32.png")));
 		tbStep->setEnabled(true);
 		tbSkip->setEnabled(true);
-		if (m_pCurrentCall && m_pCurrentCall->isEditable()) {
+		if (currentCall && currentCall->isEditable()) {
 			tbEdit->setEnabled(true);
 		} else {
 			tbEdit->setEnabled(false);
@@ -1645,7 +1654,7 @@ void MainWindow::setRunLevel(int rl)
 								":/icons/icons/face-devil-green-grin_32.png")));
 		tbStep->setEnabled(true);
 		tbSkip->setEnabled(true);
-		if (m_pCurrentCall && m_pCurrentCall->isEditable()) {
+		if (currentCall && currentCall->isEditable()) {
 			tbEdit->setEnabled(true);
 		} else {
 			tbEdit->setEnabled(false);
@@ -1663,15 +1672,8 @@ void MainWindow::setRunLevel(int rl)
 		setGuiUpdates(true);
 		break;
 	}
-}
 
-void MainWindow::setRunLevelDebuggable(int &primitive, bool has_shaders)
-{
-	/* choose sub-level */
-	if (m_pCurrentCall && m_pCurrentCall->isDebuggable(&primitive) && has_shaders)
-		setRunLevel(RL_TRACE_EXECUTE_IS_DEBUGABLE);
-	else
-		setRunLevel(RL_TRACE_EXECUTE_NO_DEBUGABLE);
+	shaderManager->updateGui(rl);
 }
 
 void MainWindow::setErrorStatus(int status)
@@ -1756,7 +1758,7 @@ void MainWindow::setMouseOverValues(int x, int y, const bool *active,
 
 void MainWindow::resetPerFrameStatistics(void)
 {
-	if (m_pCurrentCall && m_pCurrentCall->isFrameEnd()) {
+	if (currentCall && currentCall->isFrameEnd()) {
 		m_pGlCallPfst->resetStatistic();
 		m_pGlExtPfst->resetStatistic();
 		m_pGlxCallPfst->resetStatistic();

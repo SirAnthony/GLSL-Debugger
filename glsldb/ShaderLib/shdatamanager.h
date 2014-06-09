@@ -14,7 +14,6 @@ class ShDockWidget;
 class ShWindowManager;
 class ShVarModel;
 class ShVarItem;
-class QMainWindow;
 class FragmentTestOptions;
 
 
@@ -53,8 +52,7 @@ public:
 	 * other things like ShVarItem which have no direct connection
 	 * with MainWindow.
 	 */
-	static ShDataManager* create(QMainWindow *window, ProgramControl *pc,
-								 QObject *parent = 0);
+	static ShDataManager* create(ProgramControl *pc, QWidget *parent = 0);
 	static ShDataManager* get();
 
 	bool getDebugData(ShaderMode type, int option, ShChangeableList *cl,
@@ -67,6 +65,7 @@ public:
 	int getCurrentTarget();
 	bool codeReady();
 	ShBuiltInResource *getResource();
+	void updateGui(int);
 
 	inline ShVarModel *getModel()
 	{ return model; }
@@ -74,6 +73,8 @@ public:
 	{ return windows; }
 	inline bool isAvaliable()
 	{ return shadersAvaliable; }
+	inline int *primitiveMode()
+	{ return &geometry.primitiveMode; }
 
 signals:
 	void setGuiUpdates(bool);
@@ -83,7 +84,6 @@ signals:
 	void cleanModel();
 	void setErrorStatus(int);
 	void setRunLevel(int);
-	void setCurrentDebuggable(int&, bool);
 	void killProgram(int);
 	void updateSelection(int, int, QString &, ShaderMode);
 	void updateSourceHighlight(ShaderMode, DbgRsRange *);
@@ -109,7 +109,6 @@ public slots:
 	void removeShaders();
 
 protected slots:
-	void updateGui(int);
 	void updateWatched(ShVarItem *);
 
 protected:
@@ -120,7 +119,7 @@ protected:
 	int retriveFragmentData(const char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
 
 private:
-	ShDataManager(QMainWindow *window, ProgramControl *_pc, QObject *parent = 0);
+	ShDataManager(ProgramControl *_pc, QWidget *parent = 0);
 	~ShDataManager();
 	// Probably we do not need stack here
 	QStack<LoopData*> loopsData;
