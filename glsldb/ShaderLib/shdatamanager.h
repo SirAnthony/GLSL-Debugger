@@ -95,8 +95,8 @@ signals:
 	void resetWatchData(ShaderMode, bool *);
 	void getWatchItems(QSet<ShVarItem *> &);
 	void getOptions(FragmentTestOptions *);
-	void getShaders(const char *shaders[]);
-	void setShaders(const char *shaders[]);
+	void getShaders(const char **shaders);
+	void setShaders(const char **shaders);
 	void getCurrentIndex(int&);
 
 public slots:

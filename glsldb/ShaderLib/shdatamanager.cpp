@@ -295,7 +295,7 @@ void ShDataManager::execute(ShaderMode type)
 		return;
 	}
 
-	if (!ShCompile(compiler, &shaders[type], 1, &shResources, dbgopts, shVariables)) {
+	if (!ShCompile(compiler, &shaders[type], 1, &shResources, dbgopts, &shVariables)) {
 		const char *err = ShGetInfoLog(compiler);
 		QMessageBox message;
 		message.setText("Error at shader compilation");
@@ -460,8 +460,6 @@ void ShDataManager::updateShaders(int &error)
 	int uniformsCount = 0;
 	char *uniforms = NULL;
 	char *shaders[smCount];
-	for (int i = 0; i < smCount; i++)
-		shaders[i] = NULL;
 
 	error = pc->getShaderCode(shaders, &shResources, &uniforms, &uniformsCount);
 	if (error == PCE_NONE) {
@@ -470,9 +468,13 @@ void ShDataManager::updateShaders(int &error)
 		emit setShaders(cshaders);
 		model->setUniforms(uniforms, uniformsCount);
 		shadersAvaliable = (shaders[0] || shaders[1] || shaders[2]);
-		for (int i = 0; i < smCount; ++i)
-			delete[] shaders[i];
 	}
+
+	for (int i = 0; i < smCount; ++i)
+		if (shaders[i])
+			delete[] shaders[i];
+	if (uniforms)
+		delete[] uniforms;
 }
 
 void ShDataManager::removeShaders()

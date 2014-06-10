@@ -375,7 +375,7 @@ SH_IMPORT_EXPORT void freeShVariableList(ShVariableList *vl);
 //
 SH_IMPORT_EXPORT int ShCompile(const ShHandle, const char* const shaderStrings[],
 		const int numStrings, const ShBuiltInResource *resources,
-		int debugOptions, ShVariableList *vl);
+		int debugOptions, ShVariableList **vl);
 
 //
 // Advancing the debugger

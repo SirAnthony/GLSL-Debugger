@@ -49,17 +49,17 @@ void ShSourceDock::registerDock(ShDataManager *manager)
 			this, SLOT(updateGui(int,bool,bool)));
 	connect(manager, SIGNAL(updateSourceHighlight(ShaderMode,DbgRsRange*)),
 			this, SLOT(updateHighlight(ShaderMode,DbgRsRange*)));
-	connect(manager, SIGNAL(getShaders(const char*[])),
-			this, SLOT(getShaders(const char*[])));
-	connect(manager, SIGNAL(setShaders(const char*[])),
-			this, SLOT(setShaders(const char*[])));
+	connect(manager, SIGNAL(getShaders(const char**)),
+			this, SLOT(getShaders(const char**)));
+	connect(manager, SIGNAL(setShaders(const char**)),
+			this, SLOT(setShaders(const char**)));
 	connect(manager, SIGNAL(getCurrentIndex(int&)), this, SLOT(getCurrentIndex(int&)));
 	connect(this, SIGNAL(stepShader(int)), manager, SLOT(step(int)));
 	connect(this, SIGNAL(resetShader()), manager, SLOT(reset()));
 	connect(this, SIGNAL(executeShader(ShaderMode)), manager, SLOT(execute(ShaderMode)));
 }
 
-void ShSourceDock::getShaders(const char *shaders[])
+void ShSourceDock::getShaders(const char **shaders)
 {
 	if (!shaders)
 		return;
@@ -67,18 +67,16 @@ void ShSourceDock::getShaders(const char *shaders[])
 		shaders[s] = shaderText[s].toStdString().c_str();
 }
 
-void ShSourceDock::setShaders(const char *shaders[])
+void ShSourceDock::setShaders(const char **shaders)
 {
 	for (int s = 0; s < smCount; ++s) {
 		shaderText[s] = QString((shaders && shaders[s]) ? shaders[s] : "");
 		QTextDocument *doc = new QTextDocument(shaderText[s], editWidgets[s]);
-		editWidgets[s]->setDocument(doc);
-		if (!shaderText[s].isEmpty()) {
-			/* the document becomes owner of the highlighter, so it get's freed */
+		/* the document becomes owner of the highlighter, so it get's freed */
+		if (!shaderText[s].isEmpty())
 			new GlslSyntaxHighlighter(doc);
-			editWidgets[s]->setDocument(doc);
-			editWidgets[s]->setTabStopWidth(30);
-		}
+		editWidgets[s]->setDocument(doc);
+		editWidgets[s]->setTabStopWidth(30);
 	}
 }
 

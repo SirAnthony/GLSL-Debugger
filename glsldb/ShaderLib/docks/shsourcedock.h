@@ -23,12 +23,12 @@ signals:
 	void stepShader(int);
 	void resetShader();
 	void executeShader(ShaderMode);
-	
+
 public slots:
 	void updateGui(int, bool, bool);
 	void setGuiUpdates(bool);
-	void getShaders(const char *shaders[]);
-	void setShaders(const char *shaders[]);
+	void getShaders(const char **shaders);
+	void setShaders(const char **shaders);
 	void executeShader();
 	void stepInto();
 	void stepOver();
@@ -48,7 +48,7 @@ private:
 	Ui::ShSourceDock *ui;
 	FragmentTestOptions options;
 	QTextEdit *editWidgets[smCount];
-	QString shaderText[smCount];	
+	QString shaderText[smCount];
 };
 
 #endif // SHSOURCEDOCK_H

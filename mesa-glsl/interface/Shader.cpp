@@ -227,18 +227,20 @@ int __fastcall ShFinalize( )
 //
 int ShCompile(const ShHandle handle, const char* const shaderStrings[],
 			  const int numStrings, const ShBuiltInResource* resources,
-			  int debugOptions, ShVariableList *vl)
+			  int debugOptions, ShVariableList **pvl)
 {
 	if (handle == NULL)
 		return 0;
 
 	clearTraverseDebugJump();
 
-	vl->numVariables = 0;
-	vl->variables = NULL;
-
 	ShaderHolder* holder = reinterpret_cast<ShaderHolder*>(handle);
 	initialize_context(holder->ctx, resources);
+
+	ShVariableList* vl = rzalloc(holder, struct ShVariableList);
+	vl->numVariables = 0;
+	vl->variables = NULL;
+	*pvl = vl;
 
 	bool success = true;
 	for (int shnum = 0; numStrings > shnum; shnum++) {
