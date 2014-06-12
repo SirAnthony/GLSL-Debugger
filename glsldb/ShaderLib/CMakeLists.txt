@@ -21,3 +21,7 @@ include_directories(
 set(SRC ${SRC_CPP} ${MOC_OUTFILES} ${UI_OUTFILES} ${RES_OUTFILES})
 add_library(shadergui STATIC ${SRC})
 target_link_libraries(shadergui ${GLSL_LIBRARIES})
+
+#if(TESTS)
+    add_subdirectory(tests)
+#endif()
