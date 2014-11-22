@@ -12,7 +12,11 @@ if(GLSLDB_LINUX OR GLSLDB_OSX)
 	find_package(X11 REQUIRED)
 	find_package(Threads REQUIRED)
 endif()
+if (GLSLDB_WIN)
+	find_package(QtDll REQUIRED)
+endif()
 
+set(CMAKE_AUTOMOC TRUE)
 include(${QT_USE_FILE})
 
 file(GLOB SRC_CPP *.cpp)
@@ -21,14 +25,13 @@ file(GLOB SRC_C *.c)
 file(GLOB MOC_HEADERS *.qt.h)
 file(GLOB RES_FILES *.qrc)
 file(GLOB UI_FILES ui/*.ui)
-qt4_wrap_cpp(MOC_OUTFILES ${MOC_HEADERS})
 qt4_wrap_ui(UI_OUTFILES ${UI_FILES})
 qt4_add_resources(RES_OUTFILES ${RES_FILES})
 
 set(SRC
 	${SRC_C}
 	${SRC_CPP}
-	${MOC_OUTFILES}
+	${MOC_HEADERS}
 	${UI_OUTFILES}
 	${RES_OUTFILES}
 )
@@ -77,5 +80,7 @@ target_link_libraries(glsldb
 )
 
 if(GLSLDB_WIN)
-	install(TARGETS glsldb RUNTIME DESTINATION "${DISTRIBUTION_DIRECTORY}")
+	install(FILES ${DLL_FILES_QT} DESTINATION "${DISTRIBUTION_DIRECTORY}")
+	set(DIST_FILES glsldb)
+	install(TARGETS "${DIST_FILES}" RUNTIME DESTINATION "${DISTRIBUTION_DIRECTORY}")
 endif()

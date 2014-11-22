@@ -33,6 +33,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0501
 #endif
+#include "attachToProcess.qt.h"
 
 #include "attachToProcess.qt.h"
 

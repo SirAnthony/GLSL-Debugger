@@ -4,14 +4,19 @@ add_subdirectory(mesa)
 
 include_directories(
 	"${PROJECT_SOURCE_DIR}"
+	"${PROJECT_SOURCE_DIR}/glsldb"
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface"
 	"${CMAKE_CURRENT_SOURCE_DIR}/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/mesa"
 	"${CMAKE_CURRENT_SOURCE_DIR}/mesa/mesa"
 	"${CMAKE_CURRENT_SOURCE_DIR}/mesa/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/mesa/mapi"
 )
 
+if (MSVC)
+	include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include/c99")
+endif()
 
 file(GLOB SRC_INTERFACE interface/*.cpp)
 file(GLOB SRC_VISITORS interface/visitors/*.cpp)

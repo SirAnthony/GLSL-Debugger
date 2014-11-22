@@ -8,6 +8,7 @@
 #include <windows.h>
 #include "progControl.qt.h"
 #include "utils/dbgprint.h"
+#include <string>
 #include <cstdlib>
 #define DEBUGLIB "\\glsldebug.dll"
 
@@ -80,7 +81,8 @@ pcErrorCode ProgramControl::runProgram(char **debuggedProgramArgs, char *workDir
 	/* Concatenate the command line. */
 	for (int i = 0; debuggedProgramArgs[i] != 0; i++)
 		cmdArgs << debuggedProgramArgs[i];
-	cmdLine = strdup(cmdArgs.join(" ").toStdString().c_str());
+	std::string cmdLineStr = cmdArgs.join(" ").toStdString();
+	cmdLine = strdup(cmdLineStr.c_str());
 
 	this->setDebugEnvVars();	// TODO dirty hack.
 	LPVOID newEnv = GetEnvironmentStrings();
