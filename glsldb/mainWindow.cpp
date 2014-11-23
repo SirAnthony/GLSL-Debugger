@@ -46,6 +46,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QCloseEvent>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -1369,12 +1370,15 @@ void MainWindow::leaveDBGState()
 	}
 }
 
+#define GLTRACE_EXECUTE ":/icons/icons/gltrace-execute_32.png"
+#define ICON_DEVIL ":/icons/icons/face-devil-green-grin_32.png"
+
 void MainWindow::setRunLevel(int rl)
 {
+	assert(rl < RL_DBG_LAST);
 	QString title = QString(MAIN_WINDOW_TITLE);
-	UT_NOTIFY(LV_INFO,
-			"new level: " << rl << " " << (currentCall ? currentCall->getName() : ""));
-
+	UT_NOTIFY(LV_INFO, "new level: " << runlevel_names[rl] <<
+			" " << (currentCall ? currentCall->getName() : ""));
 	switch (rl) {
 	case RL_INIT:  // Program start
 		currentRunLevel = RL_INIT;
@@ -1390,10 +1394,7 @@ void MainWindow::setRunLevel(int rl)
 		tbBVSave->setEnabled(false);
 		lBVLabel->setPixmap(QPixmap());
 		tbExecute->setEnabled(false);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/gltrace-execute_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(GLTRACE_EXECUTE)));
 		tbStep->setEnabled(false);
 		tbSkip->setEnabled(false);
 		tbEdit->setEnabled(false);
@@ -1425,10 +1426,7 @@ void MainWindow::setRunLevel(int rl)
 		tbBVSave->setEnabled(false);
 		lBVLabel->setPixmap(QPixmap());
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/gltrace-execute_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(GLTRACE_EXECUTE)));
 		tbStep->setEnabled(false);
 		tbSkip->setEnabled(false);
 		tbEdit->setEnabled(false);
@@ -1469,17 +1467,10 @@ void MainWindow::setRunLevel(int rl)
 		}
 		tbBVCaptureAutomatic->setEnabled(true);
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-green-grin_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(ICON_DEVIL)));
 		tbStep->setEnabled(true);
 		tbSkip->setEnabled(true);
-		if (currentCall && currentCall->isEditable()) {
-			tbEdit->setEnabled(true);
-		} else {
-			tbEdit->setEnabled(false);
-		}
+		tbEdit->setEnabled(currentCall && currentCall->isEditable());
 		tbJumpToDrawCall->setEnabled(true);
 		tbJumpToShader->setEnabled(true);
 		tbJumpToUserDef->setEnabled(true);
@@ -1507,17 +1498,10 @@ void MainWindow::setRunLevel(int rl)
 		}
 		tbBVCaptureAutomatic->setEnabled(true);
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-green-grin_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(ICON_DEVIL)));
 		tbStep->setEnabled(true);
 		tbSkip->setEnabled(true);
-		if (currentCall && currentCall->isEditable()) {
-			tbEdit->setEnabled(true);
-		} else {
-			tbEdit->setEnabled(false);
-		}
+		tbEdit->setEnabled(currentCall && currentCall->isEditable());
 		tbJumpToDrawCall->setEnabled(true);
 		tbJumpToShader->setEnabled(true);
 		tbJumpToUserDef->setEnabled(true);
@@ -1542,10 +1526,7 @@ void MainWindow::setRunLevel(int rl)
 		}
 		tbBVCaptureAutomatic->setEnabled(true);
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-green-grin_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(ICON_DEVIL)));
 		tbStep->setEnabled(false);
 		tbSkip->setEnabled(false);
 		tbEdit->setEnabled(false);
@@ -1578,10 +1559,7 @@ void MainWindow::setRunLevel(int rl)
 		}
 		tbBVCaptureAutomatic->setEnabled(true);
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-green-grin_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(ICON_DEVIL)));
 		tbStep->setEnabled(false);
 		tbSkip->setEnabled(false);
 		tbEdit->setEnabled(false);
@@ -1614,10 +1592,7 @@ void MainWindow::setRunLevel(int rl)
 		}
 		tbBVCaptureAutomatic->setEnabled(true);
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-green-grin_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(ICON_DEVIL)));
 		tbStep->setEnabled(false);
 		tbSkip->setEnabled(false);
 		tbEdit->setEnabled(false);
@@ -1648,17 +1623,10 @@ void MainWindow::setRunLevel(int rl)
 		}
 		tbBVCaptureAutomatic->setEnabled(true);
 		tbExecute->setEnabled(true);
-		tbExecute->setIcon(
-				QIcon(
-						QString::fromUtf8(
-								":/icons/icons/face-devil-green-grin_32.png")));
+		tbExecute->setIcon(QIcon(QString::fromUtf8(ICON_DEVIL)));
 		tbStep->setEnabled(true);
 		tbSkip->setEnabled(true);
-		if (currentCall && currentCall->isEditable()) {
-			tbEdit->setEnabled(true);
-		} else {
-			tbEdit->setEnabled(false);
-		}
+		tbEdit->setEnabled(currentCall && currentCall->isEditable());
 		tbJumpToDrawCall->setEnabled(true);
 		tbJumpToShader->setEnabled(true);
 		tbJumpToUserDef->setEnabled(true);

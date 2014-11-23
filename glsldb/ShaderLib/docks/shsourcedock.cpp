@@ -99,7 +99,7 @@ void ShSourceDock::updateGui(int active_tab, bool restart, bool debuggable)
 	ui->tbExecute->setEnabled(enabled);
 	ui->tbOptions->setEnabled(!restart && !debuggable);
 
-	if (enabled || (!restart && !debuggable))
+	if (enabled || (!restart && debuggable))
 		updateControls();
 
 	if (!restart)
@@ -161,7 +161,7 @@ void ShSourceDock::updateStepControls(bool enabled)
 void ShSourceDock::updateControls()
 {
 	int index = ui->twShader->currentIndex();
-	if (index > 0)
+	if (index >= 0)
 		updateCurrent(index);
 }
 

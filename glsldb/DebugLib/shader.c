@@ -1087,7 +1087,7 @@ static void freeShaderProgram(ShaderProgram *shader)
 	shader->programHandle = 0;
 }
 
-static int getShaderResources(ShaderProgram *shader, struct ShBuiltInResource *resources)
+static int getShaderResources(ShaderProgram *shader, ShBuiltInResource *resources)
 {
 	ORIG_GL(glGetIntegerv)(GL_MAX_LIGHTS, &resources->maxLights);
 	ORIG_GL(glGetIntegerv)(GL_MAX_CLIP_PLANES, &resources->maxClipPlanes);

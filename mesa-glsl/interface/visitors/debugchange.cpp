@@ -159,8 +159,8 @@ bool ast_debugchange_traverser_visitor::enter(class ast_expression* node)
 		// should be one or zero, otherwise we have a problem
 		copyChangeables(node, subnode);
 
-		int count = exec_list_length(&node->changeables);
-		assert(count <= 1 || !"DebugVar - field_selection or index to more than one changeable?");
+		assert(exec_list_length(&node->changeables) <= 1 ||
+				!"DebugVar - field_selection or index to more than one changeable?");
 		if (node->changeables.is_empty())
 			return false;
 

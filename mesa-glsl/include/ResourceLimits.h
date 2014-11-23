@@ -32,11 +32,10 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #ifndef RESOURCE_LIMITS_INCLUDED
 #define RESOURCE_LIMITS_INCLUDED
 
-struct ShBuiltInResource {
+typedef struct ShBuiltInResource {
     int maxLights;
     int maxClipPlanes;
     int maxTextureUnits;
@@ -56,5 +55,5 @@ struct ShBuiltInResource {
     int geoVerticesOut;
     int geoInputType;
     int geoOutputType;
-};
+} ShBuiltInResource;
 #endif /* RESOURCE_LIMITS_INCLUDED */
