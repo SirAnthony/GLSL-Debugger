@@ -20,6 +20,13 @@ void FunctionsMap::initialize()
 	}
 	UT_NOTIFY(LV_INFO, _map.size() << " registered GL-Functions");
 }
+
+void FunctionsMap::free()
+{
+	_map.clear();
+}
+
+
 GLFunctionList* FunctionsMap::operator[](const std::string& name)
 {
 	GLFunctionList* func = 0;

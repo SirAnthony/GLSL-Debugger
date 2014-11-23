@@ -11,6 +11,7 @@ class FunctionsMap {
 public:
 	static FunctionsMap& instance();
 	void initialize();
+	void free();
 	GLFunctionList* operator[](const std::string& name);
 private:
 	static FunctionsMap* _instance;
