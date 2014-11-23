@@ -95,8 +95,8 @@ signals:
 	void resetWatchData(ShaderMode, bool *);
 	void getWatchItems(QSet<ShVarItem *> &);
 	void getOptions(FragmentTestOptions *);
-	void getShaders(const char **shaders);
-	void setShaders(const char **shaders);
+	void getShaders(char **shaders, int count);
+	void setShaders(const char **shaders, int count);
 	void getCurrentIndex(int&);
 
 public slots:
@@ -115,8 +115,10 @@ protected:
 	void updateGeometry(ShaderMode);
 	void updateDialogs(int, int, bool, bool);
 	bool processError(int error, ShaderMode type, bool restart = false);
-	int retriveVertexData(const char *shaders[3], int target, int option, bool *coverage, VertexBox *box);
-	int retriveFragmentData(const char *shaders[3], int format, int option, bool *coverage, PixelBox *box);
+	int retriveVertexData(const char * const shaders[smCount], int target, int option,
+			bool *coverage, VertexBox *box);
+	int retriveFragmentData(const char * const shaders[smCount], int format, int option,
+			bool *coverage, PixelBox *box);
 
 private:
 	ShDataManager(ProgramControl *_pc, QWidget *parent = 0);

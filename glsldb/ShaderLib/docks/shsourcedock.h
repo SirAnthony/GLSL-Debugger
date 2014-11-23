@@ -27,8 +27,8 @@ signals:
 public slots:
 	void updateGui(int, bool, bool);
 	void setGuiUpdates(bool);
-	void getShaders(const char **shaders);
-	void setShaders(const char **shaders);
+	void getShaders(char **shaders, int count);
+	void setShaders(const char **shaders, int count);
 	void executeShader();
 	void stepInto();
 	void stepOver();

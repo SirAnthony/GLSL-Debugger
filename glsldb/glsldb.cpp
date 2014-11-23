@@ -391,6 +391,7 @@ int main(int argc, char **argv)
 
 	UTILS_NOTIFY_SHUTDOWN();
 	quitLogging();
+	map.free();
 	return returnValue;
 }
 

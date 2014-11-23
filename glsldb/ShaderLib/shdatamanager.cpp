@@ -46,8 +46,38 @@ static const runLevel dbg_runlevels[smCount] = {
 	RL_DBG_FRAGMENT_SHADER
 };
 
+struct ShadersStackHolder
+{
+	int count;
+	char **shaders;
 
-static void printDebugInfo(int option, int target, const char *shaders[3])
+	ShadersStackHolder(int c)
+	{
+		count = c;
+		shaders = (char **)malloc(count * sizeof(char *));
+		for (int i = 0; i < count; ++i)
+			shaders[i] = NULL;
+	}
+
+	~ShadersStackHolder()
+	{
+		for (int i=0; i < count; ++i) {
+			if (shaders[i])
+				free(shaders[i]);
+		}
+		free(shaders);
+	}
+
+	void clear(int num)
+	{
+		if (count < num || !shaders[num])
+			return;
+		free(shaders[num]);
+		shaders[num] = NULL;
+	}
+};
+
+static void printDebugInfo(int option, int target, const char * const shaders[3])
 {
 	/////// DEBUG
 	dbgPrint(DBGLVL_DEBUG, ">>>>> DEBUG CG: ");
@@ -133,24 +163,24 @@ bool ShDataManager::getDebugData(ShaderMode type, int option, ShChangeableList *
 	}
 
 	pcErrorCode error;
-	const char *shaders[3] = {NULL, NULL, NULL};
+	ShadersStackHolder sh(smCount);
 	char *debugCode = ShDebugGetProg(compiler, cl, shVariables, (DbgCgOptions)option);
 
-	emit getShaders(shaders);
-	shaders[type] = debugCode;
+	emit getShaders(sh.shaders, sh.count);
+	sh.clear(type);
+	sh.shaders[type] = debugCode;
 	if (type == smVertex)
-		shaders[1] = NULL;
+		sh.clear(smGeometry);
 
 	DBG_TARGETS target = dbg_pc_targets[type];
-	printDebugInfo(option, target, shaders);
+	printDebugInfo(option, target, sh.shaders);
 	if (type == smFragment)
-		error = static_cast<pcErrorCode>(retriveFragmentData(shaders, format,
+		error = static_cast<pcErrorCode>(retriveFragmentData(sh.shaders, format,
 						option, coverage, dynamic_cast<PixelBox*>(data)));
 	else
-		error = static_cast<pcErrorCode>(retriveVertexData(shaders, target,
+		error = static_cast<pcErrorCode>(retriveVertexData(sh.shaders, target,
 						option, coverage, dynamic_cast<VertexBox*>(data)));
 
-	free(debugCode);
 	if (!processError(error, type))
 		return false;
 
@@ -279,9 +309,9 @@ void ShDataManager::execute(ShaderMode type)
 	if (!processError(error, type))
 		return;
 
-	const char *shaders[3] = {NULL, NULL, NULL};
-	emit getShaders(shaders);
-	if (!shaders[type])
+	ShadersStackHolder sh(smCount);
+	emit getShaders(sh.shaders, sh.count);
+	if (!sh.shaders[type])
 		return;
 
 	emit setRunLevel(dbg_runlevels[type]);
@@ -295,7 +325,7 @@ void ShDataManager::execute(ShaderMode type)
 		return;
 	}
 
-	if (!ShCompile(compiler, &shaders[type], 1, &shResources, dbgopts, &shVariables)) {
+	if (!ShCompile(compiler, &sh.shaders[type], 1, &shResources, dbgopts, &shVariables)) {
 		const char *err = ShGetInfoLog(compiler);
 		QMessageBox message;
 		message.setText("Error at shader compilation");
@@ -465,7 +495,7 @@ void ShDataManager::updateShaders(int &error)
 	if (error == PCE_NONE) {
 		/* show shader code(s) in tabs */
 		const char *cshaders[smCount] = { shaders[0], shaders[1], shaders[2] };
-		emit setShaders(cshaders);
+		emit setShaders(cshaders, smCount);
 		model->setUniforms(uniforms, uniformsCount);
 		shadersAvaliable = (shaders[0] || shaders[1] || shaders[2]);
 	}
@@ -479,7 +509,7 @@ void ShDataManager::updateShaders(int &error)
 
 void ShDataManager::removeShaders()
 {
-	emit setShaders(NULL);
+	emit setShaders(NULL, smCount);
 	shadersAvaliable = false;
 }
 
@@ -668,7 +698,7 @@ bool ShDataManager::processError(int error, ShaderMode type, bool restart)
 	return false;
 }
 
-int ShDataManager::retriveVertexData(const char *shaders[], int target, int option,
+int ShDataManager::retriveVertexData(const char * const shaders[], int target, int option,
 									 bool *coverage, VertexBox *box)
 {
 	int elementsPerVertex = 3;
@@ -717,7 +747,7 @@ int ShDataManager::retriveVertexData(const char *shaders[], int target, int opti
 	return error;
 }
 
-int ShDataManager::retriveFragmentData(const char *shaders[], int format, int option,
+int ShDataManager::retriveFragmentData(const char * const shaders[], int format, int option,
 									   bool *coverage, PixelBox *box)
 {
 	int channels;
