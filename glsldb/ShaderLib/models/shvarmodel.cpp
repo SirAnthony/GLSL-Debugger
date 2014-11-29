@@ -104,17 +104,17 @@ void ShVarModel::clear()
 	this->invisibleRootItem()->removeRows(0, this->rowCount());
 }
 
-void ShVarModel::setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope, DbgRsScopeStack &stack)
+void ShVarModel::setChangedAndScope(const ShChangeableList* cl, DbgRsScope &scope, DbgRsScopeStack &stack)
 {
 	QStandardItem *root = this->invisibleRootItem();
 
 	setRecursive(false, DF_CHANGED, root);
-	dumpShChangeableList(&cl);
+	dumpShChangeableList(cl);
 
 
 	/* Changed? */
-	for (int i = 0; i < cl.numChangeables; i++) {
-		const ShChangeable *c = cl.changeables[i];
+	for (int i = 0; i < cl->numChangeables; i++) {
+		const ShChangeable *c = cl->changeables[i];
 
 		for (int j = 0; j < root->rowCount(); j++) {
 			ShVarItem *item = dynamic_cast<ShVarItem*>(root->child(j));

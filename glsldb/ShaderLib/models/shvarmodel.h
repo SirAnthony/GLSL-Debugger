@@ -14,7 +14,7 @@ public:
 	void appendRow(const ShVariableList *items);
 
 	void setRecursive(QVariant data, varDataFields field, QStandardItem *item);
-	void setChangedAndScope(ShChangeableList &cl, DbgRsScope &scope,
+	void setChangedAndScope(const ShChangeableList* cl, DbgRsScope &scope,
 			DbgRsScopeStack &stack);
 
 	void setWatched(ShVarItem *item);

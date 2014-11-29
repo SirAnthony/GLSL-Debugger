@@ -23,7 +23,7 @@ void freeShChangeableList(ShChangeableList **list)
 	}
 }
 
-void dumpShChangeableList(ShChangeableList *cl)
+void dumpShChangeableList(const ShChangeableList *cl)
 {
 	int i;
 

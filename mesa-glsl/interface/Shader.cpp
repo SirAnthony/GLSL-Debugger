@@ -342,7 +342,7 @@ int ShLink(const ShHandle linkHandle, const ShHandle compHandles[], const int nu
 	if( linkHandle == NULL )
 		return 0;
 
-	ShaderHolder* holder = reinterpret_cast< ShaderHolder* >( linkHandle );
+	//ShaderHolder* holder = reinterpret_cast< ShaderHolder* >( linkHandle );
 
 //	if( holder->program == 0 )
 //		return 0;
@@ -364,7 +364,7 @@ const char* ShGetInfoLog(const ShHandle handle)
 	if( handle == 0 )
 		return NULL;
 
-	ShaderHolder* holder = reinterpret_cast< ShaderHolder* >( handle );
+	//ShaderHolder* holder = reinterpret_cast< ShaderHolder* >( handle );
 
 //	if( holder->program == 0 )
 //		return 0;

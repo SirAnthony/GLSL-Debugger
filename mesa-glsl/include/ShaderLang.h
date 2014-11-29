@@ -136,7 +136,7 @@ typedef struct {
 //
 SH_IMPORT_EXPORT void createShChangeableList(ShChangeableList **list);
 SH_IMPORT_EXPORT void freeShChangeableList(ShChangeableList **list);
-SH_IMPORT_EXPORT void dumpShChangeableList(ShChangeableList *cl);
+SH_IMPORT_EXPORT void dumpShChangeableList(const ShChangeableList *cl);
 SH_IMPORT_EXPORT void dumpShChangeable(const ShChangeable *cbl);
 SH_IMPORT_EXPORT void addShChangeable(ShChangeableList *cl, const ShChangeable *c);
 SH_IMPORT_EXPORT void createShChangeable(ShChangeable **c);
@@ -237,7 +237,7 @@ typedef struct {
 	DbgRsRange range;
 	DbgRsScope scope;
 	DbgRsScopeStack scopeStack;
-	ShChangeableList cgbls;
+	ShChangeableList* cgbls;
 	int loopIteration;
 	bool passedEmitVertex;
 	bool passedDiscard;

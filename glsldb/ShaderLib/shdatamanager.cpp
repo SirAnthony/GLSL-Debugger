@@ -158,7 +158,7 @@ bool ShDataManager::getDebugData(ShaderMode type, int option, ShChangeableList *
 								 int format, bool *coverage, DataBox *data)
 {
 	if (type < 0) {
-		dbgPrint(DBGLVL_ERROR, "ShDataManager::getDebugData called with error type.");
+		dbgPrint(DBGLVL_ERROR, "ShDataManager::getDebugData called with error type.\n");
 		return false;
 	}
 
@@ -184,7 +184,7 @@ bool ShDataManager::getDebugData(ShaderMode type, int option, ShChangeableList *
 	if (!processError(error, type))
 		return false;
 
-	dbgPrint(DBGLVL_INFO, "getDebugVertexData done");
+	dbgPrint(DBGLVL_INFO, "getDebugVertexData done\n");
 	return true;
 }
 
@@ -215,7 +215,7 @@ bool ShDataManager::cleanShader(ShaderMode type)
 			compiler = NULL;
 		}
 
-		dbgPrint(DBGLVL_INFO, "Restoring render target");
+		dbgPrint(DBGLVL_INFO, "Restoring render target\n");
 		/* restore render target */
 		error = pc->restoreRenderTarget(dbg_pc_targets[type]);
 		break;
@@ -297,7 +297,7 @@ void ShDataManager::execute(ShaderMode type)
 		break;
 	}
 	default:
-		dbgPrint(DBGLVL_ERROR, "Wrong shader type to execute");
+		dbgPrint(DBGLVL_ERROR, "Wrong shader type to execute\n");
 		error = PCE_DBG_INVALID_VALUE;
 		return;
 	}
@@ -383,7 +383,7 @@ void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 	static int lastActive = 0;
 
 	if (!dr) {
-		dbgPrint(DBGLVL_ERROR, "An error occured at shader step.");
+		dbgPrint(DBGLVL_ERROR, "An error occured at shader step.\n");
 		return;
 	}
 
@@ -397,7 +397,7 @@ void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 			/* Retrieve cover map (one render pass 'DBG_CG_COVERAGE') */
 			if (!getDebugData(shaderMode, DBG_CG_COVERAGE, NULL,
 							  GL_FLOAT, NULL, coverageBox)) {
-				dbgPrint(DBGLVL_ERROR, "An error occurred while reading coverage.");
+				dbgPrint(DBGLVL_ERROR, "An error occurred while reading coverage.\n");
 				if (coverageBox)
 					delete coverageBox;
 				cleanShader(shaderMode);
@@ -419,10 +419,10 @@ void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 				lastActive = active;
 			} else if (shaderMode == smGeometry || shaderMode == smVertex) {
 				if (changed) {
-					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_GROWN");
+					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_GROWN\n");
 					cmstatus = COVERAGEMAP_GROWN;
 				} else {
-					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_UNCHANGED");
+					dbgPrint(DBGLVL_INFO, "cmstatus = COVERAGEMAP_UNCHANGED\n");
 					cmstatus = COVERAGEMAP_UNCHANGED;
 				}
 			}
@@ -433,7 +433,7 @@ void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 	} else if (dr->status == DBG_RS_STATUS_FINISHED) {
 		emit updateStepControls(false);
 	} else {
-		dbgPrint(DBGLVL_ERROR, "An unhandled debug result (%d) occurred.", dr->status);
+		dbgPrint(DBGLVL_ERROR, "An unhandled debug result (%d) occurred.\n", dr->status);
 		return;
 	}
 
@@ -443,7 +443,7 @@ void ShDataManager::step(int action, bool update_watch, bool update_covermap)
 
 	/* Process watch list */
 	if (update_watch) {
-		dbgPrint(DBGLVL_INFO, "updateWatchData %d emitVertex: %d, discard: %d",
+		dbgPrint(DBGLVL_INFO, "updateWatchData %d emitVertex: %d, discard: %d\n",
 				 cmstatus, dr->passedEmitVertex, dr->passedDiscard);
 		emit updateWatchData(shaderMode, cmstatus, coverage,
 						dr->passedEmitVertex || dr->passedDiscard);
@@ -589,7 +589,7 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 	if (retrive) {
 		dataBox = create_databox(shaderMode);
 		if (!getDebugData(shaderMode, options, NULL, GL_FLOAT, coverage, dataBox)) {
-			dbgPrint(DBGLVL_WARNING, "An error occurred while retrieving the data.");
+			dbgPrint(DBGLVL_WARNING, "An error occurred while retrieving the data.\n");
 			cleanShader(shaderMode);
 			emit setRunLevel(RL_DBG_RESTART);
 			delete dataBox;
@@ -629,11 +629,11 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 		LoopData *lData = NULL;
 		/* Add data to the loop storage */
 		if (loop_iter == 0) {
-			dbgPrint(DBGLVL_INFO, "==> new loop encountered");
+			dbgPrint(DBGLVL_INFO, "==> new loop encountered\n");
 			lData = new LoopData(shaderMode, dataBox, this);
 			loopsData.push(lData);
 		} else {
-			dbgPrint(DBGLVL_INFO, "==> known loop at %d", loop_iter);
+			dbgPrint(DBGLVL_INFO, "==> known loop at %d\n", loop_iter);
 			if (!loopsData.isEmpty()) {
 				lData = loopsData.top();
 				if (update_covermap)
@@ -641,7 +641,7 @@ void ShDataManager::updateDialogs(int position, int loop_iter,
 			} else {
 				/* TODO error handling */
 				dbgPrint(DBGLVL_ERROR, "An error occurred while trying to "
-						 "get loop count data.");
+						 "get loop count data.\n");
 				step(DBG_BH_JUMP_OVER);
 				delete dataBox;
 				return;
@@ -685,14 +685,14 @@ bool ShDataManager::processError(int error, ShaderMode type, bool restart)
 	if (code == PCE_NONE)
 		return true;
 
-	dbgPrint(DBGLVL_WARNING, "Error occured: %s", getErrorDescription(code));
+	dbgPrint(DBGLVL_WARNING, "Error occurred: %s\n", getErrorDescription(code));
 	if (isErrorCritical(code)) {
-		dbgPrint(DBGLVL_ERROR, "Error is critical.");
+		dbgPrint(DBGLVL_ERROR, "Error is critical.\n");
 		cleanShader(type);
 		emit setRunLevel(RL_SETUP);
 		emit killProgram(1);
 	} else if (restart) {
-		dbgPrint(DBGLVL_ERROR, "Restart required.");
+		dbgPrint(DBGLVL_ERROR, "Restart required.\n");
 		emit setRunLevel(RL_DBG_RESTART);
 	}
 	return false;
@@ -743,7 +743,7 @@ int ShDataManager::retriveVertexData(const char * const shaders[], int target, i
 	if (data)
 		free(data);
 
-	dbgPrint(DBGLVL_DEBUG, "retriveVertexData done");
+	dbgPrint(DBGLVL_DEBUG, "retriveVertexData done\n");
 	return error;
 }
 
@@ -766,7 +766,7 @@ int ShDataManager::retriveFragmentData(const char * const shaders[], int format,
 		break;
 	}
 
-	dbgPrint(DBGLVL_COMPILERINFO, "Init buffers...");
+	dbgPrint(DBGLVL_COMPILERINFO, "Init buffers...\n");
 	switch (option) {
 	case DBG_CG_ORIGINAL_SRC:
 		error = pc->initializeRenderBuffer(true, true, true, true, 0.0, 0.0,
@@ -785,7 +785,7 @@ int ShDataManager::retriveFragmentData(const char * const shaders[], int format,
 		break;
 	}
 	default:
-		dbgPrint(DBGLVL_ERROR, "Unhandled DbgCgCoption %i", option);
+		dbgPrint(DBGLVL_ERROR, "Unhandled DbgCgCoption %i\n", option);
 		error = PCE_UNKNOWN_ERROR;
 		break;
 	}
@@ -811,11 +811,11 @@ int ShDataManager::retriveFragmentData(const char * const shaders[], int format,
 		box->setData<unsigned int>(width, height, channels, (unsigned *)imageData, coverage);
 		break;
 	default:
-		dbgPrint(DBGLVL_ERROR, "Invalid image data format");
+		dbgPrint(DBGLVL_ERROR, "Invalid image data format\n");
 	}
 
 	free(imageData);
-	dbgPrint(DBGLVL_DEBUG, "retriveFragmentData done");
+	dbgPrint(DBGLVL_DEBUG, "retriveFragmentData done\n");
 	return error;
 }
 

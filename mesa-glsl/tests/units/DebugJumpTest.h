@@ -90,11 +90,11 @@ public:
 			dr << " " << formatVariable(id);
 		}
 		dr << "\nChangeables:\n";
-		for (int i = 0; i < dbg_result.cgbls.numChangeables; ++i) {
-			const ShChangeable* ch = dbg_result.cgbls.changeables[i];
+		for (int i = 0; i < dbg_result.cgbls->numChangeables; ++i) {
+			const ShChangeable* ch = dbg_result.cgbls->changeables[i];
 			dr << " " << formatChangeable(ch);
 		}
-		if (dbg_result.cgbls.numChangeables)
+		if (dbg_result.cgbls->numChangeables)
 			dr << "\n";
 		dr << "LoopIter: " << dbg_result.loopIteration << " "
 		   << "EmitVertex: " << dbg_result.passedEmitVertex << " "

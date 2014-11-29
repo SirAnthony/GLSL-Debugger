@@ -22,7 +22,7 @@ int DataBox::getCoverageFromData(bool **src, const bool *old, bool *changed)
 	}
 
 	if (*src)
-		delete[] src;
+		delete[] *src;
 	*src = covermap;
 
 	if (changed)

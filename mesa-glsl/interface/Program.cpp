@@ -25,9 +25,11 @@ void clearTraverseDebugJump(void)
 
 void resetDbgResult(DbgResult& r)
 {
-	// All memory in DbgResult must not belong to it.
+	if (r.cgbls)
+		ralloc_free(r.cgbls);
 	// Just clear it. Valgring says if something wrong.
 	memset(&r, '\0', sizeof(DbgResult));
+	r.cgbls = ralloc(NULL, ShChangeableList);
 }
 
 static void resetGlobals()
